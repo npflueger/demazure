@@ -1,19 +1,5 @@
 import Mathlib
--- import Demazure.Basic
-
-def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ k ∧ τ k < m }
-
-def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
-
--- lemma se_finiteness_helper (τ : ℤ → ℤ) (m n : ℤ) :
---   (southeast_set τ m n).Finite ↔ (southeast_set τ m (n+1)).Finite := by
---   let A := southeast_set τ m n
---   let B := southeast_set τ m (n+1)
---   change A.Finite ↔ B.Finite
---   sorry
---   -- by_cases h_n : τ n < m
---   -- · -- Case 1: n is in the southeast set
---   -- · -- Case 2: n is not in the southeast set
+import Demazure.Basic
 
 
 
@@ -72,62 +58,146 @@ def perm_321a := { τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ }
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
--- lemma criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
---   I_321a_prop (inv_set τ) := by
---   constructor
---   -- Forward direction
---   · intro h321a
---     constructor
---     · show I_directed (inv_set τ)
---       intro u v uvinv
---       exact uvinv.1
---     · show I_tfree (inv_set τ)
---       intro u v w
---       by_contra! h; obtain ⟨⟨u_lt_v,τv_lt_τu⟩, ⟨v_lt_w,τw_lt_τv⟩⟩ := h
---       cases (h321a u v w u_lt_v v_lt_w) <;> linarith
---     · show I_coclosed (inv_set τ)
---       rintro u v n ⟨u_lt_v, τv_lt_τu⟩ u_lt_n n_lt_v
---       by_cases h_τun : τ n < τ u
---       · -- case τ n < τ u
---         left; exact ⟨u_lt_n, h_τun⟩
---       · -- case τ u ≤ τ n
---         right; use n_lt_v
---         linarith
---     · show I_locfinite (inv_set τ)
---       constructor
---       · -- Finite outdegree
---         unfold I_finite_outdegree
---         intro n
---         apply Set.finite_iff_bddBelow_bddAbove.mpr
---         constructor
---         · use n; unfold lowerBounds
---           rw [Set.mem_setOf_eq]
---           rintro v h
---           linarith [h.1]
---         suffices ∃ v, ∀ w, (n,w) ∈ inv_set τ → w ≤ v by
---           rcases this with ⟨v, hv⟩
---           use v; unfold upperBounds
---           rw [Set.mem_setOf_eq]
---           intro w hw
---           exact hv w hw
+theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
+  have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ.val := by
+    by_cases h : ∃ u : ℤ, ⟨u,0⟩ ∈ inv_set τ.val
+    · obtain ⟨u, hu⟩ := h
+      use u
+      intro n hn
+      have h := τ.property.2 n u 0 hn.1 hu.1
+      have h' := hu.2
+      have h'' := hn.2
+      contrapose! h
+      constructor <;> linarith
+    · use 0
+      push_neg at h
+      exact h
+  obtain ⟨u, h_src⟩ := ex_src
+  have ex_snk : ∃ v : ℤ, ∀ n : ℤ, ⟨v,n⟩ ∉ inv_set τ.val := by
+    by_cases h : ∃ v : ℤ, ⟨0,v⟩ ∈ inv_set τ.val
+    · obtain ⟨v, hv⟩ := h
+      use v
+      intro n hn
+      have h := τ.property.2 0 v n hv.1 hn.1
+      have h' := hv.2
+      have h'' := hn.2
+      contrapose! h
+      constructor <;> linarith
+    · use 0
+      push_neg at h
+      exact h
+  obtain ⟨v, h_snk⟩ := ex_snk
 
---         sorry
---       · -- Finite indegree
---         sorry
---   -- Converse
---   · rintro h i j k i_lt_j j_lt_k
---     have := h.tfree i j k
---     contrapose! this
---     obtain ⟨h1, h2⟩ := this
---     have h1 : τ j < τ i := by
---       apply lt_of_le_of_ne h1
---       intro heq; apply hperm.injective at heq
---       linarith
---     have h2 : τ k < τ j := by
---       apply lt_of_le_of_ne h2
---       intro heq; apply hperm.injective at heq
---       linarith
---     exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
+  have se_empty : (southeast_set τ.val (τ.val v) v) = ∅ := by
+    apply Set.eq_empty_of_forall_notMem
+    intro n hn
+    unfold southeast_set at hn
+    specialize h_snk n
+    simp at hn h_snk
+    obtain ⟨v_le_n, τ_n_lt_v⟩ := hn
+    unfold inv_set at h_snk
+    simp at h_snk
+    have : v ≠ n := by
+      intro heq
+      rw [heq] at τ_n_lt_v
+      linarith
+    have := h_snk (lt_of_le_of_ne v_le_n this)
+    linarith
+
+  have se_finite : (southeast_set τ.val (τ.val v) v).Finite := by simp [se_empty]
+
+  have nw_empty : (northwest_set τ.val (τ.val u + 1) (u+1)) = ∅ := by
+    apply Set.eq_empty_of_forall_notMem
+    intro n hn
+    unfold northwest_set at hn; simp at hn
+    specialize h_src n
+    simp at hn h_src
+    obtain ⟨n_lt_u_plus_1, τ_n_ge_u_plus_1⟩ := hn
+    unfold inv_set at h_src
+    simp at h_src
+    have n_le_u : n ≤ u := by linarith
+    have : n ≠ u := by
+      intro heq
+      rw [heq] at τ_n_ge_u_plus_1
+      linarith
+    have n_lt_u : n < u := lt_of_le_of_ne n_le_u this
+    have := h_src n_lt_u
+    linarith
+
+  have nw_finite : (northwest_set τ.val (τ.val u + 1) (u+1)).Finite := by simp [nw_empty]
+
+  exact asp_of_finite_quadrants τ.property.1.injective se_finite nw_finite
+
+theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
+  I_321a_prop (inv_set τ) := by
+  constructor
+  -- Forward direction
+  · intro h321a
+    constructor
+    · show I_directed (inv_set τ)
+      intro u v uvinv
+      exact uvinv.1
+    · show I_tfree (inv_set τ)
+      intro u v w
+      by_contra! h; obtain ⟨⟨u_lt_v,τv_lt_τu⟩, ⟨v_lt_w,τw_lt_τv⟩⟩ := h
+      cases (h321a u v w u_lt_v v_lt_w) <;> linarith
+    · show I_coclosed (inv_set τ)
+      rintro u v n ⟨u_lt_v, τv_lt_τu⟩ u_lt_n n_lt_v
+      by_cases h_τun : τ n < τ u
+      · -- case τ n < τ u
+        left; exact ⟨u_lt_n, h_τun⟩
+      · -- case τ u ≤ τ n
+        right; use n_lt_v
+        linarith
+    · show I_locfinite (inv_set τ)
+      have h_asp : is_asp τ := asp_of_321a ⟨τ, hperm, h321a⟩
+      constructor
+      · -- Finite outdegree
+        intro x
+        have : {v | (x, v) ∈ inv_set τ} = southeast_set τ (τ x) (x+1) := by
+          unfold southeast_set inv_set
+          ext v
+          constructor
+          · intro h
+            simp at *
+            obtain ⟨h1, h2⟩ := h
+            constructor <;> linarith
+          · intro h
+            simp at *
+            obtain ⟨h1, h2⟩ := h
+            constructor <;> linarith
+        rw [this]
+        exact se_finite_of_asp hperm.injective (τ x) (x+1) h_asp
+      · -- Finite indegree
+        intro x
+        have : {u | ⟨u,x⟩ ∈ inv_set τ} = northwest_set τ ((τ x)+1) x := by
+          ext u
+          unfold northwest_set inv_set
+          constructor
+          · intro h
+            simp at *
+            obtain ⟨h1, h2⟩ := h
+            constructor <;> linarith
+          · intro h
+            simp at *
+            obtain ⟨h1, h2⟩ := h
+            constructor <;> linarith
+        rw [this]
+        exact nw_finite_of_asp hperm.injective ((τ x)+1) x h_asp
+  -- Converse
+  · rintro h i j k i_lt_j j_lt_k
+    have := h.tfree i j k
+    contrapose! this
+    obtain ⟨h1, h2⟩ := this
+    have h1 : τ j < τ i := by
+      apply lt_of_le_of_ne h1
+      intro heq; apply hperm.injective at heq
+      linarith
+    have h2 : τ k < τ j := by
+      apply lt_of_le_of_ne h2
+      intro heq; apply hperm.injective at heq
+      linarith
+    exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
 
 
 noncomputable section
@@ -507,25 +577,24 @@ lemma σ_inv : inv_set (σ I) = I.set := by
       exact ⟨I.dir _ _ I_mn, this⟩
     linarith
 
--- lemma helper_sandwich {y : ℤ} (hy : σ I y ≠ y) : ∃ m n : ℤ, m < n ∧ σ I m ≥ y ∧ σ I n ≤ y := by
---   by_cases y_om : (I.inset y).Nonempty
---   · -- Case 1: there is an edge into y
---     let m := Finset.max' (I.inset y) y_om
---     have I_my : ⟨m, y⟩ ∈ I.set := by
---       simpa [m] using (Finset.max'_mem (I.inset y) y_om)
-
-
---     have h : Finset.Icc (m+1) y ⊆ I.outset m := by
---       intro x x_in
---       have m_lt_x : m < x := by
---         simp at x_in
---         tauto
---       by_cases x_eq_y : x = y
---       · rw [x_eq_y]
---         simp [I_my]
---       sorry
---     sorry
---   sorry
+lemma σ_is_321a : is_321a (σ I) := by
+  have set_eq : inv_set (σ I) = I.set := σ_inv I
+  intro u v w u_lt_v v_lt_w
+  have h_tf := I.tf u v w
+  rw [← set_eq] at h_tf
+  unfold inv_set at h_tf
+  simp [u_lt_v, v_lt_w] at h_tf
+  rcases h_tf with (h_tf | h_tf)
+  · left
+    apply lt_of_le_of_ne h_tf
+    intro heq
+    apply σ_injective I at heq
+    linarith
+  · right
+    apply lt_of_le_of_ne h_tf
+    intro heq
+    apply σ_injective I at heq
+    linarith
 
 def inv_index (m n : ℤ) : ℤ := m + ((Finset.Ico m n).filter (· ∈ I.outset m)).card
 
@@ -913,3 +982,20 @@ lemma σ_perm : Function.Bijective (σ I) := by
   exact ⟨σ_injective I, σ_surjective I⟩
 
 end
+
+theorem inv_321a_char (I : Set (ℤ × ℤ)) :
+  I_321a_prop I
+  ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
+  constructor
+  · intro Ip
+    let I_struc : I_321a := ⟨I, Ip⟩
+    let τ : ℤ → ℤ := σ I_struc
+    use τ
+    constructor
+    · exact σ_is_321a I_struc
+    constructor
+    · exact σ_perm I_struc
+    · exact σ_inv I_struc
+  · rintro ⟨τ, ⟨h_321a, h_bij, h_inv⟩⟩
+    have := (criterion_321a τ h_bij).mp h_321a
+    rwa [h_inv] at this

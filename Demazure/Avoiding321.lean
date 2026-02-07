@@ -5,17 +5,15 @@ def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ 
 
 def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
 
-lemma se_finiteness_helper (τ : ℤ → ℤ) (m n : ℤ) :
-  (southeast_set τ m n).Finite ↔ (southeast_set τ m (n+1)).Finite := by
-  let A := southeast_set τ m n
-  let B := southeast_set τ m (n+1)
-  change A.Finite ↔ B.Finite
-
-  by_cases h_n : τ n < m
-  · -- Case 1: n is in the southeast set
-    sorry
-  · -- Case 2: n is not in the southeast set
-    sorry
+-- lemma se_finiteness_helper (τ : ℤ → ℤ) (m n : ℤ) :
+--   (southeast_set τ m n).Finite ↔ (southeast_set τ m (n+1)).Finite := by
+--   let A := southeast_set τ m n
+--   let B := southeast_set τ m (n+1)
+--   change A.Finite ↔ B.Finite
+--   sorry
+--   -- by_cases h_n : τ n < m
+--   -- · -- Case 1: n is in the southeast set
+--   -- · -- Case 2: n is not in the southeast set
 
 
 
@@ -74,62 +72,62 @@ def perm_321a := { τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ }
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
-lemma criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
-  I_321a_prop (inv_set τ) := by
-  constructor
-  -- Forward direction
-  · intro h321a
-    constructor
-    · show I_directed (inv_set τ)
-      intro u v uvinv
-      exact uvinv.1
-    · show I_tfree (inv_set τ)
-      intro u v w
-      by_contra! h; obtain ⟨⟨u_lt_v,τv_lt_τu⟩, ⟨v_lt_w,τw_lt_τv⟩⟩ := h
-      cases (h321a u v w u_lt_v v_lt_w) <;> linarith
-    · show I_coclosed (inv_set τ)
-      rintro u v n ⟨u_lt_v, τv_lt_τu⟩ u_lt_n n_lt_v
-      by_cases h_τun : τ n < τ u
-      · -- case τ n < τ u
-        left; exact ⟨u_lt_n, h_τun⟩
-      · -- case τ u ≤ τ n
-        right; use n_lt_v
-        linarith
-    · show I_locfinite (inv_set τ)
-      constructor
-      · -- Finite outdegree
-        unfold I_finite_outdegree
-        intro n
-        apply Set.finite_iff_bddBelow_bddAbove.mpr
-        constructor
-        · use n; unfold lowerBounds
-          rw [Set.mem_setOf_eq]
-          rintro v h
-          linarith [h.1]
-        suffices ∃ v, ∀ w, (n,w) ∈ inv_set τ → w ≤ v by
-          rcases this with ⟨v, hv⟩
-          use v; unfold upperBounds
-          rw [Set.mem_setOf_eq]
-          intro w hw
-          exact hv w hw
+-- lemma criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
+--   I_321a_prop (inv_set τ) := by
+--   constructor
+--   -- Forward direction
+--   · intro h321a
+--     constructor
+--     · show I_directed (inv_set τ)
+--       intro u v uvinv
+--       exact uvinv.1
+--     · show I_tfree (inv_set τ)
+--       intro u v w
+--       by_contra! h; obtain ⟨⟨u_lt_v,τv_lt_τu⟩, ⟨v_lt_w,τw_lt_τv⟩⟩ := h
+--       cases (h321a u v w u_lt_v v_lt_w) <;> linarith
+--     · show I_coclosed (inv_set τ)
+--       rintro u v n ⟨u_lt_v, τv_lt_τu⟩ u_lt_n n_lt_v
+--       by_cases h_τun : τ n < τ u
+--       · -- case τ n < τ u
+--         left; exact ⟨u_lt_n, h_τun⟩
+--       · -- case τ u ≤ τ n
+--         right; use n_lt_v
+--         linarith
+--     · show I_locfinite (inv_set τ)
+--       constructor
+--       · -- Finite outdegree
+--         unfold I_finite_outdegree
+--         intro n
+--         apply Set.finite_iff_bddBelow_bddAbove.mpr
+--         constructor
+--         · use n; unfold lowerBounds
+--           rw [Set.mem_setOf_eq]
+--           rintro v h
+--           linarith [h.1]
+--         suffices ∃ v, ∀ w, (n,w) ∈ inv_set τ → w ≤ v by
+--           rcases this with ⟨v, hv⟩
+--           use v; unfold upperBounds
+--           rw [Set.mem_setOf_eq]
+--           intro w hw
+--           exact hv w hw
 
-        sorry
-      · -- Finite indegree
-        sorry
-  -- Converse
-  · rintro h i j k i_lt_j j_lt_k
-    have := h.tfree i j k
-    contrapose! this
-    obtain ⟨h1, h2⟩ := this
-    have h1 : τ j < τ i := by
-      apply lt_of_le_of_ne h1
-      intro heq; apply hperm.injective at heq
-      linarith
-    have h2 : τ k < τ j := by
-      apply lt_of_le_of_ne h2
-      intro heq; apply hperm.injective at heq
-      linarith
-    exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
+--         sorry
+--       · -- Finite indegree
+--         sorry
+--   -- Converse
+--   · rintro h i j k i_lt_j j_lt_k
+--     have := h.tfree i j k
+--     contrapose! this
+--     obtain ⟨h1, h2⟩ := this
+--     have h1 : τ j < τ i := by
+--       apply lt_of_le_of_ne h1
+--       intro heq; apply hperm.injective at heq
+--       linarith
+--     have h2 : τ k < τ j := by
+--       apply lt_of_le_of_ne h2
+--       intro heq; apply hperm.injective at heq
+--       linarith
+--     exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
 
 
 noncomputable section
@@ -509,8 +507,278 @@ lemma σ_inv : inv_set (σ I) = I.set := by
       exact ⟨I.dir _ _ I_mn, this⟩
     linarith
 
-lemma σ_perm : Function.Bijective (σ I) := by
-  sorry
+-- lemma helper_sandwich {y : ℤ} (hy : σ I y ≠ y) : ∃ m n : ℤ, m < n ∧ σ I m ≥ y ∧ σ I n ≤ y := by
+--   by_cases y_om : (I.inset y).Nonempty
+--   · -- Case 1: there is an edge into y
+--     let m := Finset.max' (I.inset y) y_om
+--     have I_my : ⟨m, y⟩ ∈ I.set := by
+--       simpa [m] using (Finset.max'_mem (I.inset y) y_om)
+
+
+--     have h : Finset.Icc (m+1) y ⊆ I.outset m := by
+--       intro x x_in
+--       have m_lt_x : m < x := by
+--         simp at x_in
+--         tauto
+--       by_cases x_eq_y : x = y
+--       · rw [x_eq_y]
+--         simp [I_my]
+--       sorry
+--     sorry
+--   sorry
+
+def inv_index (m n : ℤ) : ℤ := m + ((Finset.Ico m n).filter (· ∈ I.outset m)).card
+
+def inv_index' (m n : ℤ) : ℤ := n - ((Finset.Ico m n).filter (· ∈ I.inset n)).card
+
+lemma inv_index_eq {m n : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) : inv_index I m n = inv_index' I m n := by
+  have m_lt_n : m < n := I.dir _ _ I_mn
+  suffices (Finset.Ico m n).card
+    = ((Finset.Ico m n).filter (· ∈ I.outset m)).card
+    + ((Finset.Ico m n).filter (· ∈ I.inset n)).card by
+    have h : (Finset.Ico m n).card = (n-m).toNat := by simp
+    have h' : ( (Finset.Ico m n).card : ℤ) = n - m := by
+      rw [h]; simp [le_of_lt m_lt_n]
+    rw [h] at this
+    dsimp [inv_index, inv_index']
+    linarith
+
+  refine card_sum_helper ?_ ?_
+  · -- Check the set is a union
+    ext x
+    simp
+    constructor
+    · intro x_in
+      simp [x_in]
+      by_cases x_eq_m : x = m
+      · right; rw [x_eq_m]; exact I_mn
+      have m_lt_x : m < x := by
+        apply lt_of_le_of_ne (x_in.1)
+        tauto
+      exact I.cc m n x I_mn m_lt_x x_in.2
+    · -- Converse
+      intro h_x
+      rcases h_x with (h | h) <;> exact h.1
+  · -- Check the sets are disjoint
+    intro x
+    by_contra! h
+    obtain ⟨x_out, x_in⟩ := h
+    have mx_I : ⟨m,x⟩ ∈ I.set := by
+      rw [Finset.mem_filter] at x_out
+      simp at x_out; tauto
+    have xn_I : ⟨x,n⟩ ∈ I.set := by
+      rw [Finset.mem_filter] at x_in
+      simp at x_in; tauto
+    have := I.tf m x n
+    tauto
+
+def move_right (m n : ℤ) : WithTop ℤ :=
+  Finset.min ((I.outset m).filter (· > n))
+
+lemma inv_index_right {m n n' : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (h_right : move_right I m n = some n') :
+  inv_index I m n' = inv_index I m n + 1 := by
+  unfold inv_index
+  suffices (Finset.Ico m n').filter (· ∈ I.outset m)
+    = (Finset.Ico m n).filter (· ∈ I.outset m) ∪ {n} by
+    rw [this]
+    simp; ring
+  ext x
+  simp [Finset.mem_filter]
+  by_cases I_mx : ⟨m,x⟩ ∉ I.set
+  · -- Case 1: ⟨m,x⟩ ∉ I.set
+    simp [I_mx]
+    intro x_eq_n
+    rw [x_eq_n] at I_mx
+    exact I_mx I_mn
+  -- Case 2: ⟨m,x⟩ ∈ I.set
+  push_neg at I_mx; simp [I_mx]
+  have : m ≤ x := by
+    have := I.dir _ _ I_mx
+    linarith
+  simp [this]
+  suffices n < n' ∧ (x < n' → x ≤ n) by
+    obtain ⟨n_lt_n', h⟩ := this
+    constructor
+    · intro h'
+      apply h at h'
+      apply le_iff_lt_or_eq.mp at h'
+      tauto
+    · intro h'
+      rcases h' with (h' | h')
+      · rw [h']
+        exact n_lt_n'
+      · exact lt_trans h' n_lt_n'
+  unfold move_right at h_right
+  have : (x > n → x ≥ n') := by
+    intro n_lt_x
+    refine Finset.min_le_of_eq ?_ h_right
+    rw [Finset.mem_filter]
+    simp; tauto
+  constructor
+  · have := Finset.mem_of_min h_right
+    simp at this
+    exact this.2
+  · intro h
+    contrapose! h
+    exact this h
+
+lemma inv_index_right_bot {m n : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (h_right : move_right I m n = ⊤) :
+  inv_index I m n + 1= σ I m := by
+  unfold inv_index σ
+  have : (I.inset m).card = 0 := by
+    apply Finset.card_eq_zero.mpr
+    apply Finset.eq_empty_of_forall_notMem
+    intro x x_in
+    have : ⟨x, m⟩ ∈ I.set := by
+      rw [inset_char I m x] at x_in
+      exact x_in
+    have := I.tf x m n
+    tauto
+  rw [this, Nat.cast_zero, sub_zero]
+
+  have : (I.outset m) = ((I.outset m).filter (· < n) ) ∪ {n}  := by
+    ext x
+    rw [Finset.mem_union, Finset.mem_filter]
+    simp
+    constructor
+    · intro h; simp [h]
+      suffices x ≤ n by
+        rw [← le_iff_lt_or_eq]
+        exact this
+      unfold move_right at h_right
+      rw [Finset.min_eq_top, Finset.eq_empty_iff_forall_notMem] at h_right
+      specialize h_right x
+      simp at h_right
+      exact h_right h
+    · intro h
+      rcases h with (h | h)
+      · exact h.1
+      · rw [h]; exact I_mn
+
+  have : (I.outset m).card = ((I.outset m).filter (· < n)).card + 1 := by
+    nth_rewrite 1 [this]
+    rw [Finset.card_union]
+    simp
+  rw [this]
+
+  suffices {x ∈ Finset.Ico m n | x ∈ I.outset m} = {x ∈ I.outset m | x < n} by
+    rw [this]; simp; ring
+
+  ext x
+  simp
+  constructor
+  · intro h
+    tauto
+  · intro h
+    suffices m ≤ x by tauto
+    have := I.dir _ _ h.1
+    exact le_of_lt this
+
+-- Now prove ``move left'' versions of the two lemmas above...
+
+def move_left (m n : ℤ) : WithBot ℤ :=
+  Finset.max ((I.inset n).filter (· < m))
+
+lemma inv_index_left {m n m' : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (h_left : move_left I m n = some m') :
+  inv_index I m' n = inv_index I m n - 1 := by
+
+  unfold move_left at h_left
+  have m'_mem := Finset.mem_of_max h_left
+  rw [Finset.mem_filter] at m'_mem
+  obtain ⟨I_m'n, m'_lt_m⟩ := m'_mem
+  simp at I_m'n
+
+  repeat rw [inv_index_eq I I_mn, inv_index_eq I I_m'n]
+  unfold inv_index'
+
+  suffices (Finset.Ico m' n).filter (· ∈ I.inset n)
+    = (Finset.Ico m n).filter (· ∈ I.inset n) ∪ {m'} by
+    rw [this, Finset.card_union, Finset.card_singleton]
+    have : ({x ∈ Finset.Ico m n | x ∈ I.inset n} ∩ {m'}) = ∅ := by
+      apply Finset.eq_empty_of_forall_notMem
+      intro x x_in
+      rw [Finset.mem_inter, Finset.mem_singleton] at x_in
+      obtain ⟨x_in_xo, x_eq_m⟩ := x_in
+      rw [Finset.mem_filter] at x_in_xo
+      rw [x_eq_m] at x_in_xo
+      have : m ≤ m' := by
+        have := x_in_xo.1
+        simp at this
+        exact this.1
+      linarith
+    rw [this, Finset.card_empty]
+    simp [Nat.cast_add]
+    linarith
+
+  ext x
+  simp
+  by_cases I_xn : ⟨x,n⟩ ∉ I.set
+  · -- Case 1: ⟨x,n⟩ ∉ I.set
+    simp [I_xn]
+    intro x_eq_m
+    rw [x_eq_m] at I_xn
+    exact I_xn I_m'n
+  · -- Case 2: ⟨x,n⟩ ∈ I.set
+    push_neg at I_xn; simp [I_xn]
+    constructor
+    · intro h
+      simp [h]
+      by_cases x_lt_m : x < m
+      · have : x ≤ m' := by
+          refine Finset.le_max_of_eq ?_ h_left
+          rw [Finset.mem_filter]
+          simp; tauto
+        left; linarith
+      · right; linarith
+    · intro h
+      rcases h with (h | h)
+      · simp [h]
+        exact I.dir _ _ I_m'n
+      · simp [h]
+        by_cases x_lt_m : x < m
+        · have : x ≤ m' := by
+            refine Finset.le_max_of_eq ?_ h_left
+            rw [Finset.mem_filter]
+            simp; tauto
+          linarith
+        · linarith
+
+lemma inv_index_left_bot {m n : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (h_left : move_left I m n = ⊥) :
+  inv_index I m n  = σ I n := by
+  rw [inv_index_eq I I_mn]
+  unfold inv_index' σ
+  have : (I.outset n).card = 0 := by
+    apply Finset.card_eq_zero.mpr
+    apply Finset.eq_empty_of_forall_notMem
+    intro x x_in
+    have : ⟨n, x⟩ ∈ I.set := by
+      rw [outset_char I n x] at x_in
+      exact x_in
+    have tf := I.tf m n x
+    tauto
+  rw [this, Nat.cast_zero, add_zero]
+
+  congr; ext x; simp
+  intro I_xn
+  simp [I.dir _ _ I_xn]
+  unfold move_left at h_left
+  rw [Finset.max_eq_bot, Finset.eq_empty_iff_forall_notMem] at h_left
+  specialize h_left x
+  simp at h_left
+  exact h_left I_xn
+
+
+-- lemma σ_surjective : Function.Surjective (σ I) := by
+--   intro y
+--   by_cases hy : σ I y = y
+--   · use y
+--   -- Now assume σ y ≠ y
+
+--   sorry
+
+
+-- lemma σ_perm : Function.Bijective (σ I) := by
+--   sorry
 
 
 

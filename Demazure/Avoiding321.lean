@@ -767,19 +767,149 @@ lemma inv_index_left_bot {m n : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (h_left : mov
   simp at h_left
   exact h_left I_xn
 
+lemma helper_zigzag {m n : ℤ} (I_mn : ⟨m, n⟩ ∈ I.set) (ε : ℤ) : (ε = 0 ∨ ε = 1 )
+  → ∃ k : ℤ, σ I k  = inv_index I m n + ε := by
+  intro hε
+  rcases hε with (hε | hε)
+  · -- Case 1: ε = 0
+    rw [hε]
+    match hml : move_left I m n with
+    | some m' =>
+      have m'_mem := Finset.mem_of_max hml
+      rw [Finset.mem_filter] at m'_mem
+      simp at m'_mem
+      obtain ⟨I_m'n, m'_lt_m⟩ := m'_mem
+      have : ⟨m', n⟩ ∈ I.set := by
+        unfold move_left at hml
+        exact I_m'n
+      have := helper_zigzag this 1 (by norm_num)
+      rcases this with ⟨k, hk⟩
+      use k; rw [hk, inv_index_left I I_mn hml]
+      norm_num
+    | ⊥ =>
+      use n
+      simp [inv_index_left_bot I I_mn hml]
+  · -- Case 2: ε = 1
+    rw [hε]
+    match hmr : move_right I m n with
+    | some n' =>
+      have n'_mem := Finset.mem_of_min hmr
+      rw [Finset.mem_filter] at n'_mem
+      simp at n'_mem
+      obtain ⟨I_mn', n_lt_n'⟩ := n'_mem
+      have : ⟨m, n'⟩ ∈ I.set := by
+        unfold move_right at hmr
+        exact I_mn'
+      have := helper_zigzag this 0 (by norm_num)
+      rcases this with ⟨k, hk⟩
+      use k; rw [hk, inv_index_right I I_mn hmr]
+      norm_num
+    | ⊤ =>
+      use m
+      simp [inv_index_right_bot I I_mn hmr]
+termination_by _ => (σ I m - σ I n).toNat
+decreasing_by
+  · have inv_eq := σ_inv I
+    have h2 : ⟨m,n⟩ ∈ I.set := I_mn
+    suffices σ I m' < σ I m ∧ σ I n < σ I m by
+      obtain ⟨h1, h2⟩ := this
+      simp; exact ⟨h1, h2⟩
+    have h1 : ⟨m',m⟩ ∉ I.set := by
+      intro h
+      have tf := I.tf m' m n
+      tauto
+    rw [← inv_eq] at h1 h2
+    unfold inv_set at h1 h2
+    simp [h2.2]
+    contrapose! h1
+    have σ_m_lt_m' : σ I m < σ I m' := by
+      apply lt_of_le_of_ne h1
+      intro σ_eq
+      have m_eq_m' : m = m' := by
+        apply σ_injective I σ_eq
+      rw [m_eq_m'] at m'_lt_m
+      linarith
+    exact ⟨m'_lt_m, σ_m_lt_m'⟩
+  · suffices σ I n < σ I n' ∧ σ I n < σ I m by
+      obtain ⟨h1, h2⟩ := this
+      simp; exact ⟨h1, h2⟩
+    have h1 : ⟨n,n'⟩ ∉ I.set := by
+      intro h
+      have tf := I.tf m n n'
+      tauto
+    have inv_eq := σ_inv I
+    have h2 : ⟨m,n⟩ ∈ I.set := I_mn
+    rw [← inv_eq] at h1 h2
+    unfold inv_set at h1 h2
+    simp [h2.2]
+    contrapose! h1
+    have σ_n'_lt_n : σ I n' < σ I n := by
+      apply lt_of_le_of_ne h1
+      intro σ_eq
+      have n_eq_n' : n' = n := by
+        apply σ_injective I σ_eq
+      rw [n_eq_n'] at n_lt_n'
+      linarith
+    exact ⟨n_lt_n', σ_n'_lt_n⟩
 
--- lemma σ_surjective : Function.Surjective (σ I) := by
---   intro y
---   by_cases hy : σ I y = y
---   · use y
---   -- Now assume σ y ≠ y
+lemma σ_surjective : Function.Surjective (σ I) := by
+  intro y
+  by_cases hy : σ I y = y
+  · use y
+  -- Now assume σ y ≠ y
 
---   sorry
+  have : (I.inset y).Nonempty ∨ (I.outset y).Nonempty := by
+    by_contra! h'
+    simp at h'
+    obtain ⟨h1, h2⟩ := h'
+    push_neg at h1 h2
+    unfold σ at hy
+    let h1 : I.inset y = ∅ := by simp [h1]
+    let h2 : I.outset y = ∅ := by simp [h2]
+    rw [h1, h2, Finset.card_empty] at hy
+    simp at hy
 
+  rcases this with (y_snk | y_src)
+  · -- Case 1: there is an edge into y
+    let u := Finset.max' (I.inset y) (by simpa using y_snk)
+    have I_uy : u ∈ I.inset y := Finset.max'_mem (I.inset y) (by simpa using y_snk)
+    simp at I_uy
+    have h_index : inv_index I u y = y -1 := by
+      rw [inv_index_eq I I_uy]
+      unfold inv_index'
+      suffices {x ∈ Finset.Ico u y | x ∈ I.inset y} = {u} by
+        rw [this, Finset.card_singleton, Nat.cast_one]
+      ext u'; simp
+      constructor
+      · intro u'_in
+        simp at u'_in
+        have : u' ≤ u := by
+          apply Finset.le_max' (I.inset y)
+          simp [u'_in]
+        linarith
+      · intro u'_eq
+        rw [u'_eq]; simp [I_uy, I.dir _ _ I_uy]
+    have := helper_zigzag I I_uy 1 (by norm_num)
+    rcases this with ⟨k, hk⟩
+    use k; linarith
+  · -- Case 2: there is an edge out of y
+    let v := Finset.min' (I.outset y) (by simpa using y_src)
+    have I_yv : v ∈ I.outset y := Finset.min'_mem (I.outset y) (by simpa using y_src)
+    simp at I_yv
+    have h_index : inv_index I y v = y  := by
+      unfold inv_index
+      suffices {x ∈ Finset.Ico y v | x ∈ I.outset y} = ∅ by
+        rw [this, Finset.card_empty, Nat.cast_zero, add_zero]
+      ext v'; simp
+      intro y_le_v' v'_lt_v
+      by_contra! h
+      have : v ≤ v' := Finset.min'_le (I.outset y) v' (by simp [h])
+      linarith
+    have := helper_zigzag I I_yv 0 (by norm_num)
+    rcases this with ⟨k, hk⟩
+    use k; linarith
 
--- lemma σ_perm : Function.Bijective (σ I) := by
---   sorry
-
-
+lemma σ_perm : Function.Bijective (σ I) := by
+  exact ⟨σ_injective I, σ_surjective I⟩
 
 end

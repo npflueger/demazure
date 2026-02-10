@@ -1,5 +1,6 @@
 import Mathlib
 import Demazure.Basic
+import Demazure.Utils
 
 
 
@@ -211,40 +212,7 @@ def σ : ℤ → ℤ :=
 def slice_set (m n : ℤ) : Finset ℤ :=
   ((I.inset m) \ (I.inset n)) ∪ ((I.outset n) \ (I.outset m))
 
-/-
-  The difference between cardinalities of two finite sets is equal to the
-  difference of cardinalities of their difference sets. This is a general
-  fact that does not appear to yet be in Mathlib.
--/
-lemma sub_card_eq_sub_card_diff (S T : Finset ℤ) :
-  (↑S.card : ℤ) - ↑T.card = ↑(S \ T).card - ↑(T \ S).card := by
-  rw [sub_eq_sub_iff_add_eq_add]
-  have h' (S T : Finset ℤ) : (↑S.card : ℤ) + (T \ S).card  = (S ∪ T).card := by
-    have : Disjoint S (T \ S) := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a as b hb
-      apply (Finset.mem_sdiff).mp at hb
-      intro hab
-      rw [hab] at as
-      exact hb.2 as
-    rw [← Nat.cast_add, ← Finset.card_union_of_disjoint this]
-    suffices S ∪ (T \ S) = S ∪ T by rw[this]
-    ext x
-    rw [Finset.mem_union, Finset.mem_union, Finset.mem_sdiff]
-    constructor
-    · intro hx
-      rcases hx with (hx | hx)
-      · left; exact hx
-      · right; exact hx.1
-    · intro hx
-      by_cases h : x ∈ S
-      · left; exact h
-      · right
-        have : x ∈ T := by
-          contrapose! hx; exact ⟨h,hx⟩
-        exact ⟨this, h⟩
-  rw [h' S T]
-  rw [add_comm, h' T S, Finset.union_comm]
+
 
 lemma slice_card (m n : ℤ) : (slice_set I m n).card =
   ((I.inset m) \ (I.inset n)).card
@@ -280,8 +248,8 @@ lemma σ_diff_slice (m n : ℤ) : σ I n - σ I m =
     unfold σ
     ring
   rw [h]
-  rw [sub_card_eq_sub_card_diff (I.inset m) (I.inset n)]
-  rw [sub_card_eq_sub_card_diff (I.outset n) (I.outset m)]
+  rw [Utils.sub_card_eq_sub_card_diff (I.inset m) (I.inset n)]
+  rw [Utils.sub_card_eq_sub_card_diff (I.outset n) (I.outset m)]
   rw [slice_card, slice_card]
   rw [Nat.cast_add, Nat.cast_add]
   ring

@@ -143,18 +143,43 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
   · exact se_finite_of_finite h_inj m n 0 1 fin_se
   · exact nw_finite_of_finite h_inj m' n' 1 0 fin_nw
 
-
-
 structure AspPerm where
   func : ℤ → ℤ
   bijective : Function.Bijective func
   asp : is_asp func
+
+instance : CoeFun AspPerm (fun _ => ℤ → ℤ) :=
+  ⟨AspPerm.func⟩
 
 namespace AspPerm
 variable (τ : AspPerm)
 
 def inv : Set (ℤ × ℤ) := inv_set τ.func
 
+lemma injective : Function.Injective τ.func := τ.bijective.injective
 
+lemma surjective : Function.Surjective τ.func := τ.bijective.surjective
+
+noncomputable section
+
+def se (a b : ℤ) : Finset ℤ := (se_finite_of_asp τ.injective a b τ.asp).toFinset
+
+@[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se a b) ↔ n ≥ b ∧ τ n < a := by
+  unfold se southeast_set
+  simp
+
+def nw (a b : ℤ) : Finset ℤ := (nw_finite_of_asp τ.injective a b τ.asp).toFinset
+
+@[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw a b) ↔ n < b ∧ τ n ≥ a := by
+  unfold nw northwest_set
+  simp
+
+def s (a b : ℤ) : ℤ := (τ.se a b).card
+def s' (a b : ℤ) : ℤ := (τ.nw a b).card
+def χ : ℤ := τ.s 0 0 - τ.s' 0 0
+
+end -- End noncomputable section
+
+-- def a_step (a b : ℤ) τ.s (a+1) b = τ.s a b + (if )
 
 end AspPerm

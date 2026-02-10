@@ -2,25 +2,73 @@ import Mathlib
 import Demazure.Basic
 import Demazure.Utils
 
+structure AspSet_prop (I : Set (ℤ × ℤ)) where
+  directed :
+    (∀ u v : ℤ, ⟨u, v⟩ ∈ I → u < v)
+  closed:
+    (∀ u v w : ℤ, (u, v) ∈ I → (v, w) ∈ I → ⟨u, w⟩ ∈ I)
+  coclosed:
+    (∀ u v w : ℤ, (u < v) → (v < w) → (u, v) ∉ I → (v, w) ∉ I → ⟨u, w⟩ ∉ I)
+  finite_outdegree:
+    (∀ u : ℤ, { v : ℤ | ⟨u, v⟩ ∈ I }.Finite)
+  finite_indegree:
+    (∀ v : ℤ, { u : ℤ | ⟨u, v⟩ ∈ I }.Finite)
+
 structure AspSet where
   I : Set (ℤ × ℤ)
-  directed:
-    ∀ u v : ℤ, ⟨u, v⟩ ∈ I → u < v
-  closed:
-    ∀ u v w : ℤ, (u, v) ∈ I → (v, w) ∈ I → ⟨u, w⟩ ∈ I
-  coclosed:
-    ∀ u v w : ℤ, (u < v) → (v < w) → (u, v) ∉ I → (v, w) ∉ I → ⟨u, w⟩ ∉ I
-  finite_outdegree:
-    ∀ u : ℤ, { v : ℤ | ⟨u, v⟩ ∈ I }.Finite
-  finite_indegree:
-    ∀ v : ℤ, { u : ℤ | ⟨u, v⟩ ∈ I }.Finite
-
-def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
-  {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
+  prop : AspSet_prop I
 
 namespace AspSet
-noncomputable section
 
+abbrev directed (as : AspSet) := as.prop.directed
+abbrev closed (as : AspSet) := as.prop.closed
+abbrev coclosed (as : AspSet) := as.prop.coclosed
+abbrev finite_outdegree (as : AspSet) := as.prop.finite_outdegree
+abbrev finite_indegree (as : AspSet) := as.prop.finite_indegree
+
+
+lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop τ.inv := by
+  constructor
+  · intro u v uv_inv
+    exact uv_inv.1
+  · intro u v w uv_inv vw_inv
+    have h1 := lt_trans uv_inv.1 vw_inv.1
+    have h2 := lt_trans vw_inv.2 uv_inv.2
+    exact ⟨h1, h2⟩
+  · intro u v w u_lt_v v_lt_w uv_inv vw_inv
+    have h1 : u < w := lt_trans u_lt_v v_lt_w
+    have h2 : τ.func u ≤ τ.func v := by
+      contrapose! uv_inv
+      exact ⟨u_lt_v, uv_inv⟩
+    have h3 : τ.func v ≤ τ.func w := by
+      contrapose! vw_inv
+      exact ⟨v_lt_w, vw_inv⟩
+    have h4 := le_trans h2 h3
+    contrapose! h4
+    exact h4.2
+  · show ∀ (u : ℤ), {v | (u, v) ∈ τ.inv}.Finite
+    unfold AspPerm.inv inv_set; simp
+    intro u
+    suffices {v | u < v ∧ τ.func v < τ.func u} = southeast_set τ.func (τ.func u) (u+1) by
+      rw [this]
+      apply se_finite_of_asp τ.bijective.injective
+      exact τ.asp
+    unfold southeast_set
+    tauto
+  · show ∀ (v : ℤ), {u | (u, v) ∈ τ.inv}.Finite
+    unfold AspPerm.inv inv_set; simp
+    intro v
+    suffices {u | u < v ∧ τ.func u > τ.func v} = northwest_set τ.func (τ.func v + 1) v by
+      rw [this]
+      apply nw_finite_of_asp τ.bijective.injective
+      exact τ.asp
+    unfold northwest_set
+    tauto
+
+def of_AspPerm (τ : AspPerm) : AspSet :=
+  ⟨τ.inv, AspSet_InvSet_of_AspPerm τ⟩
+
+noncomputable section
 abbrev inset (as : AspSet) (n : ℤ) : Finset ℤ := (as.finite_indegree n).toFinset
 
 abbrev outset (as : AspSet) (n : ℤ) : Finset ℤ := (as.finite_outdegree n).toFinset
@@ -526,6 +574,20 @@ theorem invSet_func (as : AspSet) : inv_set (as.to_func) = as.I := by
     unfold inv_set; simp [u_lt_v]
     exact σ_dec as u v u_lt_v h
 
+lemma inset_eq_nw (as : AspSet) (n : ℤ) : (as.inset n).toSet
+   = northwest_set as.σ ((as.σ n) + 1) n := by
+  ext x; simp
+  rw [← invSet_func as]
+  unfold inv_set northwest_set; simp
+  tauto
+
+lemma outset_eq_se (as : AspSet) (n : ℤ) : (as.outset n).toSet
+   = southeast_set as.σ (as.σ n) (n+1) := by
+  ext x; simp
+  rw [← invSet_func as]
+  unfold inv_set southeast_set; simp
+  tauto
+
 -- This lemma is equivalent to the funtion being bounded above,
 -- but it is stated in a strange way. This is just for convenience
 -- in the proof of surjectivity.
@@ -670,50 +732,39 @@ theorem func_surjective (as : AspSet) : Function.Surjective (as.to_func) := by
 theorem func_bijective (as : AspSet) : Function.Bijective (as.to_func) :=
   ⟨func_injective as, func_surjective as⟩
 
--- [TODO] Reformulation this after creating an ASP structure, etc.
--- ALso move teh prove that asp inv_sets are asp sets elsewhere.
-theorem invSets_of_asp (I : Set (ℤ × ℤ)) :
-  (∃ τ : ℤ → ℤ, Function.Bijective τ ∧ (is_asp τ) ∧ (inv_set τ = I))
-  ↔  (∃ as : AspSet, I = as.I) := by
+theorem func_asp (as : AspSet) : is_asp (as.to_func) := by
+  let τ := as.to_func
+  let se := southeast_set τ (τ 0) 1
+  have se_fin : se.Finite := by
+    suffices se = outset as 0 by
+      rw [this]
+      simp [as.finite_outdegree 0]
+    rw [outset_eq_se as 0]
+    congr
+  let nw := northwest_set τ ((τ 0) + 1) 0
+  have nw_fin : nw.Finite := by
+    suffices nw = inset as 0 by
+      rw [this]
+      simp [as.finite_indegree 0]
+    rw [inset_eq_nw as 0]
+  apply asp_of_finite_quadrants (func_injective as) se_fin nw_fin
+
+def toAspPerm (as : AspSet) : AspPerm :=
+  ⟨as.to_func, func_bijective as, func_asp as⟩
+
+lemma invSet_of_toAspPerm (as : AspSet) : (toAspPerm as).inv = as.I := invSet_func as
+
+theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) :
+  (∃ τ : AspPerm, τ.inv = I) ↔  (AspSet_prop I) := by
   constructor
   · intro h
-    rcases h with ⟨τ, τ_bij, τ_asp, τ_inv_eq⟩
-    use {
-      I := inv_set τ,
-      directed := by
-        intro u v uv_inv
-        exact uv_inv.1
-      closed := by
-        intro u v w uv_inv vw_inv
-        have h1 := lt_trans uv_inv.1 vw_inv.1
-        have h2 := lt_trans vw_inv.2 uv_inv.2
-        exact ⟨h1, h2⟩
-      coclosed := by
-        intro u v w u_lt_v v_lt_w uv_inv vw_inv
-        have h1 : u < w := lt_trans u_lt_v v_lt_w
-        have h2 : τ u ≤ τ v := by
-          contrapose! uv_inv
-          exact ⟨u_lt_v, uv_inv⟩
-        have h3 : τ v ≤ τ w := by
-          contrapose! vw_inv
-          exact ⟨v_lt_w, vw_inv⟩
-        have h4 := le_trans h2 h3
-        contrapose! h4
-        exact h4.2
-      finite_indegree := by
-        sorry
-      finite_outdegree := by
-        sorry
-    }
-    simp [τ_inv_eq]
-  · intro ex_as
-    rcases ex_as with ⟨as, rfl⟩
-    use as.to_func
-    constructor
-    · exact func_bijective as
-    constructor
-    · sorry
-    · exact invSet_func as
+    rcases h with ⟨τ, τ_inv_eq⟩
+    rw [← τ_inv_eq]
+    exact AspSet_InvSet_of_AspPerm τ
+  · intro asp
+    let as : AspSet := ⟨I, asp⟩
+    use as.toAspPerm
+    exact invSet_of_toAspPerm as
 
 end
 end AspSet

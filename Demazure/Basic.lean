@@ -1,5 +1,8 @@
 import Mathlib
 
+def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
+  {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
+
 def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ k ∧ τ k < m }
 
 def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
@@ -139,3 +142,19 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
   apply Set.Finite.union
   · exact se_finite_of_finite h_inj m n 0 1 fin_se
   · exact nw_finite_of_finite h_inj m' n' 1 0 fin_nw
+
+
+
+structure AspPerm where
+  func : ℤ → ℤ
+  bijective : Function.Bijective func
+  asp : is_asp func
+
+namespace AspPerm
+variable (τ : AspPerm)
+
+def inv : Set (ℤ × ℤ) := inv_set τ.func
+
+
+
+end AspPerm

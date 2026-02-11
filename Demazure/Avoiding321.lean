@@ -1,5 +1,5 @@
 import Mathlib
-import Demazure.Basic
+import Demazure.AspPerm
 import Demazure.Utils
 
 
@@ -55,9 +55,6 @@ def is_321a (τ : ℤ → ℤ) : Prop :=
   ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k
 
 def perm_321a := { τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ }
-
-def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
-  {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
 theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
   have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ.val := by

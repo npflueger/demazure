@@ -1,5 +1,5 @@
 import Mathlib
-import Demazure.Basic
+import Demazure.AspPerm
 import Demazure.Utils
 
 structure AspSet_prop (I : Set (ℤ × ℤ)) where
@@ -36,7 +36,7 @@ abbrev finite_outdegree (asps : AspSet) := asps.prop.finite_outdegree
 abbrev finite_indegree (asps : AspSet) := asps.prop.finite_indegree
 
 
-lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop τ.inv := by
+lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
   constructor
   · intro u v uv_inv
     exact uv_inv.1
@@ -55,8 +55,8 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop τ.inv := by
     have h4 := le_trans h2 h3
     contrapose! h4
     exact h4.2
-  · show ∀ (u : ℤ), {v | (u, v) ∈ τ.inv}.Finite
-    unfold AspPerm.inv inv_set; simp
+  · show ∀ (u : ℤ), {v | (u, v) ∈ inv_set τ}.Finite
+    unfold inv_set; simp
     intro u
     suffices {v | u < v ∧ τ v < τ u} = southeast_set τ (τ u) (u+1) by
       rw [this]
@@ -64,8 +64,8 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop τ.inv := by
       exact τ.asp
     unfold southeast_set
     tauto
-  · show ∀ (v : ℤ), {u | (u, v) ∈ τ.inv}.Finite
-    unfold AspPerm.inv inv_set; simp
+  · show ∀ (v : ℤ), {u | (u, v) ∈ inv_set τ}.Finite
+    unfold inv_set; simp
     intro v
     suffices {u | u < v ∧ τ u > τ v} = northwest_set τ (τ v + 1) v by
       rw [this]
@@ -75,7 +75,7 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop τ.inv := by
     tauto
 
 def of_AspPerm (τ : AspPerm) : AspSet :=
-  ⟨τ.inv, AspSet_InvSet_of_AspPerm τ⟩
+  ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩
 
 noncomputable section
 abbrev inset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_indegree n).toFinset
@@ -773,10 +773,10 @@ theorem func_asp (asps : AspSet) : is_asp (asps.to_func) := by
 def toAspPerm (asps : AspSet) : AspPerm :=
   ⟨asps.to_func, func_bijective asps, func_asp asps⟩
 
-lemma invSet_of_toAspPerm (asps : AspSet) : (toAspPerm asps).inv = asps := invSet_func asps
+lemma invSet_of_toAspPerm (asps : AspSet) : inv_set (toAspPerm asps)= asps := invSet_func asps
 
 theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) :
-  (∃ τ : AspPerm, τ.inv = I) ↔  (AspSet_prop I) := by
+  (∃ τ : AspPerm, inv_set τ = I) ↔  (AspSet_prop I) := by
   constructor
   · intro h
     rcases h with ⟨τ, τ_inv_eq⟩

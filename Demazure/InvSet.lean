@@ -77,10 +77,9 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
 def of_AspPerm (τ : AspPerm) : AspSet :=
   ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩
 
-noncomputable section
-abbrev inset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_indegree n).toFinset
+noncomputable abbrev inset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_indegree n).toFinset
 
-abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_outdegree n).toFinset
+noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_outdegree n).toFinset
 
 @[simp] lemma mem_inset (asps : AspSet) (n x : ℤ) : x ∈ asps.inset n ↔ ⟨x, n⟩ ∈ asps := by
   simp [inset]
@@ -88,21 +87,21 @@ abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_outdegree n
 @[simp] lemma mem_outset (asps : AspSet) (n x : ℤ) : x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
   simp [outset]
 
-def to_func (asps : AspSet) : ℤ → ℤ :=
+noncomputable def to_func (asps : AspSet) : ℤ → ℤ :=
   fun n => n + (asps.outset n).card - (asps.inset n).card
 
 section σ_diff
 variable (asps : AspSet) (m n : ℤ)
-abbrev σ := asps.to_func
+noncomputable abbrev σ := asps.to_func
 
-abbrev lf_pos : Finset ℤ := asps.inset m \ asps.inset n
+noncomputable abbrev lf_pos : Finset ℤ := asps.inset m \ asps.inset n
 @[simp] lemma mem_lf_pos (x : ℤ) : x ∈ lf_pos asps m n
     ↔ x < m ∧ ⟨x, m⟩ ∈ asps ∧ ⟨x, n⟩ ∉ asps := by
   simp [lf_pos]
   intro hm hn
   exact asps.directed x m hm
 
-abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m ∪ asps.inset n)
+noncomputable abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m ∪ asps.inset n)
 @[simp] lemma mem_md_pos (x : ℤ) : x ∈ md_pos asps m n
     ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∉ asps ∧ ⟨x, n⟩ ∉ asps := by
   simp [md_pos]
@@ -114,7 +113,7 @@ abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m ∪ asps.inset n
     obtain ⟨x_ge_m, x_lt_n, x_outm, x_inn⟩ := h
     simp [x_ge_m, x_lt_n, x_outm, x_inn]
 
-abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
+noncomputable abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
 @[simp] lemma mem_rt_pos (x : ℤ) : x ∈ rt_pos asps m n
     ↔ x ≥ n ∧ ⟨m,x⟩ ∉ asps ∧ ⟨n,x⟩ ∈ asps := by
   simp [rt_pos]
@@ -125,19 +124,19 @@ abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
   · intro h
     simp [h]
 
-abbrev lf_neg : Finset ℤ := (asps.inset n \ asps.inset m).filter (· < m)
+noncomputable abbrev lf_neg : Finset ℤ := (asps.inset n \ asps.inset m).filter (· < m)
 @[simp] lemma mem_lf_neg (x : ℤ) : x ∈ lf_neg asps m n
     ↔ x < m ∧ ⟨x, m⟩ ∉ asps ∧ ⟨x, n⟩ ∈ asps := by
   simp [lf_neg]
   constructor <;> (intro h; simp [h])
 
-abbrev md_neg : Finset ℤ := (Finset.Ico m n) ∩ (asps.outset m ∩ asps.inset n)
+noncomputable abbrev md_neg : Finset ℤ := (Finset.Ico m n) ∩ (asps.outset m ∩ asps.inset n)
 @[simp] lemma mem_md_neg (x : ℤ) : x ∈ md_neg asps m n
     ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨x, n⟩ ∈ asps := by
   simp [md_neg]
   constructor <;> (intro h; simp [h])
 
-abbrev rt_neg : Finset ℤ := (asps.outset m \ asps.outset n).filter (· ≥  n)
+noncomputable abbrev rt_neg : Finset ℤ := (asps.outset m \ asps.outset n).filter (· ≥  n)
 @[simp] lemma mem_rt_neg (x : ℤ) : x ∈ rt_neg asps m n
     ↔ x ≥ n ∧ ⟨m,x⟩ ∈ asps ∧ ⟨n,x⟩ ∉ asps := by
   simp [rt_neg]
@@ -770,7 +769,7 @@ theorem func_asp (asps : AspSet) : is_asp (asps.to_func) := by
     rw [inset_eq_nw asps 0]
   apply asp_of_finite_quadrants (func_injective asps) se_fin nw_fin
 
-def toAspPerm (asps : AspSet) : AspPerm :=
+noncomputable def toAspPerm (asps : AspSet) : AspPerm :=
   ⟨asps.to_func, func_bijective asps, func_asp asps⟩
 
 lemma invSet_of_toAspPerm (asps : AspSet) : inv_set (toAspPerm asps)= asps := invSet_func asps
@@ -787,5 +786,4 @@ theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) :
     use asps.toAspPerm
     exact invSet_of_toAspPerm asps
 
-end
 end AspSet

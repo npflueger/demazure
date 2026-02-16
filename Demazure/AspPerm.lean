@@ -159,8 +159,6 @@ lemma injective : Function.Injective τ.func := τ.bijective.injective
 
 lemma surjective : Function.Surjective τ.func := τ.bijective.surjective
 
-noncomputable section
-
 @[simp] lemma eq_iff_eq_func {σ τ : AspPerm} : σ = τ ↔ σ.func = τ.func := by
   constructor
   · intro h; rw [h]
@@ -197,7 +195,7 @@ def mul (σ τ : AspPerm) : AspPerm where
       rw [this]
       exact Set.Finite.preimage (Set.injOn_of_injective τ.injective) (Set.finite_singleton 0)
 
-def inv (τ : AspPerm) : AspPerm where
+noncomputable def inv (τ : AspPerm) : AspPerm where
   func := Function.invFun τ.func
   bijective := by
     have hR : Function.RightInverse (Function.invFun τ.func) τ.func :=
@@ -224,7 +222,7 @@ def one : AspPerm where
     unfold is_asp; rw [this]
     exact Set.finite_empty
 
-instance : Group AspPerm where
+noncomputable instance : Group AspPerm where
   mul := mul
   inv := inv
   one := one
@@ -246,23 +244,21 @@ instance : Group AspPerm where
   change τ.func (Function.invFun τ.func n) = n
   exact Function.rightInverse_invFun τ.surjective n
 
-def se (a b : ℤ) : Finset ℤ := (se_finite_of_asp τ.injective a b τ.asp).toFinset
+noncomputable def se (a b : ℤ) : Finset ℤ := (se_finite_of_asp τ.injective a b τ.asp).toFinset
 
 @[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se a b) ↔ n ≥ b ∧ τ n < a := by
   unfold se southeast_set
   simp
 
-def nw (a b : ℤ) : Finset ℤ := (nw_finite_of_asp τ.injective a b τ.asp).toFinset
+noncomputable def nw (a b : ℤ) : Finset ℤ := (nw_finite_of_asp τ.injective a b τ.asp).toFinset
 
 @[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw a b) ↔ n < b ∧ τ n ≥ a := by
   unfold nw northwest_set
   simp
 
-def s (a b : ℤ) : ℤ := (τ.se a b).card
-def s' (a b : ℤ) : ℤ := (τ.nw b a).card
-def χ : ℤ := τ.s 0 0 - τ.s' 0 0
-
-end -- End noncomputable section
+noncomputable def s (a b : ℤ) : ℤ := (τ.se a b).card
+noncomputable def s' (a b : ℤ) : ℤ := (τ.nw b a).card
+noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
 lemma dual_inverse : τ.s' = (τ⁻¹).s := by
   funext b a

@@ -3,6 +3,8 @@ import Demazure.AspPerm
 import Demazure.InvSet
 import Demazure.Utils
 
+def is_321a (τ : ℤ → ℤ) : Prop :=
+  ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k
 
 namespace ASP321a
 
@@ -13,18 +15,13 @@ structure set_321a_prop (I : Set (ℤ × ℤ)) where
 structure set_321a : Type extends AspSet where
   prop_321a : set_321a_prop I
 
-def func_321a_prop (τ : ℤ → ℤ) : Prop :=
-  ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k
-
-def perm_321a := { τ : ℤ → ℤ // Function.Bijective τ ∧ func_321a_prop τ }
-
-theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
-  have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ.val := by
-    by_cases h : ∃ u : ℤ, ⟨u,0⟩ ∈ inv_set τ.val
+theorem asp_of_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ) (h_321a : is_321a τ) : is_asp τ := by
+  have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ := by
+    by_cases h : ∃ u : ℤ, ⟨u,0⟩ ∈ inv_set τ
     · obtain ⟨u, hu⟩ := h
       use u
       intro n hn
-      have h := τ.property.2 n u 0 hn.1 hu.1
+      have h := h_321a n u 0 hn.1 hu.1
       have h' := hu.2
       have h'' := hn.2
       contrapose! h
@@ -33,12 +30,12 @@ theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
       push_neg at h
       exact h
   obtain ⟨u, h_src⟩ := ex_src
-  have ex_snk : ∃ v : ℤ, ∀ n : ℤ, ⟨v,n⟩ ∉ inv_set τ.val := by
-    by_cases h : ∃ v : ℤ, ⟨0,v⟩ ∈ inv_set τ.val
+  have ex_snk : ∃ v : ℤ, ∀ n : ℤ, ⟨v,n⟩ ∉ inv_set τ := by
+    by_cases h : ∃ v : ℤ, ⟨0,v⟩ ∈ inv_set τ
     · obtain ⟨v, hv⟩ := h
       use v
       intro n hn
-      have h := τ.property.2 0 v n hv.1 hn.1
+      have h := h_321a 0 v n hv.1 hn.1
       have h' := hv.2
       have h'' := hn.2
       contrapose! h
@@ -48,7 +45,7 @@ theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
       exact h
   obtain ⟨v, h_snk⟩ := ex_snk
 
-  have se_empty : (southeast_set τ.val (τ.val v) v) = ∅ := by
+  have se_empty : (southeast_set τ (τ v) v) = ∅ := by
     apply Set.eq_empty_of_forall_notMem
     intro n hn
     unfold southeast_set at hn
@@ -64,9 +61,9 @@ theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
     have := h_snk (lt_of_le_of_ne v_le_n this)
     linarith
 
-  have se_finite : (southeast_set τ.val (τ.val v) v).Finite := by simp [se_empty]
+  have se_finite : (southeast_set τ (τ v) v).Finite := by simp [se_empty]
 
-  have nw_empty : (northwest_set τ.val (τ.val u + 1) (u+1)) = ∅ := by
+  have nw_empty : (northwest_set τ (τ u + 1) (u+1)) = ∅ := by
     apply Set.eq_empty_of_forall_notMem
     intro n hn
     unfold northwest_set at hn; simp at hn
@@ -84,17 +81,16 @@ theorem asp_of_321a (τ : perm_321a) : is_asp τ.val := by
     have := h_src n_lt_u
     linarith
 
-  have nw_finite : (northwest_set τ.val (τ.val u + 1) (u+1)).Finite := by simp [nw_empty]
+  have nw_finite : (northwest_set τ (τ u + 1) (u+1)).Finite := by simp [nw_empty]
 
-  exact asp_of_finite_quadrants τ.property.1.injective se_finite nw_finite
+  exact asp_of_finite_quadrants h_bij.injective se_finite nw_finite
 
-theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : func_321a_prop τ ↔
+theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
   set_321a_prop (inv_set τ) := by
   constructor
   -- Forward direction
   · intro h321a
-    let τ_321a : perm_321a := ⟨τ, hperm, h321a⟩
-    have h_asp := asp_of_321a τ_321a
+    have h_asp := asp_of_321a τ hperm h321a
     let τ_asp : AspPerm := ⟨τ, hperm, h_asp⟩
     constructor
     · show AspSet_prop (inv_set τ)
@@ -130,7 +126,7 @@ lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func
 
 theorem inv_321a_char (I : Set (ℤ × ℤ)) :
   set_321a_prop I
-  ↔ (∃ τ : (ℤ → ℤ), (func_321a_prop τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
+  ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
   constructor
   · intro Ip
     let I_asp : AspSet := ⟨I, Ip.asp⟩
@@ -149,3 +145,13 @@ theorem inv_321a_char (I : Set (ℤ × ℤ)) :
     rwa [h_inv] at this
 
 end ASP321a
+
+theorem adj_inv (α β τ : AspPerm) (h_321a : is_321a τ)
+  (h_R : α ≤R τ) (h_L : β ≤L τ) (a b : ℤ)
+  (h_geq : AspPerm.dprod_geq α β a b (τ.s a b + 1)) :
+  ∃ u v u' v' : ℤ,
+  ⟨u, v⟩ ∈ inv_set β ∧ ⟨τ v, τ u⟩ ∈ inv_set (α⁻¹).func
+  ∧ ⟨u', v'⟩ ∈ inv_set α ∧ ⟨τ v', τ u'⟩ ∈ inv_set (β⁻¹).func
+  ∧ u' ≤ u ∧ v ≤ v'
+  ∧ (u ≠ u' ∨ v ≠ v'):= by
+  sorry

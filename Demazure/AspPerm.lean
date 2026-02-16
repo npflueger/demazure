@@ -487,4 +487,19 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   unfold h at this
   linarith
 
+def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
+infix:50 " ≤L " => le_weak_L
+
+def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
+infix:50 " ≤R " => le_weak_R
+
+-- Proposition mean that (α ⋆ β).s a b ≥ n.
+def dprod_geq (α β : AspPerm) (a b n : ℤ) : Prop :=
+  ∀ l : ℤ, α.s a l + β.s l b ≥ n
+
+def dprod_leq (α β : AspPerm) (a b n : ℤ) : Prop :=
+  ∃ l : ℤ, α.s a l + β.s l b ≤ n
+
+
+
 end AspPerm

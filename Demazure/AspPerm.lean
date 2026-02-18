@@ -4,6 +4,10 @@ import Demazure.Utils
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
+
+
+
+
 def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ k ∧ τ k < m }
 
 def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
@@ -158,6 +162,30 @@ variable (τ : AspPerm)
 lemma injective : Function.Injective τ.func := τ.bijective.injective
 
 lemma surjective : Function.Surjective τ.func := τ.bijective.surjective
+
+-- Lemmas for convenience, to handle edge cases involving i = j
+lemma inv_iff_lt {i j : ℤ} (i_le_j : i ≤ j) :
+  ⟨i, j⟩ ∈ inv_set τ ↔  τ j < τ i := by
+  rw [inv_set]
+  wlog i_lt_j : i < j
+  · have i_eq_j : i = j := le_antisymm i_le_j (le_of_not_gt i_lt_j)
+    rw [i_eq_j]; simp
+  constructor
+  · intro ij_inv
+    exact ij_inv.2
+  · intro τ_j_lt_i
+    exact ⟨i_lt_j, τ_j_lt_i⟩
+lemma inv_iff_le {i j : ℤ} (i_lt_j : i < j) :
+  ⟨i, j⟩ ∈ inv_set τ ↔ τ j ≤ τ i := by
+  constructor
+  · intro ij_inv
+    exact le_of_lt ij_inv.2
+  · intro τ_j_le_i
+    have : τ j ≠ τ i := by
+      intro heq
+      apply τ.injective at heq
+      rw [heq] at i_lt_j; exact lt_irrefl i i_lt_j
+    exact ⟨i_lt_j, lt_of_le_of_ne τ_j_le_i this⟩
 
 @[simp] lemma eq_iff_eq_func {σ τ : AspPerm} : σ = τ ↔ σ.func = τ.func := by
   constructor
@@ -343,6 +371,32 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     exact Finset.card_le_card B_subset_A
   by_cases h_ge : τ⁻¹ a ≥ b <;> simp [this, diff_card]
 
+lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
+  τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
+  rw [a_move_up τ a a' b a_le_a']
+  let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
+
+  constructor
+  · have : S.card ≥ 0 := by simp
+    linarith
+
+  -- Now handle the equality case
+  suffices (∀ (x : ℤ), a ≤ τ.func x → τ.func x < a' → x < b) ↔ S.card = 0 by
+    simp only [this]
+    constructor <;> (intro; linarith)
+  rw [Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+  constructor
+  · intro h x xS
+    specialize h (τ⁻¹ x)
+    simp [S] at xS
+    simp [τ.mul_inv_cancel_eval, xS] at h
+    linarith
+  · intro hS x a_le τx_le
+    specialize hS (τ x)
+    simp [S, a_le, τx_le] at hS
+    exact hS
+
+
 lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
   have move_up := a_move_up τ a (a+1) b (by linarith)
   let C := (Finset.Ico a (a+1)).filter (τ⁻¹ · ≥ b)
@@ -409,6 +463,22 @@ lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
       simp [hB.1, hB.2, this]
   rw [← h_union, Finset.card_union_of_disjoint h_disj]
 
+lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
+  τ.s a b ≥ τ.s a b' ∧ (τ.s a b = τ.s a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := by
+  let S := {x ∈ Finset.Ico b b' | τ x < a}
+  have heq : τ.s a b = τ.s a b' + S.card := by
+    rw [b_move_up τ a b b' b_le_b']
+    simp [S]
+  constructor
+  · have : S.card ≥ 0 := by simp
+    linarith
+  · have : τ.s a b = τ.s a b' ↔ S.card = 0 := by
+      rw [heq]
+      constructor <;> (intro; linarith)
+    rw [this, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+    unfold S
+    simp
+
 lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0) := by
   have move_up := b_move_up τ a b (b+1) (by linarith)
   suffices {x ∈ Finset.Ico b (b + 1) | τ.func x < a}.card = if τ b < a then 1 else 0 by linarith
@@ -427,8 +497,6 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
     intro x x_ge_b x_le_b
     have x_eq_b : x = b := by linarith
     rwa [x_eq_b]
-
-
 
 theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   let h (a b : ℤ) := τ.s a b - (τ⁻¹).s b a - a + b
@@ -486,6 +554,37 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
     rw [change_a 0 a b, change_b 0 b 0]
   unfold h at this
   linarith
+
+def ramp (τ : AspPerm) (b : ℤ) : Set (ℤ × ℤ) :=
+  {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}
+
+def lamp (τ : AspPerm) (a : ℤ) : Set (ℤ × ℤ) :=
+  {⟨m, n⟩ | ∃ l : ℤ, τ.s a l ≥ m ∧ τ.s' l a ≥ n}
+
+lemma ramp_lamp_dual (τ : AspPerm) (b m n : ℤ) :
+  ⟨m,n⟩ ∈ τ.ramp b ↔ ⟨n, m⟩ ∈ (τ⁻¹).lamp b := by
+  unfold ramp lamp
+  rw [← dual_inverse τ, dual_inverse τ⁻¹, inv_inv τ]
+  constructor <;> (intro h; rcases h with ⟨l, _, _⟩; use l)
+
+lemma mem_ramp_iff_s_geq (τ : AspPerm) (b m n : ℤ) :
+  ⟨m, n⟩ ∈ τ.ramp b ↔ τ.s (b + m - n - τ.χ) b ≥ m := by
+  constructor
+  · intro mn_ramp
+    rcases mn_ramp with ⟨l, hm, hn⟩
+    by_cases hl : l ≤ b + m - n - τ.χ
+    · have := a_move_up τ l (b + m - n - τ.χ) b hl
+      linarith
+    · have ineq := b_move_up τ⁻¹ b (b + m - n - τ.χ) l (by linarith)
+      rw [dual_inverse τ] at hn
+      linarith [τ.duality (b + m - n - τ.χ) b, τ.duality l b]
+  · intro s_geq
+    use b + m - n - τ.χ
+    rw [dual_inverse τ]
+    constructor
+    · exact s_geq
+    · linarith [τ.duality (b + m - n - τ.χ) b]
+
 
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L

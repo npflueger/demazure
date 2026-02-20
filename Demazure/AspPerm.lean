@@ -213,15 +213,19 @@ def mul (σ τ : AspPerm) : AspPerm where
       contrapose! h'
       exact mul_neg_of_neg_of_pos h' h''
     refine Set.Finite.subset ?_ this
-    repeat apply Set.Finite.union
-    · exact τ.asp
-    · have : {n | τ n * σ (τ n) < 0} = τ ⁻¹' {n | n * σ n < 0} := by ext n; simp
-
-      rw [this]
-      exact  Set.Finite.preimage (Set.injOn_of_injective τ.injective) σ.asp
-    · have : {n | τ n = 0} = τ ⁻¹' {0} := by ext n; simp
-      rw [this]
+    have h_pre : Set.Finite {n | τ n * σ (τ n) < 0} := by
+      have h : {n | τ n * σ (τ n) < 0} = τ ⁻¹' {n | n * σ n < 0} := by
+        ext n
+        simp
+      rw [h]
+      exact Set.Finite.preimage (Set.injOn_of_injective τ.injective) σ.asp
+    have h_zero : Set.Finite {n | τ n = 0} := by
+      have h : {n | τ n = 0} = τ ⁻¹' ({0} : Set ℤ) := by
+        ext n
+        simp
+      rw [h]
       exact Set.Finite.preimage (Set.injOn_of_injective τ.injective) (Set.finite_singleton 0)
+    exact Set.Finite.union (Set.Finite.union τ.asp h_pre) h_zero
 
 noncomputable def inv (τ : AspPerm) : AspPerm where
   func := Function.invFun τ.func
@@ -506,8 +510,13 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     linarith
   have h (n : ℤ): n ∈ A ↔ -1-n ∈ B := by
     simp only [A, B, Finset.mem_filter, Finset.mem_Ico, flip]
-    constructor <;>
-      (intro hn; obtain ⟨⟨h1,h2⟩,h3⟩ := hn; repeat constructor; repeat linarith)
+    constructor
+    · intro hn
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hn
+      refine ⟨⟨?_, ?_⟩, ?_⟩ <;> linarith
+    · intro hn
+      obtain ⟨⟨h1, h2⟩, h3⟩ := hn
+      refine ⟨⟨?_, ?_⟩, ?_⟩ <;> linarith
   apply Finset.card_bij (fun n _ => -1 - n)
   · intro a; exact (h a).mp
   · intro _ _ _ _ _; linarith

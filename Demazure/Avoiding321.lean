@@ -339,10 +339,30 @@ lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
     have x_src : is_src β x := src_of_inv h_xv
     have x_snk : ¬ is_snk τ x := not_imp_not.mpr bp.snk_iff_left_inv.mp h_ux
     have x_snk_β : ¬ is_snk β x := not_imp_not.mpr (snk_of_snk h_L) x_snk
-    constructor <;> tauto
+    refine ⟨bp, bpβ, ?_, ?_, ?_, ?_⟩
+    · constructor
+      · intro h
+        exact (h_ux_β h).elim
+      · intro h
+        exact (h_ux h).elim
+    · constructor
+      · intro h
+        exact h_L h
+      · intro _
+        exact h_xv
+    · constructor
+      · intro _
+        exact src_of_src h_L h_src
+      · intro _
+        exact x_src
+    · constructor
+      · intro h
+        exact (x_snk_β h).elim
+      · intro h
+        exact (x_snk h).elim
   · have h_snk : is_snk β x := by
       have := bpβ.src_or_snk
-      tauto
+      exact this.resolve_left h_src
     have h_ux : ⟨u, x⟩ ∈ inv_set β := bpβ.snk_iff_left_inv.mp h_snk
     have h_xv : ⟨x, v⟩ ∉ inv_set τ := bp.snk_iff_right_ninv.mp (snk_of_snk h_L h_snk)
     have h_xv_β : ⟨x, v⟩ ∉ inv_set β := by
@@ -350,7 +370,27 @@ lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
       exact h_L h_xv
     have x_src : ¬ is_src τ x := not_imp_not.mpr bp.src_iff_right_inv.mp h_xv
     have x_snk : is_snk β x := snk_of_inv h_ux
-    constructor <;> tauto
+    refine ⟨bp, bpβ, ?_, ?_, ?_, ?_⟩
+    · constructor
+      · intro h
+        exact h_L h
+      · intro _
+        exact h_ux
+    · constructor
+      · intro h
+        exact (h_xv_β h).elim
+      · intro h
+        exact (h_xv h).elim
+    · constructor
+      · intro h
+        exact (h_src h).elim
+      · intro h
+        exact (x_src h).elim
+    · constructor
+      · intro _
+        exact snk_of_snk h_L h_snk
+      · intro _
+        exact x_snk
 
 def interval_sub (i₁ i₂ : (ℤ × ℤ)) : Prop :=
   i₂.1 ≤ i₁.1 ∧ i₁.2 ≤ i₂.2

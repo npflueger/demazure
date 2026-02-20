@@ -62,8 +62,12 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
       rw [this]
       apply se_finite_of_asp τ.bijective.injective
       exact τ.asp
-    unfold southeast_set
-    tauto
+    ext v
+    constructor
+    · intro hv
+      exact ⟨Int.add_one_le_iff.mpr hv.1, hv.2⟩
+    · intro hv
+      exact ⟨Int.add_one_le_iff.mp hv.1, hv.2⟩
   · show ∀ (v : ℤ), {u | (u, v) ∈ inv_set τ}.Finite
     unfold inv_set; simp
     intro v
@@ -71,8 +75,12 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
       rw [this]
       apply nw_finite_of_asp τ.bijective.injective
       exact τ.asp
-    unfold northwest_set
-    tauto
+    ext u
+    constructor
+    · intro hu
+      exact ⟨hu.1, by linarith [hu.2]⟩
+    · intro hu
+      exact ⟨hu.1, by linarith [hu.2]⟩
 
 def of_AspPerm (τ : AspPerm) : AspSet :=
   ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩
@@ -271,25 +279,28 @@ lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   have h_lf : asps.lf_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro x hx
-    simp at hx
-    have := asps.coclosed x m n
-    tauto
+    have hx' : x < m ∧ ⟨x, m⟩ ∉ asps ∧ ⟨x, n⟩ ∈ asps := by
+      simpa using (mem_lf_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
+    rcases hx' with ⟨x_lt_m, xm_nI, xn_I⟩
+    exact (asps.coclosed x m n x_lt_m m_lt_n xm_nI mn_I) xn_I
   have h_md : asps.md_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro x hx
-    simp at hx
-    have := asps.closed m x n
-    tauto
+    have hx' : m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨x, n⟩ ∈ asps := by
+      simpa using (mem_md_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
+    rcases hx' with ⟨_, _, mx_I, xn_I⟩
+    exact mn_I (asps.closed m x n mx_I xn_I)
   have h_rt : asps.rt_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro x hx
-    simp at hx
+    have hx' : x ≥ n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨n, x⟩ ∉ asps := by
+      simpa using (mem_rt_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
+    rcases hx' with ⟨x_ge_n, mx_I, nx_nI⟩
     have : n ≠ x := by
       intro h_eq
-      rw [← h_eq] at hx
-      exact mn_I hx.1.1
-    have := asps.coclosed m n x m_lt_n (lt_of_le_of_ne hx.2 this)
-    tauto
+      rw [← h_eq] at mx_I
+      exact mn_I mx_I
+    exact (asps.coclosed m n x m_lt_n (lt_of_le_of_ne x_ge_n this) mn_I nx_nI) mx_I
   rw [h_lf, h_md, h_rt] at diff
   simp at diff
   exact diff
@@ -382,7 +393,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
   simp
 
   by_cases k_lt_m : k < m
-  · have h0 : ¬ (m ≤ k) := by linarith
+  · have h0 : ¬ (m ≤ k) := not_le_of_gt k_lt_m
     have h1 : ⟨m, k⟩ ∉ asps := by
       intro h
       have := asps.directed m k h
@@ -417,8 +428,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
         exact lt_of_le_of_ne h this
     simp at h0 h1 h2 h3 h4
     simp [h0, h1, h2, h3, h4]
-  have m_le_k : m ≤ k := by
-    push_neg at k_lt_m; exact k_lt_m
+  have m_le_k : m ≤ k := le_of_not_gt k_lt_m
   clear k_lt_m
   by_cases k_lt_n : k < n
   · simp [m_le_k, k_lt_n]
@@ -451,9 +461,9 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
       simp at km_nI nk_nI
       simp [km_nI, nk_nI] at h
       simp [h]
-  have n_le_k : n ≤ k := by push_neg at k_lt_n; exact k_lt_n
+  have n_le_k : n ≤ k := le_of_not_gt k_lt_n
   clear k_lt_n
-  have : ¬(k < n) := by linarith
+  have : ¬(k < n) := not_lt_of_ge n_le_k
   simp [m_le_k, this]
   have : asps.σ m ≤ asps.σ k ↔ ⟨m, k⟩ ∉ asps := by
     simp [mem_iff_lt asps m k m_le_k]

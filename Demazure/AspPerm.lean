@@ -310,122 +310,102 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         simp [h]
     _ = (τ⁻¹).s b a := by rfl
 
- -- [TODO] rewrite this proof in a similar way to b_move_up, which is simpler.
-lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
-  τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
-  let A := τ.se a' b
-  let B := τ.se a b
-  let C := (Finset.Ico a a').filter (τ⁻¹ · ≥ b)
-  suffices A.card = B.card + C.card by
-    unfold A B at this
-    unfold AspPerm.s
-    simp [this, C]
 
-  have B_subset_A : B ⊆ A := by
-    unfold A B
-    intro n; simp only [mem_se]
-    suffices τ n < a → τ n < a' by
-      intro h; exact ⟨h.1, this h.2⟩
-    intro h; linarith
+abbrev flip_func (f : ℤ → ℤ) : ℤ → ℤ := fun n => -1 - f (-1 - n)
 
-  have diff_mems (n : ℤ) : n ∈ A \ B ↔ τ n ∈ C := by
-    simp only [Finset.mem_sdiff, A, B, mem_se]
-    by_cases hn : n ≥ b
-    · simp [hn]
-      constructor
-      · intro h
-        unfold C
-        simp only [Finset.mem_filter, Finset.mem_Ico, τ.inv_mul_cancel_eval]
-        exact ⟨⟨h.2, h.1⟩,hn⟩
-      · intro h
-        unfold C at h
-        simp [Finset.mem_filter] at h
-        exact ⟨h.1.2, h.1.1⟩
-    · simp [hn]
-      simp only [C, Finset.mem_filter]
-      intro hcontra
-      have : n ≥ b := by
-        have := hcontra.2
-        simpa [this]
-      exact hn this
-
-  have diff_card : (A \ B).card = C.card := by
-    suffices A \ B = (Finset.image τ⁻¹.func C) by
-      have imcard := Finset.card_image_of_injective C (τ⁻¹).injective
-      rw [this, ← imcard]
-    apply Finset.ext; intro n; rw [diff_mems n]
-    constructor
-    · intro hn
-      simp only [Finset.mem_image]
-      use τ n
-      apply And.intro hn
-      simp
-    · intro hn
-      simp only [Finset.mem_image] at hn
-      obtain ⟨m, mC, rfl⟩ := hn
-      simp [mC]
-
-  have : A.card = B.card + (A \ B).card := by
-    rw [Finset.card_sdiff_of_subset B_subset_A]
-    rw [Nat.add_sub_cancel']
-    exact Finset.card_le_card B_subset_A
-  by_cases h_ge : τ⁻¹ a ≥ b <;> simp [this, diff_card]
-
-lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
-  τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
-  rw [a_move_up τ a a' b a_le_a']
-  let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
-
+lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
-  · have : S.card ≥ 0 := by simp
+  · intro x y h; simp at h
+    apply τ.injective at h
     linarith
+  · intro y
+    use -1 - τ⁻¹ (-1 - y)
+    simp [flip_func]
 
-  -- Now handle the equality case
-  suffices (∀ (x : ℤ), a ≤ τ.func x → τ.func x < a' → x < b) ↔ S.card = 0 by
-    simp only [this]
-    constructor <;> (intro; linarith)
-  rw [Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+lemma flip_quadrant (f : ℤ → ℤ) (a b : ℤ) :
+  (-1 - ·) '' (southeast_set f a b) = northwest_set (flip_func f) (-a) (-b)
+  := by
+  ext n; unfold southeast_set northwest_set
   constructor
-  · intro h x xS
-    specialize h (τ⁻¹ x)
-    simp [S] at xS
-    simp [τ.mul_inv_cancel_eval, xS] at h
-    linarith
-  · intro hS x a_le τx_le
-    specialize hS (τ x)
-    simp [S, a_le, τx_le] at hS
-    exact hS
+  · intro h
+    rcases h with ⟨m, hm, rfl⟩
+    simp at hm ⊢
+    constructor <;> linarith
+  · intro hn
+    simp at hn ⊢
+    use -1 - n; simp
+    constructor <;> linarith
 
+def flip : AspPerm := {
+  func := fun n => -1 - τ (-1 - n)
+  bijective := flip_bij τ
+  asp := by
+    let f := flip_func τ
+    let g := fun n => -1 - n
+    change is_asp f
+    have hinj : Function.Injective f := (flip_bij τ).injective
+    have : g '' (southeast_set τ 0 0) = northwest_set f 0 0 := by
+      exact flip_quadrant τ 0 0
+    have nw_finite : (northwest_set f 0 0).Finite := by
+      rw [← this]
+      apply Set.Finite.image g
+      exact se_finite_of_asp τ.injective 0 0 τ.asp
+    have : g '' (southeast_set f 0 0) = northwest_set τ 0 0 := by
+      have h := flip_quadrant f 0 0
+      have : flip_func f = τ := by
+        funext n
+        simp [flip_func, f]
+      rw [this] at h
+      exact h
+    have se_finite : (southeast_set f 0 0).Finite := by
+      have h : (g '' (southeast_set f 0 0)).Finite := by
+        rw [this]
+        exact nw_finite_of_asp τ.injective 0 0 τ.asp
+      have : Set.InjOn g (southeast_set f 0 0) := by
+        intro x _ y _ h; linarith
+      apply Set.Finite.of_finite_image h this
+    exact asp_of_finite_quadrants hinj se_finite nw_finite
+}
 
-lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
-  have move_up := a_move_up τ a (a+1) b (by linarith)
-  let C := (Finset.Ico a (a+1)).filter (τ⁻¹ · ≥ b)
-  suffices C.card = if τ⁻¹ a ≥ b then 1 else 0 by linarith
-  have C_subset : C ⊆ {a} := by
-    intro n; simp only [C, Finset.mem_filter, Finset.mem_Ico]
-    intro h
-    obtain ⟨⟨a_le_n,a_ge_n⟩, _⟩ := h
-    have : n = a := by linarith
-    rw [this]; exact Finset.mem_singleton_self a
-  by_cases h_ge : τ⁻¹ a ≥ b
-  · have : {a} ⊆ C := by
-      suffices a ∈ C by exact Finset.singleton_subset_iff.mpr this
-      simp only [C, Finset.mem_filter]
-      apply And.intro _ h_ge
-      simp only [Finset.mem_Ico]
+lemma flip_inv : τ.flip⁻¹ = τ⁻¹.flip := by
+  simp; ext n
+  suffices τ.flip (τ.flip⁻¹ n) = τ.flip (τ⁻¹.flip n) by
+    exact τ.flip.injective this
+  simp
+  dsimp [AspPerm.flip]
+  simp
+
+lemma flip_flip : τ.flip.flip = τ := by
+  suffices ∀ n, τ.flip.flip n = τ n by
+    simp; funext n; exact this n
+  intro n
+  simp [flip]
+
+lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
+  unfold AspPerm.s AspPerm.s'
+  let A := τ.flip.se a b
+  let B := τ.nw (-a) (-b)
+  suffices A.card = B.card by congr
+  apply Finset.card_bij (fun n _ => -1 - n)
+  · show ∀ n ∈ A, -1 - n ∈ B
+    intro n hn
+    have : n ≥ b ∧ -1 - τ (-1 - n) < a := by rwa [mem_se] at hn
+    rw [mem_nw]
+    constructor <;> linarith
+  · -- Injectivity
+    intro _ _ _ _  _; linarith
+  · -- Surjectivity
+    intro n hn
+    have : -1 - n ∈ A := by
+      rw [mem_nw] at hn
+      rw [mem_se]
+      unfold flip; simp
       constructor <;> linarith
-    rw [Finset.Subset.antisymm C_subset this, Finset.card_singleton]
-    simp [h_ge]
-  · simp [h_ge]
-    apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro n nC
-    have : n = a := by
-      apply C_subset at nC
-      simp [Finset.mem_singleton] at nC
-      exact nC
-    simp only [C, Finset.mem_filter] at nC
-    rw [this] at nC
-    exact h_ge nC.2
+    use (-1 - n),  this
+    linarith
+
+lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
+  rw [flip_s, dual_inverse, inv_inv, neg_neg, neg_neg]
 
 lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
   τ.s a b' = τ.s a b - ((Finset.Ico b b').filter (τ · < a)).card := by
@@ -497,6 +477,69 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
     intro x x_ge_b x_le_b
     have x_eq_b : x = b := by linarith
     rwa [x_eq_b]
+
+lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
+  -- Deduce from b_move_up using the flipped inverse
+  τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+  let A := {x ∈ Finset.Ico (-a') (-a) | τ⁻¹.flip.func x < -b}
+  let B := ((Finset.Ico a a').filter (τ⁻¹ · ≥ b))
+  suffices A.card = B.card by
+    have : ∀ x y : ℤ, τ.s x y = τ⁻¹.flip.s (-y) (-x) := by simp [flip_s, dual_inverse]
+    rw [this a' b, this a b]
+    have := (τ⁻¹.flip).b_move_up (-b) (-a') (-a) (by linarith)
+    linarith
+  have h (n : ℤ): n ∈ A ↔ -1-n ∈ B := by
+    simp only [A, B, Finset.mem_filter, Finset.mem_Ico, flip]
+    constructor <;>
+      (intro hn; obtain ⟨⟨h1,h2⟩,h3⟩ := hn; repeat constructor; repeat linarith)
+  apply Finset.card_bij (fun n _ => -1 - n)
+  · intro a; exact (h a).mp
+  · intro _ _ _ _ _; linarith
+  · intro n hn
+    have : -1-n ∈ A := by
+      apply (h (-1-n)).mpr
+      simp [hn]
+    use -1-n, this
+    linarith
+
+lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
+  τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
+  rw [a_move_up τ a a' b a_le_a']
+  let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
+
+  constructor
+  · have : S.card ≥ 0 := by simp
+    linarith
+
+  -- Now handle the equality case
+  suffices (∀ (x : ℤ), a ≤ τ.func x → τ.func x < a' → x < b) ↔ S.card = 0 by
+    simp only [this]
+    constructor <;> (intro; linarith)
+  rw [Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+  constructor
+  · intro h x xS
+    specialize h (τ⁻¹ x)
+    simp [S] at xS
+    simp [τ.mul_inv_cancel_eval, xS] at h
+    linarith
+  · intro hS x a_le τx_le
+    specialize hS (τ x)
+    simp [S, a_le, τx_le] at hS
+    exact hS
+
+
+lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
+  calc
+    τ.s (a+1) b = τ⁻¹.flip.s (-b) (-(a+1)) := by rw [τ.s_flip (a+1) b]
+    _ = τ⁻¹.flip.s (-b) (-(a+1)+1) + if τ⁻¹.flip.func (-(a + 1)) < -b then 1 else 0 := by
+      linarith [(τ⁻¹.flip).b_step (-b) (-(a+1)) ]
+    _ = τ⁻¹.flip.s (-b) (-a) + if -1 - τ⁻¹.func a < -b then 1 else 0 := by
+      unfold flip; simp
+    _ = τ⁻¹.flip.s (-b) (-a) + if b ≤ τ⁻¹.func a then 1 else 0 := by
+      have : -1 - τ⁻¹.func a < -b ↔ b ≤ τ⁻¹.func a := by
+        constructor <;> (intro h; linarith)
+      simp [this]
+    _ = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by rw[τ.s_flip a b]
 
 theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   let h (a b : ℤ) := τ.s a b - (τ⁻¹).s b a - a + b

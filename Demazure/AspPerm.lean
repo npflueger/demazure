@@ -1,4 +1,3 @@
-import Mathlib
 import Demazure.Utils
 
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=

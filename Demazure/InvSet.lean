@@ -1,6 +1,4 @@
-import Mathlib
 import Demazure.AspPerm
-import Demazure.Utils
 
 structure AspSet_prop (I : Set (ℤ × ℤ)) where
   directed :
@@ -192,7 +190,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
         intro h
         have : n < x := asps.directed n x h
         linarith
-      · tauto
+      · exact hB.1
     · intro h
       simp [h, le_of_lt (asps.directed m x h.1)]
       exact lt_or_ge x n
@@ -220,7 +218,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
         intro xm_I
         apply asps.directed x m at xm_I
         linarith
-      · tauto
+      · exact hB.1
     · intro h
       have x_lt_n : x < n := asps.directed x n h.1
       simp [h, x_lt_n]
@@ -584,7 +582,11 @@ theorem invSet_func (asps : AspSet) : inv_set (asps.to_func) = asps := by
       intro h
       have := asps.directed u v h
       contradiction
-    tauto
+    constructor
+    · intro huv
+      exact (h1 huv).elim
+    · intro huv
+      exact (h2 huv).elim
   constructor
   · intro h
     contrapose! h

@@ -1,7 +1,4 @@
-import Mathlib
-import Demazure.AspPerm
 import Demazure.InvSet
-import Demazure.Utils
 
 def is_321a (τ : ℤ → ℤ) : Prop :=
   ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k

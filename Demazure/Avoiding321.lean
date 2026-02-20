@@ -196,6 +196,7 @@ structure s_witness (τ : AspPerm) (a b : ℤ) where
   s_val : τ.s a b = τ.s (τ v) b + 1
   mem_se : v ∈ southeast_set τ a b
 
+
 noncomputable def find_s_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s a b ≥ 1) : s_witness τ a b := by
   have se_nonempty : (τ.se a b).Nonempty := by
     dsimp [AspPerm.s] at hab
@@ -205,54 +206,36 @@ noncomputable def find_s_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s a b ≥ 
   have : (Finset.image τ (τ.se a b)).Nonempty := by
     simp [se_nonempty]
   let y := Finset.max' (Finset.image τ (τ.se a b)) this
-  have le_y : ∀ n ∈ τ.se a b, τ n ≤ y := by
+  let v := τ⁻¹ y
+  have y_mem : y ∈ τ '' southeast_set τ a b := by
+    -- Start with the Finset version
+    have h : y ∈ Finset.image τ (τ.se a b) := Finset.max'_mem (Finset.image τ (τ.se a b)) this
+    simp [Finset.mem_image] at h
+    exact h
+  have v_mem : v ∈ southeast_set τ a b := by
+    rcases y_mem with ⟨n, n_mem, y_eq⟩
+    subst v; rw [← y_eq]; simp [n_mem]
+  use v
+  have le_τv : ∀ n ∈ southeast_set τ a b, τ n ≤ τ v := by
     intro n n_mem
+    subst v; simp
     refine Finset.le_max' (Finset.image τ (τ.se a b)) (τ n) ?_
     rw [Finset.mem_image]
     use n
-  let v := τ⁻¹ y
-  have yeq : y = τ v := by
-    dsimp [v]; simp
-  have y_mem : y ∈ Finset.image τ (τ.se a b) := by
-    exact Finset.max'_mem (Finset.image τ (τ.se a b)) this
-  simp only [Finset.mem_image] at y_mem
-  have h : ∃ v' ∈ southeast_set τ a b, τ v' = y := by
-    rcases y_mem with ⟨v', h_v', hv_eq⟩
-    use v'
-    simp only [τ.mem_se] at h_v'
-    unfold southeast_set
-    constructor <;> assumption
-  have hv : v ∈ southeast_set τ a b ∧ τ v = y := by
-    rcases h with ⟨v', h_v', hv_eq⟩
-    have v'_eq_v : v' = v := by
-      rw [yeq] at hv_eq
-      exact τ.injective hv_eq
-    rw [v'_eq_v] at h_v' hv_eq
-    exact ⟨h_v', hv_eq⟩
-  use v
+    simpa [AspPerm.mem_se] using n_mem
   · suffices τ.s a b = τ.s (τ v + 1) b by
-      rw [this]
-      rw [τ.a_step (τ v) b, τ.inv_mul_cancel_eval]
-      suffices v ≥ b by simp [this]
-      exact hv.1.1
+      have h : τ.s (τ.func v + 1) b = τ.s (τ.func v) b + 1
+        := (τ.a_step_one_iff' v b).mpr v_mem.1
+      rw [this, h]
     unfold AspPerm.s
     suffices (τ.se a b) = (τ.se (τ.func v + 1) b) by rw [this]
-    ext n
-    constructor
-    · rintro n_se_ab
-      have : τ n < τ v + 1 := by
-        have := le_y n n_se_ab
-        rw [yeq] at this
-        linarith
-      rw [τ.mem_se] at n_se_ab ⊢
-      exact ⟨n_se_ab.1, this⟩
-    · simp only [τ.mem_se]
-      rintro ⟨n_ge_b, τn_lt_a⟩
-      have : τ v + 1 ≤ a := by
-        have := hv.1.2
-        linarith
-      exact ⟨n_ge_b, lt_of_lt_of_le τn_lt_a this⟩
-  · exact hv.1
+    ext n; simp only [AspPerm.mem_se]
+    have τv_lt_a : τ v < a := v_mem.2
+    constructor <;> (intro ⟨n_ge_b, τn_lt⟩; use n_ge_b)
+    · have := le_τv n ⟨n_ge_b, τn_lt⟩
+      exact Int.le_iff_lt_add_one.mp this
+    · have := Int.le_iff_lt_add_one.mpr τn_lt
+      exact lt_of_le_of_lt this τv_lt_a
 
 structure s'_witness (τ : AspPerm) (a b : ℤ) where
   u : ℤ
@@ -273,34 +256,29 @@ noncomputable def find_s'_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s' b a �
   use u
   · show τ.s' b a = τ.s' b (τ u)
     rw [← flip_ab]
-    have : τ.flip.s (-τ u) (-b) = τ.s' b (τ u) := by
+    have h1 : τ.flip.s (-τ u) (-b) = τ.s' b (τ u) := by
       simp [τ.flip_s (-τ u) (-b)]
-    rw [← this]
-    have := flip_wit.s_val
-    rw [this]
-    have : (τ.flip.func flip_wit.v) = -1 - τ u := by
+    have h2 := flip_wit.s_val
+    have h3 : (τ.flip.func flip_wit.v) = -1 - τ u := by
       dsimp [u, AspPerm.flip]
-    rw [this]
     have step := τ.flip.a_step (-1 - τ u) (-b)
     have : -1 - τ u + 1 = - τ u := by ring
     rw [this] at step
-    rw [step]
+    rw [← h1, h2, h3, step]
     suffices τ.flip⁻¹.func (-1 - τ.func u) ≥ -b by
       simp [this]
     suffices u < b by
       rw [τ.flip_inv]
       dsimp [AspPerm.flip]
       simp; linarith
-    have := flip_wit.mem_se.1
     dsimp [u]
-    linarith
+    linarith [flip_wit.mem_se.1]
   · show u ∈ northwest_set τ a b
     have h := flip_wit.mem_se
     have u_lt_b : u < b := by
       unfold u; linarith [h.1]
     have τu_gt_a : τ u ≥ a := by
       have := h.2
-      unfold u
       dsimp [AspPerm.flip] at this
       linarith
     unfold northwest_set

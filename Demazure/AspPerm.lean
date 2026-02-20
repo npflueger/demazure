@@ -310,8 +310,9 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         simp [h]
     _ = (τ⁻¹).s b a := by rfl
 
+abbrev refl : ℤ → ℤ := fun n => -1 - n
 
-abbrev flip_func (f : ℤ → ℤ) : ℤ → ℤ := fun n => -1 - f (-1 - n)
+abbrev flip_func (f : ℤ → ℤ) : ℤ → ℤ := refl ∘ f ∘ refl
 
 lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
@@ -478,6 +479,21 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
     have x_eq_b : x = b := by linarith
     rwa [x_eq_b]
 
+lemma b_step_one_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b - 1 ↔ τ b < a := by
+  rw [b_step τ a b]
+  by_cases h_lt : τ b < a
+  · simp [h_lt]
+  · simp [h_lt]
+    intro h_eq
+    linarith
+
+lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
+  rw [b_step τ a b]
+  by_cases h_lt : τ b < a
+  · simp [h_lt]
+  · simp [h_lt]
+    linarith
+
 lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
   -- Deduce from b_move_up using the flipped inverse
   τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
@@ -540,6 +556,25 @@ lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 
         constructor <;> (intro h; linarith)
       simp [this]
     _ = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by rw[τ.s_flip a b]
+
+lemma a_step_one_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b := by
+  rw [a_step τ a b]
+  by_cases h_ge : τ⁻¹ a ≥ b <;> simp [h_ge]
+
+lemma a_step_one_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b + 1 ↔ u ≥ b := by
+  have := a_step_one_iff τ (τ u) b
+  simpa [τ.mul_inv_cancel_eval] using this
+
+lemma a_step_eq_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b ↔ τ⁻¹ a < b := by
+  rw [a_step τ a b]
+  by_cases h_ge : τ⁻¹ a ≥ b
+  · simp [h_ge]
+  · simp [h_ge]
+    linarith
+
+lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b := by
+  have := a_step_eq_iff τ (τ u) b
+  simpa [τ.mul_inv_cancel_eval] using this
 
 theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   let h (a b : ℤ) := τ.s a b - (τ⁻¹).s b a - a + b

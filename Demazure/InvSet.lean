@@ -164,8 +164,8 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
     linarith [h1,h2,h2]
   rw [this]
 
-  have rp : (asps.outset n \ asps.outset m) = rt_pos asps m n := by simp
-  have lp : (asps.inset m \ asps.inset n) = lf_pos asps m n := by simp
+  have rp : (asps.outset n \ asps.outset m) = rt_pos asps m n := rfl
+  have lp : (asps.inset m \ asps.inset n) = lf_pos asps m n := rfl
   have rn :
     (asps.outset m \ asps.outset n).card
     = ( (Finset.Ico m n) ∩ (asps.outset m) ).card + (rt_neg asps m n).card := by
@@ -261,13 +261,15 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
     have : A ∪ B ⊆ U := by
       unfold A B U
       intro x hx
-      simp at hx ⊢; tauto
+      simp at hx ⊢
+      tauto
     simp only [Finset.card_sdiff_of_subset this]
     suffices A ∪ B ⊆ U by
       simp [Finset.card_le_card this]
     intro x hx
     unfold A B at hx
-    simp at hx; tauto
+    simp at hx
+    tauto
   linarith [h_diff, h_union]
 
 lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
@@ -429,7 +431,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
   have m_le_k : m ≤ k := le_of_not_gt k_lt_m
   clear k_lt_m
   by_cases k_lt_n : k < n
-  · simp [m_le_k, k_lt_n]
+  · simp only [m_le_k, k_lt_n]
     have h1 : asps.σ m ≤ asps.σ k ↔ ⟨m,k⟩ ∉ asps := by
       rw [mem_iff_lt asps m k m_le_k]
       push_neg; rfl
@@ -446,7 +448,8 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     constructor
     · intro h
       obtain ⟨mk_I, kn_nI⟩ := h
-      simp at mk_I kn_nI; simp [mk_I, kn_nI]
+      simp at mk_I kn_nI
+      simp [mk_I, kn_nI]
     · intro h
       have km_nI : ⟨k, m⟩ ∉ asps := by
         intro h
@@ -576,8 +579,8 @@ theorem invSet_func (asps : AspSet) : inv_set (asps.to_func) = asps := by
   ext ⟨u, v⟩
   wlog u_lt_v : u < v
   · have h1 : ⟨u, v⟩ ∉ inv_set (asps.to_func) := by
-      unfold inv_set
-      simp [u_lt_v]
+      intro huv
+      exact u_lt_v huv.1
     have h2 : ⟨u, v⟩ ∉ asps := by
       intro h
       have := asps.directed u v h
@@ -591,32 +594,45 @@ theorem invSet_func (asps : AspSet) : inv_set (asps.to_func) = asps := by
   · intro h
     contrapose! h
     have : asps.to_func u < asps.to_func v := σ_inc asps u v u_lt_v h
-    unfold inv_set; simp [u_lt_v]
-    linarith
+    intro huv
+    exact (lt_irrefl (asps.to_func u)) (lt_trans this huv.2)
   · intro h
-    unfold inv_set; simp [u_lt_v]
-    exact σ_dec asps u v u_lt_v h
+    exact ⟨u_lt_v, σ_dec asps u v u_lt_v h⟩
 
 lemma inset_eq_nw (asps : AspSet) (n : ℤ) : (asps.inset n).toSet
    = northwest_set asps.σ ((asps.σ n) + 1) n := by
-  ext x;
-  unfold northwest_set;
+  ext x
+  unfold northwest_set
   have := Set.ext_iff.mp <| invSet_func asps
   specialize this ⟨x, n⟩
-  simp at this ⊢
-  rw [← this]
-  unfold inv_set
-  simp; tauto
+  constructor
+  · intro hx
+    have hx' : ⟨x, n⟩ ∈ asps := by simpa using hx
+    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
+    rcases h_inv with ⟨hxn, hσ⟩
+    exact ⟨hxn, Int.add_one_le_iff.mpr hσ⟩
+  · intro hx
+    rcases hx with ⟨hxn, hσ⟩
+    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := ⟨hxn, Int.add_one_le_iff.mp hσ⟩
+    have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
+    simpa using hx'
 
 lemma outset_eq_se (asps : AspSet) (n : ℤ) : (asps.outset n).toSet
    = southeast_set asps.σ (asps.σ n) (n+1) := by
-  ext x; simp
-  have := Set.ext_iff.mp <| Eq.symm <| invSet_func asps
+  ext x
+  have := Set.ext_iff.mp <| invSet_func asps
   specialize this ⟨n, x⟩
-  simp at this
-  simp [this]
-  unfold inv_set southeast_set; simp
-  tauto
+  constructor
+  · intro hx
+    have hx' : ⟨n, x⟩ ∈ asps := by simpa using hx
+    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
+    rcases h_inv with ⟨hnx, hσ⟩
+    exact ⟨Int.add_one_le_iff.mpr hnx, hσ⟩
+  · intro hx
+    rcases hx with ⟨hnx, hσ⟩
+    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := ⟨Int.add_one_le_iff.mp hnx, hσ⟩
+    have hx' : ⟨n, x⟩ ∈ asps := by simpa [this] using h_inv
+    simpa using hx'
 
 -- This lemma is equivalent to the funtion being bounded above,
 -- but it is stated in a strange way. This is just for convenience

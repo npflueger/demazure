@@ -278,29 +278,17 @@ lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   have diff := σ_diff asps m n (le_of_lt m_lt_n)
   have h_lf : asps.lf_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    have hx' : x < m ∧ ⟨x, m⟩ ∉ asps ∧ ⟨x, n⟩ ∈ asps := by
-      simpa using (mem_lf_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
-    rcases hx' with ⟨x_lt_m, xm_nI, xn_I⟩
-    exact (asps.coclosed x m n x_lt_m m_lt_n xm_nI mn_I) xn_I
+    intro x hx; simp at hx
+    exact (asps.coclosed x m n hx.2 m_lt_n hx.1.2 mn_I) hx.1.1
   have h_md : asps.md_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    have hx' : m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨x, n⟩ ∈ asps := by
-      simpa using (mem_md_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
-    rcases hx' with ⟨_, _, mx_I, xn_I⟩
-    exact mn_I (asps.closed m x n mx_I xn_I)
+    intro x hx; simp at hx
+    exact mn_I (asps.closed m x n hx.2.1 hx.2.2)
   have h_rt : asps.rt_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    have hx' : x ≥ n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨n, x⟩ ∉ asps := by
-      simpa using (mem_rt_neg (asps := asps) (m := m) (n := n) (x := x)).1 hx
-    rcases hx' with ⟨x_ge_n, mx_I, nx_nI⟩
-    have : n ≠ x := by
-      intro h_eq
-      rw [← h_eq] at mx_I
-      exact mn_I mx_I
-    exact (asps.coclosed m n x m_lt_n (lt_of_le_of_ne x_ge_n this) mn_I nx_nI) mx_I
+    intro x hx; simp at hx
+    have n_ne_x : n ≠ x := by rintro rfl; exact mn_I hx.1.1
+    exact (asps.coclosed m n x m_lt_n (lt_of_le_of_ne hx.2 n_ne_x) mn_I hx.1.2) hx.1.1
   rw [h_lf, h_md, h_rt] at diff
   simp at diff
   exact diff
@@ -322,27 +310,17 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ m > asps.σ
   have diff := σ_diff asps m n (le_of_lt m_lt_n)
   have h_lf : asps.lf_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    simp at hx
-    have := asps.closed x m n
-    tauto
+    intro x hx; simp at hx
+    exact hx.2 (asps.closed x m n hx.1 mn_I)
   have h_md : asps.md_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    simp at hx
-    have : m ≠ x := by
-      intro h_eq
-      rw [← h_eq] at hx
-      exact hx.2.2 mn_I
-    have : m < x := lt_of_le_of_ne hx.1.1 this
-    have := asps.coclosed m x n
-    tauto
+    intro x hx; simp at hx
+    have m_ne_x : m ≠ x := fun h => hx.2.2 (h ▸ mn_I)
+    exact (asps.coclosed m x n (lt_of_le_of_ne hx.1.1 m_ne_x) hx.1.2 hx.2.1 hx.2.2) mn_I
   have h_rt : asps.rt_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx
-    simp at hx
-    have := asps.closed m n x
-    tauto
+    intro x hx; simp at hx
+    exact hx.2 (asps.closed m n x mn_I hx.1)
   rw [h_lf, h_md, h_rt] at diff
   simp at diff
   by_contra! h
@@ -645,51 +623,26 @@ lemma surj_helper_up (asps : AspSet) (m : ℤ) (n : ℕ) :
     simp
   | succ n ih =>
   rcases ih with ⟨x, x_ge_m, fx_ge⟩
-  have : ∃ y : ℤ, y > x ∧ y ∉ asps.outset x := by
-    by_contra! h
-    have : {y : ℤ | y > x} = ↑ (asps.outset x) := by
-      ext y
-      specialize h y
-      constructor
-      · intro h'; simp at h'
-        apply h at h'
-        exact h'
-      · intro h'
-        simp at h'
-        exact asps.directed x y h'
-    have : {y | y > x}.Finite := by
-      rw [this]
-      apply Finset.finite_toSet
-    have : {y | y > x}.Infinite := by
-      refine Set.infinite_of_forall_exists_gt ?_
-      intro a
-      use (max a x) + 1
-      simp
-      constructor
-      · have := le_max_right a x
-        linarith
-      · have := le_max_left a x
-        linarith
-    contradiction
-  rcases this with ⟨y, y_gt_x, y_not_outset_x⟩
+  obtain ⟨y, y_gt_x, y_not_outset_x⟩ : ∃ y : ℤ, y > x ∧ y ∉ asps.outset x := by
+    by_contra! hall
+    have heq : {y : ℤ | y > x} = ↑(asps.outset x) := by
+      ext y; simp only [Set.mem_setOf_eq, Finset.mem_coe, mem_outset]
+      exact ⟨fun hy => (mem_outset asps x y).mp (hall y hy),
+             fun hy => by linarith [asps.directed x y hy]⟩
+    have hfin : ({y : ℤ | y > x}).Finite := heq ▸ Finset.finite_toSet _
+    exact Set.Ioi_infinite x hfin
   use y
   constructor
   · linarith
   · simp at y_not_outset_x
-    have := mem_iff_lt asps x y (le_of_lt y_gt_x)
-    simp at this
-    simp [this] at y_not_outset_x
-    have : asps.to_func x ≠ asps.to_func y := by
-      intro h_eq
-      have : x = y := (func_injective asps) h_eq
-      linarith
-    have : asps.to_func y > asps.to_func x := by
-      exact lt_of_le_of_ne y_not_outset_x this
-    have := lt_of_le_of_lt fx_ge this
-    simp [Nat.cast_add]
-    linarith
+    have h_ineq : asps.to_func x ≤ asps.to_func y := by
+      rw [← not_lt, ← mem_iff_lt asps x y (le_of_lt y_gt_x)]
+      exact y_not_outset_x
+    have h_ne : asps.to_func x ≠ asps.to_func y :=
+      fun h => absurd (func_injective asps h) (by linarith)
+    have hlt := lt_of_le_of_ne h_ineq h_ne
+    simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
 
--- This lemma follows the previous one line for line. Surely there is some nice way to unify them.
 lemma surj_helper_down (asps : AspSet) (m : ℤ) (n : ℕ) :
   ∃ x : ℤ, x ≤ m ∧ asps.to_func x ≤ asps.to_func m - n := by
   induction n with
@@ -698,49 +651,25 @@ lemma surj_helper_down (asps : AspSet) (m : ℤ) (n : ℕ) :
     simp
   | succ n ih =>
   rcases ih with ⟨x, x_le_m, fx_le⟩
-  have : ∃ y : ℤ, y < x ∧ y ∉ asps.inset x := by
-    by_contra! h
-    have : {y : ℤ | y < x} = ↑ (asps.inset x) := by
-      ext y
-      specialize h y
-      constructor
-      · intro h'; simp at h'
-        apply h at h'
-        exact h'
-      · intro h'
-        simp at h'
-        exact asps.directed y x h'
-    have : {y | y < x}.Finite := by
-      rw [this]
-      apply Finset.finite_toSet
-    have : {y | y < x}.Infinite := by
-      refine Set.infinite_of_forall_exists_lt ?_
-      intro a
-      use (min a x) - 1
-      simp
-      constructor
-      · have := min_le_right a x
-        linarith
-      · have := min_le_left a x
-        linarith
-    contradiction
-  rcases this with ⟨y, y_lt_x, y_not_inset_x⟩
+  obtain ⟨y, y_lt_x, y_not_inset_x⟩ : ∃ y : ℤ, y < x ∧ y ∉ asps.inset x := by
+    by_contra! hall
+    have heq : {y : ℤ | y < x} = ↑(asps.inset x) := by
+      ext y; simp only [Set.mem_setOf_eq, Finset.mem_coe, mem_inset]
+      exact ⟨fun hy => (mem_inset asps x y).mp (hall y hy),
+             fun hy => by linarith [asps.directed y x hy]⟩
+    have hfin : ({y : ℤ | y < x}).Finite := heq ▸ Finset.finite_toSet _
+    exact Set.Iio_infinite x hfin
   use y
   constructor
   · linarith
   · simp at y_not_inset_x
-    have := mem_iff_lt asps y x (le_of_lt y_lt_x)
-    simp at this
-    simp [this] at y_not_inset_x
-    have : asps.to_func y ≠ asps.to_func x := by
-      intro h_eq
-      have : y = x := (func_injective asps) h_eq
-      linarith
-    have : asps.to_func y < asps.to_func x := by
-      exact lt_of_le_of_ne y_not_inset_x this
-    have := lt_of_lt_of_le this fx_le
-    simp [Nat.cast_add]
-    linarith
+    have h_ineq : asps.to_func y ≤ asps.to_func x := by
+      rw [← not_lt, ← mem_iff_lt asps y x (le_of_lt y_lt_x)]
+      exact y_not_inset_x
+    have h_ne : asps.to_func y ≠ asps.to_func x :=
+      fun h => absurd (func_injective asps h) (by linarith)
+    have hlt := lt_of_le_of_ne h_ineq h_ne
+    simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
 
 theorem func_surjective (asps : AspSet) : Function.Surjective (asps.to_func) := by

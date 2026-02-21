@@ -11,6 +11,22 @@ def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ 
 
 def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
 
+abbrev flip_func (f : ℤ → ℤ) : ℤ → ℤ := fun k => -1 - f (-1 - k)
+
+lemma flip_quadrant (f : ℤ → ℤ) (a b : ℤ) :
+  (-1 - ·) '' (southeast_set f a b) = northwest_set (flip_func f) (-a) (-b) := by
+  ext n
+  simp only [Set.mem_image, southeast_set, northwest_set, Set.mem_setOf_eq, flip_func]
+  constructor
+  · rintro ⟨m, ⟨hm1, hm2⟩, rfl⟩
+    constructor
+    · omega
+    · have hfm : f (-1 - (-1 - m)) = f m := by congr; omega
+      rw [hfm]
+      omega
+  · intro ⟨hn1, hn2⟩
+    exact ⟨-1 - n, ⟨by omega, by omega⟩, by ring_nf⟩
+
 lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
   (southeast_set τ m n).Finite → (southeast_set τ m' n').Finite := by
   let A := southeast_set τ m n
@@ -22,15 +38,9 @@ lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
   change A.Finite → B.Finite
   intro fin_A
 
-  have fin_V : V.Finite := by
-    apply Finset.finite_toSet
-
-  have fin_H₀ : H₀.Finite := by
-    apply Finset.finite_toSet
-
-  have fin_H : H.Finite := by
-    refine Set.Finite.preimage ?_ fin_H₀
-    exact Set.injOn_of_injective h_inj
+  have fin_V : V.Finite := Finset.finite_toSet _
+  have fin_H₀ : H₀.Finite := Finset.finite_toSet _
+  have fin_H : H.Finite := fin_H₀.preimage (Set.injOn_of_injective h_inj)
 
   have h : B ⊆ A ∪ (H ∪ V) := by
     intro k hk
@@ -55,46 +65,21 @@ lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
 
 lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
   (northwest_set τ m n).Finite → (northwest_set τ m' n').Finite := by
-  let A := northwest_set τ m n
-  let B := northwest_set τ m' n'
-  let V := (Finset.Ico n n').toSet
-  let H₀ := (Finset.Ico m' m).toSet
-  let H := τ⁻¹' H₀
-
-  change A.Finite → B.Finite
-  intro fin_A
-
-  have fin_V : V.Finite := by
-    apply Finset.finite_toSet
-
-  have fin_H₀ : H₀.Finite := by
-    apply Finset.finite_toSet
-
-  have fin_H : H.Finite := by
-    refine Set.Finite.preimage ?_ fin_H₀
-    exact Set.injOn_of_injective h_inj
-
-  have h : B ⊆ A ∪ (H ∪ V) := by
-    intro k hk
-    simp [A, B] at hk ⊢
-    unfold northwest_set at *
-    by_cases k_ge_n : k ≥ n
-    · right; right
-      simp only [V]
-      simp [hk.1, k_ge_n]
-    obtain k_lt_n : k < n := by
-      push_neg at k_ge_n; exact k_ge_n
-    by_cases τk_lt_m : τ k < m
-    · right; left
-      simp only [H, H₀]
-      simp [τk_lt_m, hk.2]
-    obtain τk_ge_m : τ k ≥ m := by
-      push_neg at τk_lt_m; exact τk_lt_m
-    left
-    exact ⟨k_lt_n, τk_ge_m⟩
-
-  refine Set.Finite.subset ?_ h
-  exact Set.Finite.union fin_A (Set.Finite.union fin_H fin_V)
+  have hff : flip_func (flip_func τ) = τ := by
+    funext n
+    simp [flip_func]
+  have hf_inj : Function.Injective (flip_func τ) := fun x y h => by
+    unfold flip_func at h
+    linarith [h_inj (show τ (-1 - x) = τ (-1 - y) from by linarith)]
+  have key : ∀ a b : ℤ, (northwest_set τ a b).Finite ↔
+      (southeast_set (flip_func τ) (-a) (-b)).Finite := fun a b => by
+    have hq := flip_quadrant (flip_func τ) (-a) (-b)
+    simp only [hff, neg_neg] at hq
+    rw [show northwest_set τ a b = (-1 - ·) '' southeast_set (flip_func τ) (-a) (-b) from hq.symm]
+    exact ⟨fun h => h.of_finite_image (Set.injOn_of_injective (fun x y h => by omega)),
+           fun h => h.image _⟩
+  rw [key m n, key m' n']
+  exact se_finite_of_finite hf_inj (-m) (-n) (-m') (-n')
 
 def is_asp (τ : ℤ → ℤ) : Prop :=
   { n : ℤ | n * (τ n) < 0 }.Finite
@@ -313,10 +298,6 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         simp [h]
     _ = (τ⁻¹).s b a := by rfl
 
-abbrev refl : ℤ → ℤ := fun n => -1 - n
-
-abbrev flip_func (f : ℤ → ℤ) : ℤ → ℤ := refl ∘ f ∘ refl
-
 lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
   · intro x y h; simp at h
@@ -325,20 +306,6 @@ lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   · intro y
     use -1 - τ⁻¹ (-1 - y)
     simp [flip_func]
-
-lemma flip_quadrant (f : ℤ → ℤ) (a b : ℤ) :
-  (-1 - ·) '' (southeast_set f a b) = northwest_set (flip_func f) (-a) (-b)
-  := by
-  ext n; unfold southeast_set northwest_set
-  constructor
-  · intro h
-    rcases h with ⟨m, hm, rfl⟩
-    simp at hm ⊢
-    constructor <;> linarith
-  · intro hn
-    simp at hn ⊢
-    use -1 - n; simp
-    constructor <;> linarith
 
 def flip : AspPerm := {
   func := fun n => -1 - τ (-1 - n)

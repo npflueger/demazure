@@ -239,47 +239,40 @@ structure s'_witness (τ : AspPerm) (a b : ℤ) where
   s'_val : τ.s' b a = τ.s' b (τ u)
   mem_nw : u ∈ northwest_set τ a b
 
--- This is proved from find_s_witness using the "flip" permutation.
--- This sounds simple on paper, but in practice it looks like would have been
--- easier to just prove it anew, following the proof of find_s_witness.
 noncomputable def find_s'_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s' b a ≥ 1) :
   s'_witness τ a b := by
-  have flip_ab : τ.flip.s (-a) (-b) = τ.s' b a := by
-    simp [τ.flip_s (-a) (-b)]
-  have h : τ.flip.s (-a) (-b) ≥ 1 := by
-    rwa [← flip_ab] at hab
-  have flip_wit := find_s_witness h
-  let u := -1 - flip_wit.v
+  have nw_nonempty : (τ.nw a b).Nonempty := by
+    dsimp [AspPerm.s'] at hab
+    have : (τ.nw a b).card ≠ 0 := by linarith
+    exact Finset.card_ne_zero.mp this
+  have img_nonempty : (Finset.image τ (τ.nw a b)).Nonempty := by simp [nw_nonempty]
+  let y := Finset.min' (Finset.image τ (τ.nw a b)) img_nonempty
+  let u := τ⁻¹ y
+  have y_mem : y ∈ τ '' northwest_set τ a b := by
+    have h : y ∈ Finset.image τ (τ.nw a b) :=
+      Finset.min'_mem (Finset.image τ (τ.nw a b)) img_nonempty
+    simp [Finset.mem_image] at h
+    exact h
+  have u_mem : u ∈ northwest_set τ a b := by
+    rcases y_mem with ⟨n, n_mem, y_eq⟩
+    subst u; rw [← y_eq]; simp [n_mem]
+  have ge_τu : ∀ n ∈ northwest_set τ a b, τ u ≤ τ n := by
+    intro n n_mem
+    subst u; simp
+    apply Finset.min'_le
+    rw [Finset.mem_image]
+    use n
+    simpa [AspPerm.mem_nw] using n_mem
   use u
-  · show τ.s' b a = τ.s' b (τ u)
-    rw [← flip_ab]
-    have h1 : τ.flip.s (-τ u) (-b) = τ.s' b (τ u) := by
-      simp [τ.flip_s (-τ u) (-b)]
-    have h2 := flip_wit.s_val
-    have h3 : (τ.flip.func flip_wit.v) = -1 - τ u := by
-      dsimp [u, AspPerm.flip]
-    have step := τ.flip.a_step (-1 - τ u) (-b)
-    have : -1 - τ u + 1 = - τ u := by ring
-    rw [this] at step
-    rw [← h1, h2, h3, step]
-    suffices τ.flip⁻¹.func (-1 - τ.func u) ≥ -b by
-      simp [this]
-    suffices u < b by
-      rw [τ.flip_inv]
-      dsimp [AspPerm.flip]
-      simp; linarith
-    dsimp [u]
-    linarith [flip_wit.mem_se.1]
-  · show u ∈ northwest_set τ a b
-    have h := flip_wit.mem_se
-    have u_lt_b : u < b := by
-      unfold u; linarith [h.1]
-    have τu_gt_a : τ u ≥ a := by
-      have := h.2
-      dsimp [AspPerm.flip] at this
-      linarith
-    unfold northwest_set
-    constructor <;> assumption
+  · -- s'_val : τ.s' b a = τ.s' b (τ u)
+    unfold AspPerm.s'
+    suffices τ.nw a b = τ.nw (τ.func u) b by rw [this]
+    ext n; simp only [AspPerm.mem_nw]
+    constructor
+    · intro ⟨n_lt_b, τn_ge_a⟩
+      exact ⟨n_lt_b, ge_τu n ⟨n_lt_b, τn_ge_a⟩⟩
+    · intro ⟨n_lt_b, τn_ge_τu⟩
+      exact ⟨n_lt_b, le_trans u_mem.2 τn_ge_τu⟩
 
 lemma inv_of_quadrants {τ : AspPerm} {a b u v : ℤ}
   (hu : u ∈ northwest_set τ a b) (hv : v ∈ southeast_set τ a b) :

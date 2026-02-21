@@ -497,34 +497,40 @@ lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
   · simp [h_lt]
     linarith
 
+-- Helper: the number of elements of se(a',b) \ se(a,b) equals the number of
+-- elements of Ico a a' whose τ-preimage is ≥ b, via the bijection k ↦ τ k.
+private lemma se_diff_card (a a' b : ℤ) :
+    ((τ.se a' b) \ (τ.se a b)).card = ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+  apply Finset.card_bij (fun k _ => τ k)
+  · intro k hk
+    simp only [Finset.mem_sdiff, mem_se] at hk
+    obtain ⟨⟨k_ge_b, τk_lt_a'⟩, hk_not⟩ := hk
+    have τk_ge_a : a ≤ τ k := by
+      by_contra h; push_neg at h
+      exact hk_not ⟨k_ge_b, h⟩
+    simp only [Finset.mem_filter, Finset.mem_Ico, τ.inv_mul_cancel_eval]
+    exact ⟨⟨τk_ge_a, τk_lt_a'⟩, k_ge_b⟩
+  · intro k₁ _ k₂ _ h; exact τ.injective h
+  · intro x hx
+    simp only [Finset.mem_filter, Finset.mem_Ico] at hx
+    obtain ⟨⟨x_ge_a, x_lt_a'⟩, τinv_ge_b⟩ := hx
+    refine ⟨τ⁻¹ x, ?_, τ.mul_inv_cancel_eval x⟩
+    simp only [Finset.mem_sdiff, mem_se, τ.mul_inv_cancel_eval]
+    exact ⟨⟨τinv_ge_b, x_lt_a'⟩, fun ⟨_, h⟩ => by linarith⟩
+
 lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
-  -- Deduce from b_move_up using the flipped inverse
-  τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
-  let A := {x ∈ Finset.Ico (-a') (-a) | τ⁻¹.flip.func x < -b}
-  let B := ((Finset.Ico a a').filter (τ⁻¹ · ≥ b))
-  suffices A.card = B.card by
-    have : ∀ x y : ℤ, τ.s x y = τ⁻¹.flip.s (-y) (-x) := by simp [flip_s, dual_inverse]
-    rw [this a' b, this a b]
-    have := (τ⁻¹.flip).b_move_up (-b) (-a') (-a) (by linarith)
-    linarith
-  have h (n : ℤ): n ∈ A ↔ -1-n ∈ B := by
-    simp only [A, B, Finset.mem_filter, Finset.mem_Ico, flip]
-    constructor
-    · intro hn
-      obtain ⟨⟨h1, h2⟩, h3⟩ := hn
-      refine ⟨⟨?_, ?_⟩, ?_⟩ <;> linarith
-    · intro hn
-      obtain ⟨⟨h1, h2⟩, h3⟩ := hn
-      refine ⟨⟨?_, ?_⟩, ?_⟩ <;> linarith
-  apply Finset.card_bij (fun n _ => -1 - n)
-  · intro a; exact (h a).mp
-  · intro _ _ _ _ _; linarith
-  · intro n hn
-    have : -1-n ∈ A := by
-      apply (h (-1-n)).mpr
-      simp [hn]
-    use -1-n, this
-    linarith
+    τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+  have h_sub : τ.se a b ⊆ τ.se a' b := fun k hk => by
+    simp only [mem_se] at *; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
+  suffices (τ.se a' b).card = (τ.se a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card by
+    unfold AspPerm.s; linarith
+  rw [← se_diff_card τ a a' b]
+  have h_disj : Disjoint (τ.se a b) (τ.se a' b \ τ.se a b) := disjoint_sdiff_self_right
+  have h_union : τ.se a b ∪ τ.se a' b \ τ.se a b = τ.se a' b :=
+    Finset.union_sdiff_of_subset h_sub
+  have h_card := Finset.card_union_of_disjoint h_disj
+  rw [h_union] at h_card
+  linarith
 
 lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
   τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
@@ -553,17 +559,22 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
 
 
 lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
-  calc
-    τ.s (a+1) b = τ⁻¹.flip.s (-b) (-(a+1)) := by rw [τ.s_flip (a+1) b]
-    _ = τ⁻¹.flip.s (-b) (-(a+1)+1) + if τ⁻¹.flip.func (-(a + 1)) < -b then 1 else 0 := by
-      linarith [(τ⁻¹.flip).b_step (-b) (-(a+1)) ]
-    _ = τ⁻¹.flip.s (-b) (-a) + if -1 - τ⁻¹.func a < -b then 1 else 0 := by
-      unfold flip; simp
-    _ = τ⁻¹.flip.s (-b) (-a) + if b ≤ τ⁻¹.func a then 1 else 0 := by
-      have : -1 - τ⁻¹.func a < -b ↔ b ≤ τ⁻¹.func a := by
-        constructor <;> (intro h; linarith)
-      simp [this]
-    _ = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by rw[τ.s_flip a b]
+  rw [a_move_up τ a (a + 1) b (by linarith)]
+  by_cases h : τ⁻¹ a ≥ b
+  · have hfilt : ((Finset.Ico a (a + 1)).filter (τ⁻¹ · ≥ b)) = {a} := by
+      ext x
+      simp only [Finset.mem_filter, Finset.mem_Ico, Finset.mem_singleton]
+      constructor
+      · intro ⟨⟨hge, hlt⟩, _⟩; omega
+      · rintro rfl; exact ⟨⟨le_refl _, by omega⟩, h⟩
+    simp [hfilt, if_pos h, Finset.card_singleton]
+  · have hfilt : ((Finset.Ico a (a + 1)).filter (τ⁻¹ · ≥ b)) = ∅ := by
+      ext x
+      simp only [Finset.mem_filter, Finset.mem_Ico, Finset.notMem_empty, iff_false]
+      rintro ⟨⟨hge, hlt⟩, htau⟩
+      have hxa : x = a := by omega
+      rw [hxa] at htau; exact h htau
+    simp [hfilt, if_neg h, Finset.card_empty]
 
 lemma a_step_one_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b := by
   rw [a_step τ a b]

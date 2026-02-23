@@ -3,10 +3,6 @@ import Demazure.Utils
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
-
-
-
-
 def southeast_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | n ≤ k ∧ τ k < m }
 
 def northwest_set (τ : ℤ → ℤ) (m n : ℤ) : Set ℤ := { k : ℤ | k < n ∧ m ≤ τ k }
@@ -272,9 +268,29 @@ noncomputable def nw (a b : ℤ) : Finset ℤ := (nw_finite_of_asp τ.injective 
   unfold nw northwest_set
   simp
 
+lemma inv_set_inverse (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
+  constructor
+  · intro h
+    obtain ⟨u_lt_v, τv_lt_τu⟩ := h
+    use τv_lt_τu
+    simpa
+  · intro h
+    obtain ⟨τv_lt_τu, u_lt_v⟩ := h
+    simp at u_lt_v
+    exact ⟨u_lt_v, τv_lt_τu⟩
+
 noncomputable def s (a b : ℤ) : ℤ := (τ.se a b).card
 noncomputable def s' (a b : ℤ) : ℤ := (τ.nw b a).card
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
+
+
+lemma s_nonneg (a b : ℤ) : τ.s a b ≥ 0 := by
+  unfold s
+  exact Nat.cast_nonneg _
+
+lemma s'_nonneg (a b : ℤ) : τ.s' a b ≥ 0 := by
+  unfold s'
+  exact Nat.cast_nonneg _
 
 lemma dual_inverse : τ.s' = (τ⁻¹).s := by
   funext b a
@@ -297,6 +313,14 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         rw [τ.mul_inv_cancel_eval n]
         simp [h]
     _ = (τ⁻¹).s b a := by rfl
+
+lemma χ_dual : τ⁻¹.χ = - τ.χ := by
+  dsimp [AspPerm.χ]
+  simp only [AspPerm.dual_inverse, inv_inv]
+  norm_num
+
+lemma χ_dual' : τ.χ = - (τ⁻¹).χ := by
+  rw [← χ_dual τ⁻¹, inv_inv]
 
 lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
@@ -619,6 +643,51 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   unfold h at this
   linarith
 
+lemma s_ge_diff (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := by
+  have := duality τ a b
+  linarith [τ⁻¹.s_nonneg b a]
+
+lemma s'_ge_diff (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
+  rw [dual_inverse τ]
+  have := duality τ⁻¹ a b
+  rw [inv_inv, χ_dual] at this
+  linarith [τ.s_nonneg b a]
+
+def tend_zero_a (τ : AspPerm) (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
+  by_cases h : τ.s 0 b = 0
+  · use 0
+  · let S := Finset.image τ (τ.se 0 b)
+    have S_nonempty : S.Nonempty := by
+      unfold S; apply Finset.image_nonempty.mpr
+      apply Finset.card_pos.mp
+      apply Nat.pos_iff_ne_zero.mpr
+      simpa [AspPerm.s] using h
+    let a := Finset.min' S S_nonempty
+    have a_lt_0 : a < 0 := by
+      have : a ∈ S := Finset.min'_mem S S_nonempty
+      simp only [S, Finset.mem_image] at this
+      obtain ⟨n, ⟨n_se, n_eq⟩⟩ := this
+      have := ((τ.mem_se 0 b n).mp n_se).2
+      rwa [n_eq] at this
+    use a
+    suffices southeast_set τ (Finset.min' S S_nonempty) b = ∅ by
+      unfold AspPerm.s; simpa [AspPerm.se, Finset.card_eq_zero.mpr] using this
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    rintro n ⟨b_le_n, τn_lt_min⟩
+    have : τ n < 0 := lt_trans τn_lt_min a_lt_0
+    have : n ∈ τ.se 0 b := (τ.mem_se 0 b n).mpr ⟨b_le_n, this⟩
+    have : τ n ∈ S := Finset.mem_image.mpr ⟨n, this, rfl⟩
+    have : a ≤ τ n := Finset.min'_le S (τ n) this
+    exact lt_irrefl (τ n) <| lt_of_lt_of_le τn_lt_min this
+
+def tend_zero_b (τ : AspPerm) (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
+  have := tend_zero_a τ⁻¹.flip (-a)
+  obtain ⟨b, hb⟩ := this
+  use -b
+  rw [τ⁻¹.flip_s, τ⁻¹.dual_inverse] at hb
+  simpa using hb
+
+
 def ramp (τ : AspPerm) (b : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}
 
@@ -649,6 +718,218 @@ lemma mem_ramp_iff_s_geq (τ : AspPerm) (b m n : ℤ) :
     · exact s_geq
     · linarith [τ.duality (b + m - n - τ.χ) b]
 
+lemma mem_lamp_iff_s_geq (τ : AspPerm) (a m n : ℤ) :
+  ⟨m, n⟩ ∈ τ.lamp a ↔ τ⁻¹.s (a - m + n + τ.χ) a ≥ n := by
+  have := ramp_lamp_dual τ⁻¹ a n m
+  rw [inv_inv] at this
+  rw [← this]
+  rw [mem_ramp_iff_s_geq, χ_dual]
+  constructor <;> (intro h; convert h using 2; linarith)
+
+namespace Wings
+variable (b m n : ℤ) (m_pos : m > 0) (n_pos : n > 0)
+
+def R : Set ℤ := {n : ℤ | τ.s n b < m}
+
+lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
+  have := tend_zero_a τ b
+  obtain ⟨n, hn⟩ := this
+  use n
+  unfold R; simp
+  linarith [m_pos, hn]
+
+lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
+  use m + b - τ.χ
+  intro n hn
+  simp [R] at hn
+  have dual := τ.duality n b
+  have : τ⁻¹.s b n ≥ 0 := (τ⁻¹).s_nonneg b n
+  linarith
+
+def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
+
+lemma L_nonnempty : (L τ b n).Nonempty := by
+  use b - n - τ.χ
+  unfold L; simp; rw [dual_inverse τ]
+  have dual := τ.duality (b - n - τ.χ) b
+  have : τ.s (b - n - τ.χ) b ≥ 0 := τ.s_nonneg (b - n - τ.χ) b
+  linarith [dual]
+
+lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
+  have := tend_zero_b τ⁻¹ b
+  obtain ⟨a, ha⟩ := this
+  use a
+  intro a' a'_L
+  unfold L at a'_L; simp at a'_L
+  contrapose! a'_L with a_lt_a'
+  have := (τ⁻¹.s_noninc b (le_of_lt a_lt_a')).1
+  rw [dual_inverse τ]
+  linarith
+
+end Wings
+
+noncomputable def v (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) : ℤ :=
+  τ⁻¹ ( Classical.choose <| Int.exists_greatest_of_bdd
+    (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos) )
+
+lemma v_spec (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) :
+  τ.s (τ (τ.v b m_pos)) b < m
+  ∧ ∀ a : ℤ, τ.s a b < m → a ≤ τ (τ.v b m_pos) := by
+  let v := τ.v b m_pos
+  let τv := Classical.choose <| Int.exists_greatest_of_bdd
+    (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos)
+  have τ_vs: τ v = τv := by simp [v, AspPerm.v, τv]
+  let R := Wings.R τ b m
+
+  have : τv ∈ R ∧ ∀ n : ℤ, n ∈ R → n ≤ τv := Classical.choose_spec
+    (Int.exists_greatest_of_bdd (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos))
+  rw [← τ_vs] at this
+  simpa [v, R, Wings.R] using this
+
+lemma v_crit (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) (v : ℤ) :
+  v = τ.v b m_pos ↔ τ.s (τ v) b = m - 1 ∧ b ≤ v := by
+  constructor
+  · intro v_eq
+    have v_spec : τ.s (τ v) b < m ∧ ∀ a : ℤ, τ.s a b < m → a ≤ τ v := by
+      subst v; exact τ.v_spec b m_pos
+    obtain ⟨s_lt_m, τv_max⟩ := v_spec
+    have s_next : τ.s (τ v + 1) b ≥ m := by
+      by_contra! s_next_lt
+      have a_le : τ v + 1 ≤ τ v := τv_max (τ v + 1) s_next_lt
+      linarith
+    have s_inc : τ.s (τ v) b < τ.s (τ v + 1) b := lt_of_lt_of_le s_lt_m s_next
+    have v_ge_b : b ≤ v := by
+      by_contra! v_lt_b
+      have : τ.s (τ v + 1) b = τ.s (τ v) b := (a_step_eq_iff' τ v b).mpr v_lt_b
+      rw [this] at s_inc
+      exact lt_irrefl _ s_inc
+    let s_inc : τ.s (τ v + 1) b = τ.s (τ v) b + 1 := (a_step_one_iff' τ v b).mpr v_ge_b
+    have s_next_leq : τ.s (τ v + 1) b ≤ m := by
+      rw [s_inc]
+      apply Int.lt_iff_add_one_le.mpr
+      linarith [v_eq]
+    have : τ.s (τ v + 1) b = m := le_antisymm s_next_leq s_next
+    rw [s_inc] at this
+    exact ⟨by linarith [this, s_inc], v_ge_b⟩
+  · rintro ⟨s_eq, v_ge_b⟩
+    let v₀ := τ.v b m_pos
+    have τv_le : τ v ≤ τ v₀ := by
+      apply (τ.v_spec b m_pos).2 (τ v)
+      linarith [s_eq]
+    have τv_ge : τ v₀ ≤ τ v := by
+      by_contra! τv_lt
+      have τv_le : τ v + 1 ≤ τ (τ.v b m_pos) := by linarith [τv_le]
+      have : (τ.s (τ v + 1) b ≤ τ.s (τ v₀) b) := (τ.s_nondec τv_le b).1
+      have : (τ.s (τ v) b) + 1 ≤ τ.s (τ v₀) b := by
+        rwa [(a_step_one_iff' τ v b).mpr v_ge_b] at this
+      linarith [this, s_eq, (τ.v_spec b m_pos).1]
+    exact τ.injective <| le_antisymm τv_le τv_ge
+
+noncomputable def u (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) : ℤ :=
+  τ⁻¹ <|Classical.choose <| Int.exists_greatest_of_bdd
+    (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
+
+lemma u_spec (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) :
+  τ.s' b (τ (τ.u b n_pos)) ≥ n
+  ∧ ∀ a : ℤ, τ.s' b a ≥ n → a ≤ τ (τ.u b n_pos) := by
+  let u := τ.u b n_pos
+  let τu := Classical.choose <| Int.exists_greatest_of_bdd
+    (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
+  have τ_us: τ u = τu := by simp [u, AspPerm.u, τu]
+  let L := Wings.L τ b n
+  have : τu ∈ L ∧ ∀ n : ℤ, n ∈ L → τu ≥ n := Classical.choose_spec
+    (Int.exists_greatest_of_bdd (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n))
+  rw [← τ_us] at this
+  simpa [L, Wings.L, dual_inverse τ] using this
+
+lemma u_crit (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
+  u = τ.u b n_pos ↔ τ.s' b (τ u) = n ∧ u < b := by
+  constructor
+  · intro u_eq
+    have u_spec : τ.s' b (τ u) ≥ n ∧ ∀ a : ℤ, τ.s' b a ≥ n → a ≤ τ u := by
+      subst u; exact τ.u_spec b n_pos
+    obtain ⟨s_ge_n, τu_max⟩ := u_spec
+    have s_next : τ.s' b (τ u + 1) < n := by
+      by_contra! s_next_ge
+      have a_le : τ u + 1 ≤ τ u := τu_max (τ u + 1) s_next_ge
+      linarith
+    have s_ge_n_inv : (τ⁻¹).s b (τ u) ≥ n := by
+      simpa [dual_inverse τ] using s_ge_n
+    have s_next_inv : (τ⁻¹).s b (τ u + 1) < n := by
+      simpa [dual_inverse τ] using s_next
+    have u_lt_b : u < b := by
+      by_contra! u_ge_b
+      have hs_eq : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) := by
+        apply ((τ⁻¹).b_step_eq_iff b (τ u)).2
+        simpa using u_ge_b
+      rw [hs_eq] at s_next_inv
+      exact lt_irrefl _ (lt_of_lt_of_le s_next_inv s_ge_n_inv)
+    have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
+      apply ((τ⁻¹).b_step_one_iff b (τ u)).2
+      simpa using u_lt_b
+    have hs_eq_n : (τ⁻¹).s b (τ u) = n := by
+      rw [hs_dec] at s_next_inv
+      linarith
+    exact ⟨by simpa [dual_inverse τ] using hs_eq_n, u_lt_b⟩
+  · rintro ⟨s_eq, u_lt_b⟩
+    let u₀ := τ.u b n_pos
+    have τu_le : τ u ≤ τ u₀ := by
+      apply (τ.u_spec b n_pos).2 (τ u)
+      rw [s_eq]
+    have τu_ge : τ u₀ ≤ τ u := by
+      by_contra! τu_lt
+      have τu_succ_le : τ u + 1 ≤ τ u₀ := by linarith
+      have hs_noninc : (τ⁻¹).s b (τ u₀) ≤ (τ⁻¹).s b (τ u + 1) := by
+        exact ((τ⁻¹).s_noninc (a := b) τu_succ_le).1
+      have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
+        apply ((τ⁻¹).b_step_one_iff b (τ u)).2
+        simpa using u_lt_b
+      have hs_u0_ge_n : (τ⁻¹).s b (τ u₀) ≥ n := by
+        simpa [u₀, dual_inverse τ] using (τ.u_spec b n_pos).1
+      have hs_u0_le : (τ⁻¹).s b (τ u₀) ≤ n - 1 := by
+        rw [hs_dec] at hs_noninc
+        have hs_eq_inv : (τ⁻¹).s b (τ u) = n := by
+          simpa [dual_inverse τ] using s_eq
+        linarith
+      linarith
+    exact τ.injective <| le_antisymm τu_le τu_ge
+
+theorem inv_ramp_correspondence (τ : AspPerm) (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
+  ⟨m, n⟩ ∈ τ.ramp b ↔ ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set τ := by
+  let u := τ.u b n_pos
+  let v := τ.v b m_pos
+
+  -- Consider bubbing these out as separate helpers. Might be needed elsewhere.
+  have u_lt_b : u < b := by exact ((u_crit τ b n_pos u).mp (by rfl)).2
+  have v_gt_b : b ≤ v := by exact ((v_crit τ b m_pos v).mp (by rfl)).2
+
+  have inv_simp : ⟨u, v⟩ ∈ inv_set τ ↔ τ v < τ u := by
+    simp [inv_set, lt_of_lt_of_le u_lt_b v_gt_b]
+  suffices ⟨m, n⟩ ∈ τ.ramp b ↔ τ v < τ u by
+    rw [this, inv_simp]
+  let a := b + m - n - τ.χ
+  constructor
+  · intro mn_ramp
+    have s_ge_m : τ.s a b ≥ m := (mem_ramp_iff_s_geq τ b m n).mp mn_ramp
+    have s'_ge_n : τ.s' b a ≥ n := by
+      rw [dual_inverse τ]
+      have := τ.duality a b
+      linarith
+    have a_gt_v : a > τ v := by
+      contrapose! s_ge_m with a_le_v
+      have h_lt : τ.s (τ v) b < m := (τ.v_spec b m_pos).1
+      have h_le : τ.s a b ≤ τ.s (τ (τ.v b m_pos)) b := (τ.s_nondec a_le_v b).1
+      exact lt_of_le_of_lt h_le h_lt
+    have a_le_u : a ≤ τ u := by
+      exact (τ.u_spec b n_pos).2 a s'_ge_n
+    exact lt_of_lt_of_le a_gt_v a_le_u
+  · intro τ_v_lt_u
+    use τ u
+    constructor
+    · have u_spec := (τ.v_spec b m_pos).2 (τ u)
+      contrapose! τ_v_lt_u with h
+      exact u_spec h
+    · exact (τ.u_spec b n_pos).1
 
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
@@ -664,5 +945,81 @@ def dprod_leq (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∃ l : ℤ, α.s a l + β.s l b ≤ n
 
 
+theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
+  (habMN : a - b + α.χ + β.χ = M - N) :
+  dprod_geq α β a b M ↔
+  ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
+  ⟨m, n⟩ ∈ β.ramp b ∨ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
+  := by
+  constructor
+  · intro dprod m m_icc n n_icc
+    let m' := M + 1 - m
+    let n' := N + 1 - n
+    suffices ⟨m, n⟩ ∈ β.ramp b ∨ ⟨n', m'⟩ ∈ α⁻¹.ramp a by
+      have h := ramp_lamp_dual α⁻¹ a (N+1-n) (M+1-m)
+      rw [inv_inv] at h
+      rw [← h]
+      exact this
+
+    have sα := mem_ramp_iff_s_geq α⁻¹ a n' m'
+    have sβ := mem_ramp_iff_s_geq β b m n
+    rw [sα, sβ]
+
+    unfold AspPerm.dprod_geq at dprod
+    contrapose! dprod with ineqs
+
+    let l := b + m - n  - β.χ
+    use l
+
+    have l_eq : l = a + n' - m' - α⁻¹.χ := by
+      simp [n', m', l, α.χ_dual]
+      linarith [habMN]
+    rw [← l_eq] at ineqs
+    obtain ⟨hβ, hα⟩ := ineqs
+    have hβ : β.s l b ≤ m-1 := by exact Int.le_sub_one_of_lt hβ
+    have hα : α.s a l ≤ M  - m := by
+      linarith [hα, α.duality a l]
+    have : α.s a l + β.s l b ≤ M-1 := by
+      linarith [add_le_add hα hβ]
+    exact Int.lt_of_le_sub_one this
+  · unfold AspPerm.dprod_geq
+    intro hramp l
+    contrapose! hramp with ineq
+    obtain ineq : α.s a l + β.s l b ≤ M - 1 := Int.le_sub_one_of_lt ineq
+    have ineq' : α⁻¹.s l a + β⁻¹.s b l ≤ N -1 := by
+      linarith [β.duality l b, α.duality a l]
+
+    let m := β.s l b + 1
+    let n := β⁻¹.s b l + 1
+    have l_eq : l = m - n + b - β.χ := by
+      linarith [β.duality l b]
+
+    have m_icc : m ∈ Set.Icc 1 M := by
+      constructor
+      · linarith [β.s_nonneg l b]
+      · linarith [ineq, α.s_nonneg a l]
+    have n_icc : n ∈ Set.Icc 1 N := by
+      constructor
+      · linarith [β⁻¹.s_nonneg b l]
+      · linarith [ineq', α⁻¹.s_nonneg l a]
+
+    use m, m_icc, n, n_icc
+    constructor
+    · show ⟨m, n⟩ ∉ β.ramp b
+      intro h_mn
+      apply (mem_ramp_iff_s_geq β b m n).mp at h_mn
+      have hm : β.s l b ≥ m := by
+        convert h_mn using 2
+        linarith [l_eq]
+      unfold m at hm
+      linarith [hm]
+    · show ⟨M+1-m, N+1-n⟩ ∉ α.lamp a
+      intro h_mn
+      have s_geq := (mem_lamp_iff_s_geq α a (M+1-m) (N+1-n)).mp h_mn
+      have : (a - (M + 1 - m) + (N + 1 - n) + α.χ) = l := by
+        linarith [N, l_eq]
+      have : α⁻¹.s l a ≥ N + 1 - n := by
+        rwa [this] at s_geq
+      linarith [ineq']
 
 end AspPerm

@@ -118,6 +118,26 @@ theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_3
       linarith
     exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
 
+theorem inv_321a_char (I : Set (ℤ × ℤ)) :
+  set_321a_prop I
+  ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
+  constructor
+  · intro Ip
+    let I_asp : AspSet := ⟨I, Ip.asp⟩
+    let I_321a : set_321a := ⟨I_asp, Ip⟩
+    let τ : AspPerm := I_321a.toAspPerm
+    use τ.func
+    constructor
+    · rw [criterion_321a τ.func τ.bijective]
+      have : inv_set τ.func = I := I_321a.invSet_func
+      rwa [this]
+    constructor
+    · exact τ.bijective
+    · exact I_321a.invSet_func
+  · rintro ⟨τ, ⟨h_321a, h_bij, h_inv⟩⟩
+    have := (criterion_321a τ h_bij).mp h_321a
+    rwa [h_inv] at this
+
 def is_src (τ : AspPerm) (u : ℤ) : Prop :=
   ∃ v : ℤ, ⟨u, v⟩ ∈ inv_set τ
 
@@ -132,6 +152,23 @@ def snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
 
 section fixed_321a
 variable {τ : AspPerm} (h_321a : is_321a τ)
+
+lemma inv_is_321a (h_321a : is_321a τ) : is_321a τ⁻¹.func := by
+  intro i j k i_lt_j j_lt_k
+  have h := h_321a (τ⁻¹ k) (τ⁻¹ j) (τ⁻¹ i)
+  simp only [τ.mul_inv_cancel_eval] at h
+  by_contra!
+  obtain ⟨h1, h2⟩ := this
+  have h1 : τ⁻¹ j < τ⁻¹ i := by
+    apply lt_of_le_of_ne h1
+    intro heq; apply τ⁻¹.injective at heq
+    exact ne_of_lt i_lt_j (Eq.symm heq)
+  have h2 : τ⁻¹ k < τ⁻¹ j := by
+    apply lt_of_le_of_ne h2
+    intro heq; apply τ⁻¹.injective at heq
+    exact ne_of_lt j_lt_k (Eq.symm heq)
+  have := h h2 h1
+  rcases this <;> linarith
 
 lemma not_src_and_snk (h_321a : is_321a τ) (n : ℤ) :
   ¬ (is_src τ n) ∨ ¬(is_snk τ) n := by
@@ -420,25 +457,7 @@ lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func
     refine avset.prop
   · simp [avset.prop_321a.tfree, avset.invSet_func]
 
-theorem inv_321a_char (I : Set (ℤ × ℤ)) :
-  set_321a_prop I
-  ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
-  constructor
-  · intro Ip
-    let I_asp : AspSet := ⟨I, Ip.asp⟩
-    let I_321a : set_321a := ⟨I_asp, Ip⟩
-    let τ : AspPerm := I_321a.toAspPerm
-    use τ.func
-    constructor
-    · rw [criterion_321a τ.func τ.bijective]
-      have : inv_set τ.func = I := I_321a.invSet_func
-      rwa [this]
-    constructor
-    · exact τ.bijective
-    · exact I_321a.invSet_func
-  · rintro ⟨τ, ⟨h_321a, h_bij, h_inv⟩⟩
-    have := (criterion_321a τ h_bij).mp h_321a
-    rwa [h_inv] at this
+
 
 lemma snk_lt {τ : AspPerm} (h_321a : is_321a τ)
   {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
@@ -470,7 +489,7 @@ lemma src_gt {τ : AspPerm} (h_321a : is_321a τ)
   have := tfree_of_321a τ h_321a x u v
   rcases this <;> contradiction
 
-lemma eq_s_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+theorem eq_s_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
   β.s (β v) b = τ.s (τ v) b := by
   unfold AspPerm.s
@@ -524,127 +543,338 @@ lemma eq_s'_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
   have nested : ⟨u, x⟩ ≼ ⟨u, v⟩ := by constructor <;> linarith
   exact inv_of_lel_iff h_321a h_L uv_inv nested
 
--- Helpers to extract:
--- sum formula within a special quadrant
--- Find "witness" of a special slipface value,
---   and prove it is an inversion of β with the right numerology.
-
-lemma s_inc_on_snks {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
-  (m_snk : is_snk τ m) (b_le_m : b ≤ m) (n_snk : is_snk τ n) (b_le_n : b ≤ n) :
-    m ≤ n ↔ τ.s (τ m) b ≤ τ.s (τ n) b
+lemma uv_eq_of_lel (h_321a : is_321a τ) (h_L : β ≤L τ)
+  (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
+  ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set β
+  → τ.u b n_pos = β.u b n_pos ∧ τ.v b m_pos = β.v b m_pos
   := by
-  constructor
-  · intro m_le_n
-    refine (τ.s_nondec ?_ b).1
-    wlog m_lt_n : m < n
-    · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
-      rw [this]
-    exact le_of_lt <| snk_lt h_321a m_snk m_lt_n
-  · intro h
-    contrapose! h with n_lt_m
-    have τ_n_lt_m : τ n < τ m := snk_lt h_321a n_snk n_lt_m
-    have h := (τ.s_nondec (le_of_lt τ_n_lt_m) b)
-    suffices τ.s (τ n) b ≠ τ.s (τ m) b by
-      exact lt_of_le_of_ne h.1 this
-    intro heq
-    have n_lt_b : n < b := h.2.mp heq n (le_refl _) τ_n_lt_m
-    exact lt_iff_not_ge.mp n_lt_b b_le_n
+  let u := τ.u b n_pos
+  let v := τ.v b m_pos
+  intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
+  have u_crit :=  (τ.u_crit b n_pos u).mp (by rfl)
+  have s'_eq : τ.s' b (τ u) = n := u_crit.1
+  have u_lt_b : u < b := ((τ.u_crit b n_pos u).mp (by rfl)).2
+  have v_crit := (τ.v_crit b m_pos v).mp (by rfl)
+  have s_eq : τ.s (τ v) b = m - 1 := v_crit.1
+  have b_le_v : b ≤ v := v_crit.2
 
-lemma s'_dec_on_srcs {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
-  (m_src : is_src τ m) (m_lt_b : m < b) (n_src : is_src τ n) (n_lt_b : n < b) :
-    m ≤ n ↔ τ.s' b (τ m) ≥ τ.s' b (τ n)
+  have m_eq : β.s (β v) b = m-1 := by
+    rw [eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
+  have n_eq : β.s' b (β u) = n := by
+    rw [eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
+
+  exact ⟨ (β.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
+    (β.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
+
+-- Almost identical to the above, but with β.u and β.v instead of τ.u and τ.v.
+-- Can these be unified compactly?
+lemma uv_eq_of_lel' (h_321a : is_321a τ) (h_L : β ≤L τ)
+  (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
+  ⟨β.u b n_pos, β.v b m_pos⟩ ∈ inv_set β
+  → β.u b n_pos = τ.u b n_pos ∧ β.v b m_pos = τ.v b m_pos
   := by
-  rw [τ.dual_inverse]
-  constructor
-  · intro m_le_n
-    refine (τ⁻¹.s_noninc b ?_).1
-    wlog m_lt_n : m < n
-    · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
-      rw [this]
-    exact le_of_lt <| src_gt h_321a n_src m_lt_n
-  · intro h
-    contrapose! h with n_lt_m
-    have τ_m_lt_n : τ n < τ m := src_gt h_321a m_src n_lt_m
-    have h := (τ⁻¹.s_noninc b (le_of_lt τ_m_lt_n))
-    suffices τ⁻¹.s b (τ m) ≠ τ⁻¹.s b (τ n) by
-      exact lt_of_le_of_ne h.1 this
-    intro heq
-    have n_ge_b : n ≥ b := by
-      have := h.2.mp (Eq.symm heq) (τ n) (le_refl _) τ_m_lt_n
-      rwa [τ.inv_mul_cancel_eval n] at this
-    exact lt_iff_not_ge.mp n_lt_b n_ge_b
+  let u := β.u b n_pos
+  let v := β.v b m_pos
+  intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
+  have u_crit :=  (β.u_crit b n_pos u).mp (by rfl)
+  have s'_eq : β.s' b (β u) = n := u_crit.1
+  have u_lt_b : u < b := ((β.u_crit b n_pos u).mp (by rfl)).2
+  have v_crit := (β.v_crit b m_pos v).mp (by rfl)
+  have s_eq : β.s (β v) b = m - 1 := v_crit.1
+  have b_le_v : b ≤ v := v_crit.2
 
+  have m_eq : τ.s (τ v) b = m-1 := by
+    rw [← eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
+  have n_eq : τ.s' b (τ u) = n := by
+    rw [← eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
+
+  exact ⟨ (τ.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
+    (τ.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
+
+theorem lel_ramp (h_321a : is_321a τ) (h_L : β ≤L τ)
+  (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
+  ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set β
+  ↔ ⟨m, n⟩ ∈ β.ramp b
+  := by
+  rw [β.inv_ramp_correspondence b m_pos n_pos]
+  constructor
+  · intro uv_inv
+    have uv_eq := uv_eq_of_lel h_321a h_L b m_pos n_pos uv_inv
+    rwa [← uv_eq.1, ← uv_eq.2]
+  · intro uv_inv
+    have uv_eq := uv_eq_of_lel' h_321a h_L b m_pos n_pos uv_inv
+    rwa [← uv_eq.1, ← uv_eq.2]
+
+-- lemma s_inc_on_snks {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
+--   (m_snk : is_snk τ m) (b_le_m : b ≤ m) (n_snk : is_snk τ n) (b_le_n : b ≤ n) :
+--     m ≤ n ↔ τ.s (τ m) b ≤ τ.s (τ n) b
+--   := by
+--   constructor
+--   · intro m_le_n
+--     refine (τ.s_nondec ?_ b).1
+--     wlog m_lt_n : m < n
+--     · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
+--       rw [this]
+--     exact le_of_lt <| snk_lt h_321a m_snk m_lt_n
+--   · intro h
+--     contrapose! h with n_lt_m
+--     have τ_n_lt_m : τ n < τ m := snk_lt h_321a n_snk n_lt_m
+--     have h := (τ.s_nondec (le_of_lt τ_n_lt_m) b)
+--     suffices τ.s (τ n) b ≠ τ.s (τ m) b by
+--       exact lt_of_le_of_ne h.1 this
+--     intro heq
+--     have n_lt_b : n < b := h.2.mp heq n (le_refl _) τ_n_lt_m
+--     exact lt_iff_not_ge.mp n_lt_b b_le_n
+
+-- lemma s'_dec_on_srcs {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
+--   (m_src : is_src τ m) (m_lt_b : m < b) (n_src : is_src τ n) (n_lt_b : n < b) :
+--     m ≤ n ↔ τ.s' b (τ m) ≥ τ.s' b (τ n)
+--   := by
+--   rw [τ.dual_inverse]
+--   constructor
+--   · intro m_le_n
+--     refine (τ⁻¹.s_noninc b ?_).1
+--     wlog m_lt_n : m < n
+--     · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
+--       rw [this]
+--     exact le_of_lt <| src_gt h_321a n_src m_lt_n
+--   · intro h
+--     contrapose! h with n_lt_m
+--     have τ_m_lt_n : τ n < τ m := src_gt h_321a m_src n_lt_m
+--     have h := (τ⁻¹.s_noninc b (le_of_lt τ_m_lt_n))
+--     suffices τ⁻¹.s b (τ m) ≠ τ⁻¹.s b (τ n) by
+--       exact lt_of_le_of_ne h.1 this
+--     intro heq
+--     have n_ge_b : n ≥ b := by
+--       have := h.2.mp (Eq.symm heq) (τ n) (le_refl _) τ_m_lt_n
+--       rwa [τ.inv_mul_cancel_eval n] at this
+--     exact lt_iff_not_ge.mp n_lt_b n_ge_b
 
 theorem inv_of_lel_iff_ramp {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
-  {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) (u_lt_b : u < b) (b_le_v : b ≤ v) :
-    ⟨u, v⟩ ∈ inv_set β
-    ↔ ⟨τ.s (τ v) b + 1, τ.s' b (τ u)⟩ ∈ β.ramp b
+  {u b v : ℤ} (u_lt_b : u < b) (b_le_v : b ≤ v) :
+  let m := τ.s (τ v) b + 1
+  let n := τ.s' b (τ u)
+  ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b
   := by
-  have h_321a_β := is_321a_of_lel (τ := τ) h_321a h_L
-  constructor
-  · intro uv_inv_β
-    let l₁ := β u
-    let l₂ := β v + 1
-    have l₂_le_l₁ : l₂ ≤ l₁ := uv_inv_β.2
-    use l₁
-    constructor
-    · suffices β.s l₂ b ≥ τ.s (τ.func v) b + 1 by
-        apply le_trans this
-        exact (β.s_nondec l₂_le_l₁ b).1
-      simp only [l₂]
-      have : β.s (β.func v + 1) b = β.s (β.func v) b + 1 := by
-        rw [β.a_step (β v) b, β.inv_mul_cancel_eval]
-        simp [b_le_v]
-      rw [this]
-      rw [eq_s_of_lel (τ := τ) h_321a h_L uv_inv_β u_lt_b]
-    · rw [eq_s'_of_lel (τ := τ) h_321a h_L uv_inv_β b_le_v]
-  · intro mem_ramp
-    rcases mem_ramp with ⟨l, ⟨hm,hn⟩⟩
+  intro m n
+  have m_pos : m > 0 := by linarith [τ.s_nonneg (τ v) b]
+  have n_pos : n > 0 := by
+    simp only [n, τ.dual_inverse]
+    have : τ⁻¹.s b (τ u) = τ⁻¹.s b (τ u + 1) + 1 := by
+      linarith [(τ⁻¹.b_step_one_iff b (τ u)).mpr (by simp [u_lt_b])]
+    linarith [this, τ⁻¹.s_nonneg b (τ u + 1)]
 
-    have : β.s' b l ≥ 1 := by
-      suffices τ.s' b (τ u) > 0 by linarith
-      suffices (τ.nw (τ u) b).Nonempty by
-        unfold AspPerm.s'
-        simp [this]
-      use u; simp [u_lt_b]
-    have nw_wit : s'_witness β l b := find_s'_witness this
-    let u' := nw_wit.u
+  rw [← lel_ramp h_321a h_L b m_pos n_pos]
+  have u_eq: u = τ.u b n_pos := by
+    rw [τ.u_crit b n_pos u]
+    exact ⟨rfl, u_lt_b⟩
+  have v_eq: v = τ.v b m_pos := by
+    rw [τ.v_crit b m_pos v]
+    exact ⟨by linarith, b_le_v⟩
+  rw [u_eq, v_eq]
 
-    have : β.s l b ≥ 1 := by
-      have : τ.s (τ.func v) b ≥ 0 := by
-        simp [AspPerm.s]
-      linarith [hm, this]
-    have se_wit : s_witness β l b := find_s_witness this
-    let v' := se_wit.v
 
-    have u'v'_inv : ⟨u', v'⟩ ∈ inv_set β := inv_of_quadrants nw_wit.mem_nw se_wit.mem_se
+-- theorem inv_of_lel_iff_ramp_old {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+--   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) (u_lt_b : u < b) (b_le_v : b ≤ v) :
+--     ⟨u, v⟩ ∈ inv_set β
+--     ↔ ⟨τ.s (τ v) b + 1, τ.s' b (τ u)⟩ ∈ β.ramp b
+--   := by
+--   have h_321a_β := is_321a_of_lel (τ := τ) h_321a h_L
+--   constructor
+--   · intro uv_inv_β
+--     let l₁ := β u
+--     let l₂ := β v + 1
+--     have l₂_le_l₁ : l₂ ≤ l₁ := uv_inv_β.2
+--     use l₁
+--     constructor
+--     · suffices β.s l₂ b ≥ τ.s (τ.func v) b + 1 by
+--         apply le_trans this
+--         exact (β.s_nondec l₂_le_l₁ b).1
+--       simp only [l₂]
+--       have : β.s (β.func v + 1) b = β.s (β.func v) b + 1 := by
+--         rw [β.a_step (β v) b, β.inv_mul_cancel_eval]
+--         simp [b_le_v]
+--       rw [this]
+--       rw [eq_s_of_lel (τ := τ) h_321a h_L uv_inv_β u_lt_b]
+--     · rw [eq_s'_of_lel (τ := τ) h_321a h_L uv_inv_β b_le_v]
+--   · intro mem_ramp
+--     rcases mem_ramp with ⟨l, ⟨hm,hn⟩⟩
 
-    have : τ.s (τ v) b ≤ τ.s (τ v') b := by
-      suffices τ.s (τ v) b + 1 ≤ τ.s (τ v') b + 1 by linarith
-      calc
-        τ.s (τ v) b + 1 ≤ β.s l b := hm
-        _ = β.s (β v') b + 1 := by
-          exact se_wit.s_val
-        _ = τ.s (τ v') b + 1 := by
-          have := eq_s_of_lel (τ := τ) h_321a h_L u'v'_inv nw_wit.mem_nw.1
-          linarith
+--     have : β.s' b l ≥ 1 := by
+--       suffices τ.s' b (τ u) > 0 by linarith
+--       suffices (τ.nw (τ u) b).Nonempty by
+--         unfold AspPerm.s'
+--         simp [this]
+--       use u; simp [u_lt_b]
+--     have nw_wit : s'_witness β l b := find_s'_witness this
+--     let u' := nw_wit.u
 
-    have v_le_v' : v ≤ v' := by exact (s_inc_on_snks h_321a
-      (snk_of_inv uv_inv) b_le_v (snk_of_inv <| h_L u'v'_inv) se_wit.mem_se.1).mpr this
+--     have : β.s l b ≥ 1 := by
+--       have : τ.s (τ.func v) b ≥ 0 := τ.s_nonneg (τ.func v) b
+--       linarith [hm, this]
+--     have se_wit : s_witness β l b := find_s_witness this
+--     let v' := se_wit.v
 
-    have : τ.s' b (τ u) ≤ τ.s' b (τ u') := by
-      calc
-        τ.s' b (τ u) ≤ β.s' b l := hn
-        _ = β.s' b (β u') := by exact nw_wit.s'_val
-        _ = τ.s' b (τ u') := by
-          exact eq_s'_of_lel (τ := τ) h_321a h_L u'v'_inv se_wit.mem_se.1
+--     have u'v'_inv : ⟨u', v'⟩ ∈ inv_set β := inv_of_quadrants nw_wit.mem_nw se_wit.mem_se
 
-    have u'_le_u : u' ≤ u := by exact (s'_dec_on_srcs h_321a
-      (src_of_inv <| h_L u'v'_inv) nw_wit.mem_nw.1 (src_of_inv uv_inv) u_lt_b).mpr this
-    have nest : ⟨u, v⟩ ≼ ⟨u', v'⟩ := by
-      constructor <;> assumption
-    exact (inv_of_lel_iff (τ := τ) h_321a h_L u'v'_inv nest).mpr uv_inv
+--     have : τ.s (τ v) b ≤ τ.s (τ v') b := by
+--       suffices τ.s (τ v) b + 1 ≤ τ.s (τ v') b + 1 by linarith
+--       calc
+--         τ.s (τ v) b + 1 ≤ β.s l b := hm
+--         _ = β.s (β v') b + 1 := by
+--           exact se_wit.s_val
+--         _ = τ.s (τ v') b + 1 := by
+--           have := eq_s_of_lel (τ := τ) h_321a h_L u'v'_inv nw_wit.mem_nw.1
+--           linarith
+
+--     have v_le_v' : v ≤ v' := by exact (s_inc_on_snks h_321a
+--       (snk_of_inv uv_inv) b_le_v (snk_of_inv <| h_L u'v'_inv) se_wit.mem_se.1).mpr this
+
+--     have : τ.s' b (τ u) ≤ τ.s' b (τ u') := by
+--       calc
+--         τ.s' b (τ u) ≤ β.s' b l := hn
+--         _ = β.s' b (β u') := by exact nw_wit.s'_val
+--         _ = τ.s' b (τ u') := by
+--           exact eq_s'_of_lel (τ := τ) h_321a h_L u'v'_inv se_wit.mem_se.1
+
+--     have u'_le_u : u' ≤ u := by exact (s'_dec_on_srcs h_321a
+--       (src_of_inv <| h_L u'v'_inv) nw_wit.mem_nw.1 (src_of_inv uv_inv) u_lt_b).mpr this
+--     have nest : ⟨u, v⟩ ≼ ⟨u', v'⟩ := by
+--       constructor <;> assumption
+--     exact (inv_of_lel_iff (τ := τ) h_321a h_L u'v'_inv nest).mpr uv_inv
 
 end fixed_321a_and_lel
+
+section factorization
+variable (τ α β : AspPerm) (h_R : α ≤R τ) (h_L : β ≤L τ) (h_χ : τ.χ = α.χ + β.χ)
+
+-- "Slide right" inversions from α to inversions of τ
+noncomputable def sr : (ℤ × ℤ) → (ℤ × ℤ) := fun x => ⟨ τ⁻¹ (α x.1), τ⁻¹ (α x.2) ⟩
+
+lemma sr_crit : ∀ (u v : ℤ),  ⟨u, v⟩ ∈ (sr τ α) '' inv_set α ↔ ⟨τ v, τ u⟩ ∈ inv_set α⁻¹.func := by
+  intro u v
+  constructor
+  · intro h
+    rcases h with ⟨⟨u, v⟩, uv_inv, xy_inv, rfl⟩
+    simp only [τ.mul_inv_cancel_eval]
+    exact (α.inv_set_inverse u v).mp uv_inv
+  · intro h
+    use ⟨α⁻¹ (τ u), α⁻¹ (τ v)⟩
+    constructor
+    · have := (α⁻¹.inv_set_inverse (τ v) (τ u)).mp h
+      simpa
+    · unfold sr
+      simp
+
+lemma split_s {τ : AspPerm} (h_321a : is_321a τ) {u v : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
+  τ.s a v + τ.s (τ v) b = τ.s a b := by
+  have uv_inv : ⟨u, v⟩ ∈ inv_set τ :=
+    ⟨ lt_of_lt_of_le u_lt_b b_le_v, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
+  unfold AspPerm.s
+  have : τ.se a b = τ.se a v ∪ τ.se (τ v) b := by
+    ext n
+    simp only [Finset.mem_union, τ.mem_se]
+    constructor
+    · rintro ⟨n_ge_b, τn_lt_a⟩
+      by_cases n_v : n ≥ v
+      · left
+        exact ⟨n_v, τn_lt_a⟩
+      · right
+        push_neg at n_v
+        suffices τ n < τ v by exact ⟨n_ge_b, this⟩
+        by_contra! τv_le_τn
+        have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
+        have un_inv : ⟨u, n⟩ ∈ inv_set τ := by
+          have u_lt_n : u < n := lt_of_lt_of_le u_lt_b n_ge_b
+          have τu_gt_τn : τ u > τ n := lt_of_lt_of_le τn_lt_a τu_ge_a
+          exact ⟨u_lt_n, τu_gt_τn⟩
+        have := tfree_of_321a τ h_321a u n v
+        rcases this <;> contradiction
+    · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
+      · exact ⟨le_trans b_le_v n_ge_v, τn_lt_a⟩
+      · exact ⟨n_ge_b, lt_trans τn_lt_τv τv_lt_a⟩
+
+  rw [this, Finset.card_union]
+  suffices τ.se a v ∩ τ.se (τ v) b = ∅ by
+    rw [Finset.card_eq_zero.mpr this]
+    simp
+
+  simp only [Finset.eq_empty_iff_forall_notMem, Finset.mem_inter]
+  intro x x_mem
+  simp only [τ.mem_se] at x_mem
+  obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b,τx_lt_τv⟩⟩ := x_mem
+  have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
+  have := tfree_of_321a τ h_321a u v x
+  rcases this <;> contradiction
+
+lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
+  (a b u v : ℤ) (h_χ : τ.χ = α.χ + β.χ)
+  (dprod : α.dprod_geq β a b (τ.s a b)) :
+  u < b → b ≤ v → τ u ≥ a → τ v < a
+  → ⟨u, v⟩ ∈ (sr τ α) '' (inv_set α) ∪ inv_set β := by
+  intro u_lt_b b_le_v τu_ge_a τv_lt_a
+
+  let M := τ.s a b
+  let N := τ⁻¹.s b a
+  let m := τ.s (τ v + 1) b
+  have m_eq : m = τ.s (τ v) b + 1 := by exact (τ.a_step_one_iff' v b).mpr b_le_v
+  let n := τ⁻¹.s b (τ u)
+
+  have m_icc : m ∈ Set.Icc 1 M := by
+    constructor
+    · dsimp [m]
+      linarith [m_eq, τ.s_nonneg (τ v) b]
+    · dsimp [m,M]
+      have : τ v + 1 ≤ a := by linarith [τv_lt_a]
+      exact (τ.s_nondec this b).1
+  have n_icc : n ∈ Set.Icc 1 N := by
+    constructor
+    · dsimp [n]
+      have : τ⁻¹.s b (τ u) = τ⁻¹.s b (τ u + 1) + 1 := by
+        have := (τ⁻¹.b_step_one_iff b (τ u)).mpr
+        rw [τ.inv_mul_cancel_eval] at this
+        linarith [this u_lt_b]
+      linarith [this, τ⁻¹.s_nonneg b (τ u + 1)]
+    · dsimp [n, N]
+      exact (τ⁻¹.s_noninc b τu_ge_a).1
+
+  have habMN : a - b + α.χ + β.χ = M - N := by
+    linarith [τ.duality a b, h_χ]
+
+  have legos := (α.ramp_dprod_legos β a b M N habMN).mp dprod m m_icc n n_icc
+  rcases legos with (hβ | hα)
+  · right
+    apply (inv_of_lel_iff_ramp h_321a h_L u_lt_b b_le_v).mpr
+    rw [τ.dual_inverse]
+    convert hβ
+    rw [m_eq]
+  · left
+    have := α⁻¹.ramp_lamp_dual a (N+1-n) (M+1-m)
+    rw [inv_inv] at this
+    rw [← this] at hα
+
+    have h : (τ v, τ u) ∈ inv_set α⁻¹.func ↔ (τ⁻¹.s u a + 1, τ.s a v) ∈ α⁻¹.ramp a := by
+      have := inv_of_lel_iff_ramp (inv_is_321a h_321a) h_R τv_lt_a τu_ge_a
+      rw [τ⁻¹.dual_inverse, inv_inv] at this
+      simpa using this
+
+    have : τ⁻¹.s u a + 1 = N + 1 - n ∧ τ.s a v = M + 1 - m := by
+      constructor
+      · have : τ⁻¹ (τ u) < b ∧ τ⁻¹ (τ v) ≥ b := by
+          constructor <;> (simp; assumption)
+        have := split_s (inv_is_321a h_321a) τv_lt_a τu_ge_a this.1 this.2
+        simp [τ.inv_mul_cancel_eval] at this
+        linarith [this]
+      · linarith [split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a]
+
+    rw [this.1, this.2] at h
+    apply h.mpr at hα
+
+    exact (sr_crit τ α u v).mpr hα
+
+
+end factorization
+
 end fixed_321a
 end ASP321a

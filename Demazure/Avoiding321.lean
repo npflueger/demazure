@@ -225,91 +225,92 @@ lemma between_inv {u x v : ℤ} (h_321a : is_321a τ)
       rcases this <;> contradiction
     constructor <;> simp [x_src, x_nsnk, h_ux, h_xv]
 
-structure s_witness (τ : AspPerm) (a b : ℤ) where
-  v : ℤ
-  s_val : τ.s a b = τ.s (τ v) b + 1
-  mem_se : v ∈ southeast_set τ a b
+-- structure s_witness (τ : AspPerm) (a b : ℤ) where
+--   v : ℤ
+--   s_val : τ.s a b = τ.s (τ v) b + 1
+--   mem_se : v ∈ southeast_set τ a b
 
 
-noncomputable def find_s_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s a b ≥ 1) : s_witness τ a b := by
-  have se_nonempty : (τ.se a b).Nonempty := by
-    dsimp [AspPerm.s] at hab
-    have : (τ.se a b).card ≠ 0 := by linarith
-    exact Finset.card_ne_zero.mp this
-  let S := Finset.image τ (τ.se a b)
-  have : (Finset.image τ (τ.se a b)).Nonempty := by
-    simp [se_nonempty]
-  let y := Finset.max' (Finset.image τ (τ.se a b)) this
-  let v := τ⁻¹ y
-  have y_mem : y ∈ τ '' southeast_set τ a b := by
-    -- Start with the Finset version
-    have h : y ∈ Finset.image τ (τ.se a b) := Finset.max'_mem (Finset.image τ (τ.se a b)) this
-    simp [Finset.mem_image] at h
-    exact h
-  have v_mem : v ∈ southeast_set τ a b := by
-    rcases y_mem with ⟨n, n_mem, y_eq⟩
-    subst v; rw [← y_eq]; simp [n_mem]
-  use v
-  have le_τv : ∀ n ∈ southeast_set τ a b, τ n ≤ τ v := by
-    intro n n_mem
-    subst v; simp
-    refine Finset.le_max' (Finset.image τ (τ.se a b)) (τ n) ?_
-    rw [Finset.mem_image]
-    use n
-    simpa [AspPerm.mem_se] using n_mem
-  · suffices τ.s a b = τ.s (τ v + 1) b by
-      have h : τ.s (τ.func v + 1) b = τ.s (τ.func v) b + 1
-        := (τ.a_step_one_iff' v b).mpr v_mem.1
-      rw [this, h]
-    unfold AspPerm.s
-    suffices (τ.se a b) = (τ.se (τ.func v + 1) b) by rw [this]
-    ext n; simp only [AspPerm.mem_se]
-    have τv_lt_a : τ v < a := v_mem.2
-    constructor <;> (intro ⟨n_ge_b, τn_lt⟩; use n_ge_b)
-    · have := le_τv n ⟨n_ge_b, τn_lt⟩
-      exact Int.le_iff_lt_add_one.mp this
-    · have := Int.le_iff_lt_add_one.mpr τn_lt
-      exact lt_of_le_of_lt this τv_lt_a
+-- noncomputable def find_s_witness {τ : AspPerm} {a b : ℤ}
+--   (hab : τ.s a b ≥ 1) : s_witness τ a b := by
+--   have se_nonempty : (τ.se a b).Nonempty := by
+--     dsimp [AspPerm.s] at hab
+--     have : (τ.se a b).card ≠ 0 := by linarith
+--     exact Finset.card_ne_zero.mp this
+--   let S := Finset.image τ (τ.se a b)
+--   have : (Finset.image τ (τ.se a b)).Nonempty := by
+--     simp [se_nonempty]
+--   let y := Finset.max' (Finset.image τ (τ.se a b)) this
+--   let v := τ⁻¹ y
+--   have y_mem : y ∈ τ '' southeast_set τ a b := by
+--     -- Start with the Finset version
+--     have h : y ∈ Finset.image τ (τ.se a b) := Finset.max'_mem (Finset.image τ (τ.se a b)) this
+--     simp [Finset.mem_image] at h
+--     exact h
+--   have v_mem : v ∈ southeast_set τ a b := by
+--     rcases y_mem with ⟨n, n_mem, y_eq⟩
+--     subst v; rw [← y_eq]; simp [n_mem]
+--   use v
+--   have le_τv : ∀ n ∈ southeast_set τ a b, τ n ≤ τ v := by
+--     intro n n_mem
+--     subst v; simp
+--     refine Finset.le_max' (Finset.image τ (τ.se a b)) (τ n) ?_
+--     rw [Finset.mem_image]
+--     use n
+--     simpa [AspPerm.mem_se] using n_mem
+--   · suffices τ.s a b = τ.s (τ v + 1) b by
+--       have h : τ.s (τ.func v + 1) b = τ.s (τ.func v) b + 1
+--         := (τ.a_step_one_iff' v b).mpr v_mem.1
+--       rw [this, h]
+--     unfold AspPerm.s
+--     suffices (τ.se a b) = (τ.se (τ.func v + 1) b) by rw [this]
+--     ext n; simp only [AspPerm.mem_se]
+--     have τv_lt_a : τ v < a := v_mem.2
+--     constructor <;> (intro ⟨n_ge_b, τn_lt⟩; use n_ge_b)
+--     · have := le_τv n ⟨n_ge_b, τn_lt⟩
+--       exact Int.le_iff_lt_add_one.mp this
+--     · have := Int.le_iff_lt_add_one.mpr τn_lt
+--       exact lt_of_le_of_lt this τv_lt_a
 
-structure s'_witness (τ : AspPerm) (a b : ℤ) where
-  u : ℤ
-  s'_val : τ.s' b a = τ.s' b (τ u)
-  mem_nw : u ∈ northwest_set τ a b
+-- structure s'_witness (τ : AspPerm) (a b : ℤ) where
+--   u : ℤ
+--   s'_val : τ.s' b a = τ.s' b (τ u)
+--   mem_nw : u ∈ northwest_set τ a b
 
-noncomputable def find_s'_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s' b a ≥ 1) :
-  s'_witness τ a b := by
-  have nw_nonempty : (τ.nw a b).Nonempty := by
-    dsimp [AspPerm.s'] at hab
-    have : (τ.nw a b).card ≠ 0 := by linarith
-    exact Finset.card_ne_zero.mp this
-  have img_nonempty : (Finset.image τ (τ.nw a b)).Nonempty := by simp [nw_nonempty]
-  let y := Finset.min' (Finset.image τ (τ.nw a b)) img_nonempty
-  let u := τ⁻¹ y
-  have y_mem : y ∈ τ '' northwest_set τ a b := by
-    have h : y ∈ Finset.image τ (τ.nw a b) :=
-      Finset.min'_mem (Finset.image τ (τ.nw a b)) img_nonempty
-    simp [Finset.mem_image] at h
-    exact h
-  have u_mem : u ∈ northwest_set τ a b := by
-    rcases y_mem with ⟨n, n_mem, y_eq⟩
-    subst u; rw [← y_eq]; simp [n_mem]
-  have ge_τu : ∀ n ∈ northwest_set τ a b, τ u ≤ τ n := by
-    intro n n_mem
-    subst u; simp
-    apply Finset.min'_le
-    rw [Finset.mem_image]
-    use n
-    simpa [AspPerm.mem_nw] using n_mem
-  use u
-  · -- s'_val : τ.s' b a = τ.s' b (τ u)
-    unfold AspPerm.s'
-    suffices τ.nw a b = τ.nw (τ.func u) b by rw [this]
-    ext n; simp only [AspPerm.mem_nw]
-    constructor
-    · intro ⟨n_lt_b, τn_ge_a⟩
-      exact ⟨n_lt_b, ge_τu n ⟨n_lt_b, τn_ge_a⟩⟩
-    · intro ⟨n_lt_b, τn_ge_τu⟩
-      exact ⟨n_lt_b, le_trans u_mem.2 τn_ge_τu⟩
+-- noncomputable def find_s'_witness {τ : AspPerm} {a b : ℤ} (hab : τ.s' b a ≥ 1) :
+--   s'_witness τ a b := by
+--   have nw_nonempty : (τ.nw a b).Nonempty := by
+--     dsimp [AspPerm.s'] at hab
+--     have : (τ.nw a b).card ≠ 0 := by linarith
+--     exact Finset.card_ne_zero.mp this
+--   have img_nonempty : (Finset.image τ (τ.nw a b)).Nonempty := by simp [nw_nonempty]
+--   let y := Finset.min' (Finset.image τ (τ.nw a b)) img_nonempty
+--   let u := τ⁻¹ y
+--   have y_mem : y ∈ τ '' northwest_set τ a b := by
+--     have h : y ∈ Finset.image τ (τ.nw a b) :=
+--       Finset.min'_mem (Finset.image τ (τ.nw a b)) img_nonempty
+--     simp [Finset.mem_image] at h
+--     exact h
+--   have u_mem : u ∈ northwest_set τ a b := by
+--     rcases y_mem with ⟨n, n_mem, y_eq⟩
+--     subst u; rw [← y_eq]; simp [n_mem]
+--   have ge_τu : ∀ n ∈ northwest_set τ a b, τ u ≤ τ n := by
+--     intro n n_mem
+--     subst u; simp
+--     apply Finset.min'_le
+--     rw [Finset.mem_image]
+--     use n
+--     simpa [AspPerm.mem_nw] using n_mem
+--   use u
+--   · -- s'_val : τ.s' b a = τ.s' b (τ u)
+--     unfold AspPerm.s'
+--     suffices τ.nw a b = τ.nw (τ.func u) b by rw [this]
+--     ext n; simp only [AspPerm.mem_nw]
+--     constructor
+--     · intro ⟨n_lt_b, τn_ge_a⟩
+--       exact ⟨n_lt_b, ge_τu n ⟨n_lt_b, τn_ge_a⟩⟩
+--     · intro ⟨n_lt_b, τn_ge_τu⟩
+--       exact ⟨n_lt_b, le_trans u_mem.2 τn_ge_τu⟩
 
 lemma inv_of_quadrants {τ : AspPerm} {a b u v : ℤ}
   (hu : u ∈ northwest_set τ a b) (hv : v ∈ southeast_set τ a b) :
@@ -605,6 +606,15 @@ theorem lel_ramp (h_321a : is_321a τ) (h_L : β ≤L τ)
     have uv_eq := uv_eq_of_lel' h_321a h_L b m_pos n_pos uv_inv
     rwa [← uv_eq.1, ← uv_eq.2]
 
+theorem lel_lamp (h_321a : is_321a τ) {α : AspPerm} (h_R : α ≤R τ)
+  (a : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
+  ⟨τ⁻¹.u a m_pos, τ⁻¹.v a n_pos⟩ ∈ inv_set α⁻¹.func
+  ↔ ⟨m, n⟩ ∈ α.lamp a
+  := by
+  have := lel_ramp (inv_is_321a h_321a) (β := α⁻¹) (h_R) a n_pos m_pos
+  rw [this]
+  simp [α⁻¹.ramp_lamp_dual a]
+
 -- lemma s_inc_on_snks {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
 --   (m_snk : is_snk τ m) (b_le_m : b ≤ m) (n_snk : is_snk τ n) (b_le_n : b ≤ n) :
 --     m ≤ n ↔ τ.s (τ m) b ≤ τ.s (τ n) b
@@ -808,6 +818,15 @@ lemma split_s {τ : AspPerm} (h_321a : is_321a τ) {u v : ℤ} {a b : ℤ}
   have := tfree_of_321a τ h_321a u v x
   rcases this <;> contradiction
 
+lemma split_s' {τ : AspPerm} (h_321a : is_321a τ) {u v : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
+  τ⁻¹.s b (τ u) + τ⁻¹.s u a = τ⁻¹.s b a := by
+  let u' := τ v
+  let v' := τ u
+  have := split_s (inv_is_321a h_321a) (a := b) (b := a) (u := u') (v := v')
+  have := this (τv_lt_a) (τu_ge_a) (by unfold v'; simpa) (by unfold u'; simpa)
+  unfold u' v' at this; simpa using this
+
 lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
   (a b u v : ℤ) (h_χ : τ.χ = α.χ + β.χ)
   (dprod : α.dprod_geq β a b (τ.s a b)) :
@@ -873,6 +892,71 @@ lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L
 
     exact (sr_crit τ α u v).mpr hα
 
+lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
+  (a b : ℤ) (h_χ : τ.χ = α.χ + β.χ)
+  (h_union : inv_set τ ⊆ inv_set β ∪ (sr τ α) '' (inv_set α)) :
+  α.dprod_geq β a b (τ.s a b)
+  := by
+  let M := τ.s a b
+  let N := τ.s' b a
+  have habMN : a - b + α.χ + β.χ = M - N := by
+    have : N = τ⁻¹.s b a := by rw [← τ.dual_inverse]
+    linarith [τ.duality a b, h_χ]
+  apply (α.ramp_dprod_legos β a b M N habMN).mpr
+
+  rintro m ⟨m_ge_1, m_le_M⟩ n ⟨n_ge_1, n_le_N⟩
+  let m' := M+1 - m
+  let n' := N+1 - n
+  have m'_ge_1 : m' ≥ 1 := by linarith [m_le_M]
+  have n'_ge_1 : n' ≥ 1 := by linarith [n_le_N]
+  suffices ⟨m, n⟩ ∈ β.ramp b ∨ ⟨m', n'⟩ ∈ α.lamp a by
+    convert this
+
+  let u := τ.u b n_ge_1
+  let v := τ.v b m_ge_1
+  have u_lt_b : u < b := τ.u_lt b n_ge_1
+  have v_ge_b : v ≥ b := (τ.v_ge b m_ge_1)
+  have τv_lt_a : τ v < a := τ.τv_lt b m_ge_1 m_le_M
+  have τu_ge_a : τ u ≥ a := τ.τu_ge b n_ge_1 n_le_N
+  -- [TODO] consider packaginga all the above into a structure for use elsewhere
+
+  have : ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b:= lel_ramp h_321a h_L b m_ge_1 n_ge_1
+  rw [← this]
+
+  let u' := τ⁻¹.u a m'_ge_1
+  let v' := τ⁻¹.v a n'_ge_1
+
+  -- [TODO] bubble this out as a separate helper, and also the one below
+  have u'_eq : τ v = u' := by
+    apply (τ⁻¹.u_crit a m'_ge_1 (τ v)).mpr
+    simp only [τ⁻¹.dual_inverse, inv_inv, τ.inv_mul_cancel_eval]
+    constructor
+    · suffices m + τ.s a v = M + 1 by linarith
+      have := split_s h_321a (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
+        (τ.τv_lt b m_ge_1 m_le_M) (τ.τu_ge b n_ge_1 n_le_N)
+      rw [τ.s_τv_b b m_ge_1] at this
+      linarith [this]
+    · exact  τ.τv_lt b m_ge_1 m_le_M
+
+  have v'_eq : τ u = v' := by
+    apply (τ⁻¹.v_crit a n'_ge_1 (τ u)).mpr
+    simp only [τ.inv_mul_cancel_eval]
+    constructor
+    · suffices n + τ⁻¹.s u a = N by (unfold n'; linarith)
+      have split := split_s' h_321a (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
+        (τ.τv_lt b m_ge_1 m_le_M) (τ.τu_ge b n_ge_1 n_le_N)
+      have := τ.s'_b_τu b n_ge_1; rw [τ.dual_inverse] at this
+      rw [this] at split
+      convert split using 1; rw [← τ.dual_inverse]
+    · exact τ.τu_ge b n_ge_1 n_le_N
+
+  have lamp_equiv : ⟨u', v'⟩ ∈ inv_set α⁻¹.func
+    ↔ ⟨m', n'⟩ ∈ α.lamp a := lel_lamp h_321a h_R a m'_ge_1 n'_ge_1
+  suffices ⟨u, v⟩ ∈ inv_set β ∨ ⟨u, v⟩ ∈ (sr τ α) '' (inv_set α) by
+    rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← sr_crit τ α u v]
+
+  have uv_inv : ⟨u, v⟩ ∈ inv_set τ := ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
+  exact h_union uv_inv
 
 end factorization
 

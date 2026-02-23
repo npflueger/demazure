@@ -825,6 +825,22 @@ lemma v_crit (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) (v : ℤ) :
       linarith [this, s_eq, (τ.v_spec b m_pos).1]
     exact τ.injective <| le_antisymm τv_le τv_ge
 
+lemma s_τv_b (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) :
+  τ.s (τ (τ.v b m_pos)) b = m - 1 := by
+  exact ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).1
+
+lemma v_ge (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0) : b ≤ τ.v b m_pos :=
+  ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).2
+
+lemma τv_lt (τ : AspPerm) (b : ℤ) {m : ℤ} (m_pos : m > 0)
+  {a : ℤ} (s_ge_m : m ≤ τ.s a b) : τ (τ.v b m_pos) < a := by
+  by_contra! τv_ge_a
+  have h := (τ.s_nondec τv_ge_a b).1
+  have := ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).1
+  rw [this] at h
+  have : m ≤ m-1 := le_trans s_ge_m h
+  linarith [this]
+
 noncomputable def u (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) : ℤ :=
   τ⁻¹ <|Classical.choose <| Int.exists_greatest_of_bdd
     (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
@@ -893,6 +909,19 @@ lemma u_crit (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
         linarith
       linarith
     exact τ.injective <| le_antisymm τu_le τu_ge
+
+lemma s'_b_τu (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) :
+  τ.s' b (τ (τ.u b n_pos)) = n := by
+  exact ((τ.u_crit b n_pos (τ.u b n_pos)).mp rfl).1
+
+lemma u_lt (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0) : τ.u b n_pos < b :=
+  ((τ.u_crit b n_pos (τ.u b n_pos)).mp rfl).2
+
+lemma τu_ge (τ : AspPerm) (b : ℤ) {n : ℤ} (n_pos : n > 0)
+  {a : ℤ} (s_ge_n : n ≤ τ.s' b a) : τ (τ.u b n_pos) ≥ a := by
+  by_contra! τu_lt_a
+  have hu_ge : a ≤ τ (τ.u b n_pos) := (τ.u_spec b n_pos).2 a s_ge_n
+  linarith
 
 theorem inv_ramp_correspondence (τ : AspPerm) (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨m, n⟩ ∈ τ.ramp b ↔ ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set τ := by

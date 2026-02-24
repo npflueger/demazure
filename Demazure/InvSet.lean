@@ -553,7 +553,10 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
 
 end σ_diff
 
-theorem invSet_func (asps : AspSet) : inv_set (asps.to_func) = asps := by
+section OfAspSet
+variable (asps : AspSet)
+
+theorem invSet_func : inv_set (asps.to_func) = asps := by
   ext ⟨u, v⟩
   wlog u_lt_v : u < v
   · have h1 : ⟨u, v⟩ ∉ inv_set (asps.to_func) := by
@@ -577,7 +580,7 @@ theorem invSet_func (asps : AspSet) : inv_set (asps.to_func) = asps := by
   · intro h
     exact ⟨u_lt_v, σ_dec asps u v u_lt_v h⟩
 
-lemma inset_eq_nw (asps : AspSet) (n : ℤ) : (asps.inset n).toSet
+lemma inset_eq_nw (n : ℤ) : (asps.inset n).toSet
    = northwest_set asps.σ ((asps.σ n) + 1) n := by
   ext x
   unfold northwest_set
@@ -595,7 +598,7 @@ lemma inset_eq_nw (asps : AspSet) (n : ℤ) : (asps.inset n).toSet
     have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
-lemma outset_eq_se (asps : AspSet) (n : ℤ) : (asps.outset n).toSet
+lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
    = southeast_set asps.σ (asps.σ n) (n+1) := by
   ext x
   have := Set.ext_iff.mp <| invSet_func asps
@@ -615,7 +618,7 @@ lemma outset_eq_se (asps : AspSet) (n : ℤ) : (asps.outset n).toSet
 -- This lemma is equivalent to the funtion being bounded above,
 -- but it is stated in a strange way. This is just for convenience
 -- in the proof of surjectivity.
-lemma surj_helper_up (asps : AspSet) (m : ℤ) (n : ℕ) :
+lemma surj_helper_up (m : ℤ) (n : ℕ) :
   ∃ x : ℤ, x ≥ m ∧ asps.to_func x ≥ asps.to_func m + n := by
   induction n with
   | zero =>
@@ -643,7 +646,7 @@ lemma surj_helper_up (asps : AspSet) (m : ℤ) (n : ℕ) :
     have hlt := lt_of_le_of_ne h_ineq h_ne
     simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
 
-lemma surj_helper_down (asps : AspSet) (m : ℤ) (n : ℕ) :
+lemma surj_helper_down (m : ℤ) (n : ℕ) :
   ∃ x : ℤ, x ≤ m ∧ asps.to_func x ≤ asps.to_func m - n := by
   induction n with
   | zero =>
@@ -672,7 +675,7 @@ lemma surj_helper_down (asps : AspSet) (m : ℤ) (n : ℕ) :
     simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
 
-theorem func_surjective (asps : AspSet) : Function.Surjective (asps.to_func) := by
+theorem func_surjective : Function.Surjective (asps.to_func) := by
   intro y
   have : ∃ m : ℤ, m ≤ 0 ∧ asps.to_func m ≤ y := by
     by_cases h0 : asps.to_func 0 ≤ y
@@ -706,10 +709,10 @@ theorem func_surjective (asps : AspSet) : Function.Surjective (asps.to_func) := 
   use l
   rw [hl]
 
-theorem func_bijective (asps : AspSet) : Function.Bijective (asps.to_func) :=
+theorem func_bijective : Function.Bijective (asps.to_func) :=
   ⟨func_injective asps, func_surjective asps⟩
 
-theorem func_asp (asps : AspSet) : is_asp (asps.to_func) := by
+theorem func_asp : is_asp (asps.to_func) := by
   let τ := asps.to_func
   let se := southeast_set τ (τ 0) 1
   have se_fin : se.Finite := by
@@ -726,10 +729,12 @@ theorem func_asp (asps : AspSet) : is_asp (asps.to_func) := by
     rw [inset_eq_nw asps 0]
   apply asp_of_finite_quadrants (func_injective asps) se_fin nw_fin
 
-noncomputable def toAspPerm (asps : AspSet) : AspPerm :=
+noncomputable def toAspPerm : AspPerm :=
   ⟨asps.to_func, func_bijective asps, func_asp asps⟩
 
-lemma invSet_of_toAspPerm (asps : AspSet) : inv_set (toAspPerm asps)= asps := invSet_func asps
+lemma invSet_of_toAspPerm : inv_set (toAspPerm asps)= asps := invSet_func asps
+
+end OfAspSet
 
 theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) :
   (∃ τ : AspPerm, inv_set τ = I) ↔  (AspSet_prop I) := by

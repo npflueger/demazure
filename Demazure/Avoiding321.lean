@@ -152,8 +152,9 @@ def snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
 
 section fixed_321a
 variable {τ : AspPerm} (h_321a : is_321a τ)
+include h_321a
 
-lemma inv_is_321a (h_321a : is_321a τ) : is_321a τ⁻¹.func := by
+lemma inv_is_321a : is_321a τ⁻¹.func := by
   intro i j k i_lt_j j_lt_k
   have h := h_321a (τ⁻¹ k) (τ⁻¹ j) (τ⁻¹ i)
   simp only [τ.mul_inv_cancel_eval] at h
@@ -170,7 +171,7 @@ lemma inv_is_321a (h_321a : is_321a τ) : is_321a τ⁻¹.func := by
   have := h h2 h1
   rcases this <;> linarith
 
-lemma not_src_and_snk (h_321a : is_321a τ) (n : ℤ) :
+lemma not_src_and_snk (n : ℤ) :
   ¬ (is_src τ n) ∨ ¬(is_snk τ) n := by
   by_contra!
   obtain ⟨h_src, h_snk⟩ := this
@@ -186,14 +187,14 @@ structure between_inv_prop (u x v : ℤ) where
   snk_iff_left_inv : is_snk τ x ↔ ⟨u, x⟩ ∈ inv_set τ
   snk_iff_right_ninv : is_snk τ x ↔ ⟨x, v⟩ ∉ inv_set τ
 
-lemma between_inv {u x v : ℤ} (h_321a : is_321a τ)
+lemma between_inv {u x v : ℤ}
   (uv_inv : ⟨u, v⟩ ∈ inv_set τ) (u_le_x : u ≤ x) (x_le_v : x ≤ v) :
   between_inv_prop (τ := τ) u x v := by
   by_cases h_ux : ⟨u, x⟩ ∈ inv_set τ
   · have x_snk : is_snk τ x := snk_of_inv h_ux
     have x_not_src : ¬ is_src τ x := by
       intro h_src
-      have := not_src_and_snk h_321a x
+      have := not_src_and_snk (h_321a := h_321a) x
       rcases this <;> contradiction
     have h_xv : ⟨x, v⟩ ∉ inv_set τ := by
       intro h_xv
@@ -221,7 +222,7 @@ lemma between_inv {u x v : ℤ} (h_321a : is_321a τ)
     have x_src : is_src τ x := src_of_inv h_xv
     have x_nsnk : ¬ is_snk τ x := by
       intro h_snk
-      have := not_src_and_snk (τ := τ) h_321a x
+      have := not_src_and_snk (h_321a := h_321a) x
       rcases this <;> contradiction
     constructor <;> simp [x_src, x_nsnk, h_ux, h_xv]
 
@@ -312,6 +313,7 @@ lemma between_inv {u x v : ℤ} (h_321a : is_321a τ)
 --     · intro ⟨n_lt_b, τn_ge_τu⟩
 --       exact ⟨n_lt_b, le_trans u_mem.2 τn_ge_τu⟩
 
+omit h_321a in
 lemma inv_of_quadrants {τ : AspPerm} {a b u v : ℤ}
   (hu : u ∈ northwest_set τ a b) (hv : v ∈ southeast_set τ a b) :
   ⟨u, v⟩ ∈ inv_set τ := by
@@ -319,19 +321,73 @@ lemma inv_of_quadrants {τ : AspPerm} {a b u v : ℤ}
   have τ_u_gt_v : τ v < τ u := lt_of_lt_of_le hv.2 hu.2
   exact ⟨u_lt_v, τ_u_gt_v⟩
 
+lemma split_s {u v : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
+  τ.s a v + τ.s (τ v) b = τ.s a b := by
+  have uv_inv : ⟨u, v⟩ ∈ inv_set τ :=
+    ⟨ lt_of_lt_of_le u_lt_b b_le_v, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
+  unfold AspPerm.s
+  have : τ.se a b = τ.se a v ∪ τ.se (τ v) b := by
+    ext n
+    simp only [Finset.mem_union, τ.mem_se]
+    constructor
+    · rintro ⟨n_ge_b, τn_lt_a⟩
+      by_cases n_v : n ≥ v
+      · left
+        exact ⟨n_v, τn_lt_a⟩
+      · right
+        push_neg at n_v
+        suffices τ n < τ v by exact ⟨n_ge_b, this⟩
+        by_contra! τv_le_τn
+        have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
+        have un_inv : ⟨u, n⟩ ∈ inv_set τ := by
+          have u_lt_n : u < n := lt_of_lt_of_le u_lt_b n_ge_b
+          have τu_gt_τn : τ u > τ n := lt_of_lt_of_le τn_lt_a τu_ge_a
+          exact ⟨u_lt_n, τu_gt_τn⟩
+        have := tfree_of_321a τ h_321a u n v
+        rcases this <;> contradiction
+    · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
+      · exact ⟨le_trans b_le_v n_ge_v, τn_lt_a⟩
+      · exact ⟨n_ge_b, lt_trans τn_lt_τv τv_lt_a⟩
+
+  rw [this, Finset.card_union]
+  suffices τ.se a v ∩ τ.se (τ v) b = ∅ by
+    rw [Finset.card_eq_zero.mpr this]
+    simp
+
+  simp only [Finset.eq_empty_iff_forall_notMem, Finset.mem_inter]
+  intro x x_mem
+  simp only [τ.mem_se] at x_mem
+  obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b,τx_lt_τv⟩⟩ := x_mem
+  have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
+  have := tfree_of_321a τ h_321a u v x
+  rcases this <;> contradiction
+
+lemma split_s' {u v : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
+  τ⁻¹.s b (τ u) + τ⁻¹.s u a = τ⁻¹.s b a := by
+  let u' := τ v
+  let v' := τ u
+  have := split_s (τ := τ⁻¹) (h_321a := inv_is_321a (τ := τ) (h_321a := h_321a))
+    (a := b) (b := a) (u := u') (v := v')
+  have := this (τv_lt_a) (τu_ge_a) (by unfold v'; simpa) (by unfold u'; simpa)
+  unfold u' v' at this; simpa using this
+
 section fixed_321a_and_lel
 variable {β : AspPerm} (h_L : β ≤L τ)
+include h_L
 
-lemma src_of_src {n : ℤ} (h_L : β ≤L τ) (h_src : is_src β n) : is_src τ n := by
+omit h_321a in
+lemma src_of_src {n : ℤ} (h_src : is_src β n) : is_src τ n := by
   rcases h_src with ⟨v, h_inv⟩
   exact src_of_inv (h_L h_inv)
 
-lemma snk_of_snk {n : ℤ} (h_L : β ≤L τ) (h_snk : is_snk β n) : is_snk τ n := by
+omit h_321a in
+lemma snk_of_snk {n : ℤ} (h_snk : is_snk β n) : is_snk τ n := by
   rcases h_snk with ⟨u, h_inv⟩
   exact snk_of_inv (h_L h_inv)
 
-lemma is_321a_of_lel {β : AspPerm} (h_321a : is_321a τ)
-  (h_L : β ≤L τ) : is_321a β := by
+lemma is_321a_of_lel : is_321a β := by
   rw [criterion_321a τ τ.bijective] at h_321a
   rw [criterion_321a β β.bijective]
   constructor
@@ -353,20 +409,23 @@ structure between_inv_lel_prop (β τ : AspPerm) (u x v : ℤ) where
   src_iff : is_src β x ↔ is_src τ x
   snk_iff : is_snk β x ↔ is_snk τ x
 
-lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+lemma between_inv_lel
   {u x v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_le_x : u ≤ x) (x_le_v : x ≤ v)
   : between_inv_lel_prop β τ u x v  := by
-  have bp := between_inv h_321a (h_L uv_inv) u_le_x x_le_v
-  have bpβ := between_inv (is_321a_of_lel h_321a h_L) uv_inv u_le_x x_le_v
+  have bp := between_inv (τ := τ) (h_321a := h_321a) (h_L uv_inv) u_le_x x_le_v
+  have bpβ := between_inv (τ := β) (h_321a := is_321a_of_lel (τ := τ) (β := β)
+    (h_321a := h_321a) (h_L := h_L)) uv_inv u_le_x x_le_v
   by_cases h_src : is_src β x
-  · have h_ux : ⟨u, x⟩ ∉ inv_set τ := bp.src_iff_left_ninv.mp (src_of_src h_L h_src)
+  · have h_ux : ⟨u, x⟩ ∉ inv_set τ := bp.src_iff_left_ninv.mp
+      (src_of_src (h_L := h_L) h_src)
     have h_xv : ⟨x, v⟩ ∈ inv_set β := bpβ.src_iff_right_inv.mp h_src
     have h_ux_β : ⟨u, x⟩ ∉ inv_set β := by
       contrapose! h_ux
       exact h_L h_ux
     have x_src : is_src β x := src_of_inv h_xv
     have x_snk : ¬ is_snk τ x := not_imp_not.mpr bp.snk_iff_left_inv.mp h_ux
-    have x_snk_β : ¬ is_snk β x := not_imp_not.mpr (snk_of_snk h_L) x_snk
+    have x_snk_β : ¬ is_snk β x := not_imp_not.mpr
+      (snk_of_snk (h_L := h_L)) x_snk
     refine ⟨bp, bpβ, ?_, ?_, ?_, ?_⟩
     · constructor
       · intro h
@@ -380,7 +439,7 @@ lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
         exact h_xv
     · constructor
       · intro _
-        exact src_of_src h_L h_src
+        exact src_of_src (h_L := h_L) h_src
       · intro _
         exact x_src
     · constructor
@@ -392,7 +451,8 @@ lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
       have := bpβ.src_or_snk
       exact this.resolve_left h_src
     have h_ux : ⟨u, x⟩ ∈ inv_set β := bpβ.snk_iff_left_inv.mp h_snk
-    have h_xv : ⟨x, v⟩ ∉ inv_set τ := bp.snk_iff_right_ninv.mp (snk_of_snk h_L h_snk)
+    have h_xv : ⟨x, v⟩ ∉ inv_set τ := bp.snk_iff_right_ninv.mp
+      (snk_of_snk (h_L := h_L) h_snk)
     have h_xv_β : ⟨x, v⟩ ∉ inv_set β := by
       contrapose! h_xv
       exact h_L h_xv
@@ -416,7 +476,7 @@ lemma between_inv_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
         exact (x_src h).elim
     · constructor
       · intro _
-        exact snk_of_snk h_L h_snk
+        exact snk_of_snk (h_L := h_L) h_snk
       · intro _
         exact x_snk
 
@@ -424,10 +484,10 @@ def interval_sub (i₁ i₂ : (ℤ × ℤ)) : Prop :=
   i₂.1 ≤ i₁.1 ∧ i₁.2 ≤ i₂.2
 infix:50 " ≼ " => interval_sub
 
-lemma inv_of_lel_iff {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+lemma inv_of_lel_iff
   {u v u' v' : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (nested : ⟨u', v'⟩ ≼ ⟨u, v⟩) :
   ⟨u', v'⟩ ∈ inv_set β ↔ ⟨u', v'⟩ ∈ inv_set τ := by
-  have h_321a_β := is_321a_of_lel (τ := τ) h_321a h_L
+  have h_321a_β := is_321a_of_lel (h_321a := h_321a) (h_L := h_L)
   wlog u'_lt_v' : u' < v'
   · constructor <;> (intro u'v'_inv; have := u'v'_inv.1; contradiction)
   -- Do the easy direction first
@@ -438,19 +498,22 @@ lemma inv_of_lel_iff {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
   intro u'v'_inv
 
   have u'_src_τ : is_src τ u' := src_of_inv u'v'_inv
-  have bpu' : between_inv_lel_prop β τ u u' v := between_inv_lel h_321a h_L
+  have bpu' : between_inv_lel_prop β τ u u' v :=
+    between_inv_lel (h_321a := h_321a) (h_L := h_L)
     uv_inv nested.1 (le_trans (le_of_lt u'v'_inv.1) nested.2)
   have u'_src : is_src β u' := bpu'.src_iff.mpr u'_src_τ
   have u'v_inv : ⟨u', v⟩ ∈ inv_set β := bpu'.propβ.src_iff_right_inv.mp u'_src
 
   have v'_snk_τ : is_snk τ v' := snk_of_inv u'v'_inv
-  have bpv' : between_inv_lel_prop β τ u' v' v := between_inv_lel h_321a h_L
+  have bpv' : between_inv_lel_prop β τ u' v' v :=
+    between_inv_lel (h_321a := h_321a) (h_L := h_L)
     u'v_inv (le_of_lt u'v'_inv.1) nested.2
   have v'_snk : is_snk β v' := bpv'.snk_iff.mpr v'_snk_τ
   have u'v'_inv : ⟨u', v'⟩ ∈ inv_set β := bpv'.propβ.snk_iff_left_inv.mp v'_snk
 
   exact u'v'_inv
 
+omit h_321a h_L in
 lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func) := by
   constructor
   · show AspSet_prop (inv_set avset.to_func)
@@ -460,6 +523,7 @@ lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func
 
 
 
+omit h_321a h_L in
 lemma snk_lt {τ : AspPerm} (h_321a : is_321a τ)
   {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
   τ v < τ x := by
@@ -475,6 +539,7 @@ lemma snk_lt {τ : AspPerm} (h_321a : is_321a τ)
   have := tfree_of_321a τ h_321a u v x
   rcases this <;> contradiction
 
+omit h_321a h_L in
 lemma src_gt {τ : AspPerm} (h_321a : is_321a τ)
   {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
   τ x < τ u := by
@@ -490,7 +555,7 @@ lemma src_gt {τ : AspPerm} (h_321a : is_321a τ)
   have := tfree_of_321a τ h_321a x u v
   rcases this <;> contradiction
 
-theorem eq_s_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
   β.s (β v) b = τ.s (τ v) b := by
   unfold AspPerm.s
@@ -505,7 +570,8 @@ theorem eq_s_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
   wlog x_le_v : x ≤ v
   · have v_lt_x : v < x := by linarith
     have v_snk : is_snk β v := snk_of_inv uv_inv
-    have β_lt: β v < β x := snk_lt (is_321a_of_lel h_321a h_L) v_snk v_lt_x
+    have β_lt: β v < β x := snk_lt (is_321a_of_lel (h_321a := h_321a) (h_L := h_L))
+      v_snk v_lt_x
     have τ_lt : τ v < τ x := snk_lt h_321a (snk_of_inv <| h_L uv_inv) v_lt_x
     constructor <;> (intro h; linarith)
   wlog x_lt_v : x < v
@@ -516,11 +582,11 @@ theorem eq_s_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
     rw [β.inv_iff_le x_lt_v, τ.inv_iff_le x_lt_v] at this
     constructor <;> (intro h; contrapose! h; rwa [this] at *)
   have nested : ⟨x, v⟩ ≼ ⟨u, v⟩ := by constructor <;> linarith
-  exact inv_of_lel_iff h_321a h_L uv_inv nested
+  exact inv_of_lel_iff (h_321a := h_321a) (h_L := h_L) uv_inv nested
 
 
 -- This is roughly a repeat of the proof above. Can it be unified with it somehow?
-lemma eq_s'_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
   β.s' b (β u) = τ.s' b (τ u) := by
   unfold AspPerm.s'
@@ -534,7 +600,8 @@ lemma eq_s'_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
   wlog u_le_x : u ≤ x
   · have x_lt_u : x < u := by linarith
     have u_src : is_src β u := src_of_inv uv_inv
-    have β_gt: β x < β u := src_gt (is_321a_of_lel h_321a h_L) u_src x_lt_u
+    have β_gt: β x < β u := src_gt (is_321a_of_lel (h_321a := h_321a) (h_L := h_L))
+      u_src x_lt_u
     have τ_gt : τ x < τ u := src_gt h_321a (src_of_inv <| h_L uv_inv) x_lt_u
     constructor <;> (intro h; linarith)
 
@@ -542,9 +609,9 @@ lemma eq_s'_of_lel {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
     rw [β.inv_iff_lt u_le_x, τ.inv_iff_lt u_le_x] at this
     constructor <;> (intro h; contrapose! h; rwa [this] at *)
   have nested : ⟨u, x⟩ ≼ ⟨u, v⟩ := by constructor <;> linarith
-  exact inv_of_lel_iff h_321a h_L uv_inv nested
+  exact inv_of_lel_iff (h_321a := h_321a) (h_L := h_L) uv_inv nested
 
-lemma uv_eq_of_lel (h_321a : is_321a τ) (h_L : β ≤L τ)
+lemma uv_eq_of_lel
   (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set β
   → τ.u b n_pos = β.u b n_pos ∧ τ.v b m_pos = β.v b m_pos
@@ -560,16 +627,16 @@ lemma uv_eq_of_lel (h_321a : is_321a τ) (h_L : β ≤L τ)
   have b_le_v : b ≤ v := v_crit.2
 
   have m_eq : β.s (β v) b = m-1 := by
-    rw [eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
+    rw [eq_s_of_lel (h_321a := h_321a) (h_L := h_L) uv_inv u_lt_b, s_eq]
   have n_eq : β.s' b (β u) = n := by
-    rw [eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
+    rw [eq_s'_of_lel (h_321a := h_321a) (h_L := h_L) uv_inv b_le_v, s'_eq]
 
   exact ⟨ (β.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
     (β.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
 
 -- Almost identical to the above, but with β.u and β.v instead of τ.u and τ.v.
 -- Can these be unified compactly?
-lemma uv_eq_of_lel' (h_321a : is_321a τ) (h_L : β ≤L τ)
+lemma uv_eq_of_lel'
   (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨β.u b n_pos, β.v b m_pos⟩ ∈ inv_set β
   → β.u b n_pos = τ.u b n_pos ∧ β.v b m_pos = τ.v b m_pos
@@ -585,14 +652,14 @@ lemma uv_eq_of_lel' (h_321a : is_321a τ) (h_L : β ≤L τ)
   have b_le_v : b ≤ v := v_crit.2
 
   have m_eq : τ.s (τ v) b = m-1 := by
-    rw [← eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
+    rw [← eq_s_of_lel (h_321a := h_321a) (h_L := h_L) uv_inv u_lt_b, s_eq]
   have n_eq : τ.s' b (τ u) = n := by
-    rw [← eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
+    rw [← eq_s'_of_lel (h_321a := h_321a) (h_L := h_L) uv_inv b_le_v, s'_eq]
 
   exact ⟨ (τ.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
     (τ.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
 
-theorem lel_ramp (h_321a : is_321a τ) (h_L : β ≤L τ)
+theorem lel_ramp
   (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set β
   ↔ ⟨m, n⟩ ∈ β.ramp b
@@ -600,18 +667,22 @@ theorem lel_ramp (h_321a : is_321a τ) (h_L : β ≤L τ)
   rw [β.inv_ramp_correspondence b m_pos n_pos]
   constructor
   · intro uv_inv
-    have uv_eq := uv_eq_of_lel h_321a h_L b m_pos n_pos uv_inv
+    have uv_eq := uv_eq_of_lel (h_321a := h_321a) (h_L := h_L)
+      b m_pos n_pos uv_inv
     rwa [← uv_eq.1, ← uv_eq.2]
   · intro uv_inv
-    have uv_eq := uv_eq_of_lel' h_321a h_L b m_pos n_pos uv_inv
+    have uv_eq := uv_eq_of_lel' (h_321a := h_321a) (h_L := h_L)
+      b m_pos n_pos uv_inv
     rwa [← uv_eq.1, ← uv_eq.2]
 
-theorem lel_lamp (h_321a : is_321a τ) {α : AspPerm} (h_R : α ≤R τ)
+omit h_L in
+theorem lel_lamp {α : AspPerm} (h_R : α ≤R τ)
   (a : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨τ⁻¹.u a m_pos, τ⁻¹.v a n_pos⟩ ∈ inv_set α⁻¹.func
   ↔ ⟨m, n⟩ ∈ α.lamp a
   := by
-  have := lel_ramp (inv_is_321a h_321a) (β := α⁻¹) (h_R) a n_pos m_pos
+  have := lel_ramp (τ := τ⁻¹) (β := α⁻¹)
+    (h_321a := inv_is_321a (τ := τ) (h_321a := h_321a)) (h_L := h_R) a n_pos m_pos
   rw [this]
   simp [α⁻¹.ramp_lamp_dual a]
 
@@ -660,7 +731,7 @@ theorem lel_lamp (h_321a : is_321a τ) {α : AspPerm} (h_R : α ≤R τ)
 --       rwa [τ.inv_mul_cancel_eval n] at this
 --     exact lt_iff_not_ge.mp n_lt_b n_ge_b
 
-theorem inv_of_lel_iff_ramp {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
+theorem inv_of_lel_iff_ramp
   {u b v : ℤ} (u_lt_b : u < b) (b_le_v : b ≤ v) :
   let m := τ.s (τ v) b + 1
   let n := τ.s' b (τ u)
@@ -674,7 +745,7 @@ theorem inv_of_lel_iff_ramp {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L 
       linarith [(τ⁻¹.b_step_one_iff b (τ u)).mpr (by simp [u_lt_b])]
     linarith [this, τ⁻¹.s_nonneg b (τ u + 1)]
 
-  rw [← lel_ramp h_321a h_L b m_pos n_pos]
+  rw [← lel_ramp (h_321a := h_321a) (h_L := h_L) b m_pos n_pos]
   have u_eq: u = τ.u b n_pos := by
     rw [τ.u_crit b n_pos u]
     exact ⟨rfl, u_lt_b⟩
@@ -753,85 +824,15 @@ theorem inv_of_lel_iff_ramp {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L 
 --       constructor <;> assumption
 --     exact (inv_of_lel_iff (τ := τ) h_321a h_L u'v'_inv nest).mpr uv_inv
 
-end fixed_321a_and_lel
+
 
 section factorization
-variable (τ α β : AspPerm) (h_R : α ≤R τ) (h_L : β ≤L τ) (h_χ : τ.χ = α.χ + β.χ)
+variable {α : AspPerm} (h_R : α ≤R τ) (h_χ : τ.χ = α.χ + β.χ)
+include τ α β h_321a h_R h_L h_χ
 
--- "Slide right" inversions from α to inversions of τ
-noncomputable def sr : (ℤ × ℤ) → (ℤ × ℤ) := fun x => ⟨ τ⁻¹ (α x.1), τ⁻¹ (α x.2) ⟩
-
-lemma sr_crit : ∀ (u v : ℤ),  ⟨u, v⟩ ∈ (sr τ α) '' inv_set α ↔ ⟨τ v, τ u⟩ ∈ inv_set α⁻¹.func := by
-  intro u v
-  constructor
-  · intro h
-    rcases h with ⟨⟨u, v⟩, uv_inv, xy_inv, rfl⟩
-    simp only [τ.mul_inv_cancel_eval]
-    exact (α.inv_set_inverse u v).mp uv_inv
-  · intro h
-    use ⟨α⁻¹ (τ u), α⁻¹ (τ v)⟩
-    constructor
-    · have := (α⁻¹.inv_set_inverse (τ v) (τ u)).mp h
-      simpa
-    · unfold sr
-      simp
-
-lemma split_s {τ : AspPerm} (h_321a : is_321a τ) {u v : ℤ} {a b : ℤ}
-  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
-  τ.s a v + τ.s (τ v) b = τ.s a b := by
-  have uv_inv : ⟨u, v⟩ ∈ inv_set τ :=
-    ⟨ lt_of_lt_of_le u_lt_b b_le_v, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
-  unfold AspPerm.s
-  have : τ.se a b = τ.se a v ∪ τ.se (τ v) b := by
-    ext n
-    simp only [Finset.mem_union, τ.mem_se]
-    constructor
-    · rintro ⟨n_ge_b, τn_lt_a⟩
-      by_cases n_v : n ≥ v
-      · left
-        exact ⟨n_v, τn_lt_a⟩
-      · right
-        push_neg at n_v
-        suffices τ n < τ v by exact ⟨n_ge_b, this⟩
-        by_contra! τv_le_τn
-        have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
-        have un_inv : ⟨u, n⟩ ∈ inv_set τ := by
-          have u_lt_n : u < n := lt_of_lt_of_le u_lt_b n_ge_b
-          have τu_gt_τn : τ u > τ n := lt_of_lt_of_le τn_lt_a τu_ge_a
-          exact ⟨u_lt_n, τu_gt_τn⟩
-        have := tfree_of_321a τ h_321a u n v
-        rcases this <;> contradiction
-    · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
-      · exact ⟨le_trans b_le_v n_ge_v, τn_lt_a⟩
-      · exact ⟨n_ge_b, lt_trans τn_lt_τv τv_lt_a⟩
-
-  rw [this, Finset.card_union]
-  suffices τ.se a v ∩ τ.se (τ v) b = ∅ by
-    rw [Finset.card_eq_zero.mpr this]
-    simp
-
-  simp only [Finset.eq_empty_iff_forall_notMem, Finset.mem_inter]
-  intro x x_mem
-  simp only [τ.mem_se] at x_mem
-  obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b,τx_lt_τv⟩⟩ := x_mem
-  have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
-  have := tfree_of_321a τ h_321a u v x
-  rcases this <;> contradiction
-
-lemma split_s' {τ : AspPerm} (h_321a : is_321a τ) {u v : ℤ} {a b : ℤ}
-  (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
-  τ⁻¹.s b (τ u) + τ⁻¹.s u a = τ⁻¹.s b a := by
-  let u' := τ v
-  let v' := τ u
-  have := split_s (inv_is_321a h_321a) (a := b) (b := a) (u := u') (v := v')
-  have := this (τv_lt_a) (τu_ge_a) (by unfold v'; simpa) (by unfold u'; simpa)
-  unfold u' v' at this; simpa using this
-
-lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
-  (a b u v : ℤ) (h_χ : τ.χ = α.χ + β.χ)
-  (dprod : α.dprod_geq β a b (τ.s a b)) :
+lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_geq β a b (τ.s a b)) :
   u < b → b ≤ v → τ u ≥ a → τ v < a
-  → ⟨u, v⟩ ∈ (sr τ α) '' (inv_set α) ∪ inv_set β := by
+  → ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
   intro u_lt_b b_le_v τu_ge_a τv_lt_a
 
   let M := τ.s a b
@@ -864,7 +865,8 @@ lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L
   have legos := (α.ramp_dprod_legos β a b M N habMN).mp dprod m m_icc n n_icc
   rcases legos with (hβ | hα)
   · right
-    apply (inv_of_lel_iff_ramp h_321a h_L u_lt_b b_le_v).mpr
+    apply (inv_of_lel_iff_ramp (h_321a := h_321a) (h_L := h_L)
+      u_lt_b b_le_v).mpr
     rw [τ.dual_inverse]
     convert hβ
     rw [m_eq]
@@ -874,7 +876,8 @@ lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L
     rw [← this] at hα
 
     have h : (τ v, τ u) ∈ inv_set α⁻¹.func ↔ (τ⁻¹.s u a + 1, τ.s a v) ∈ α⁻¹.ramp a := by
-      have := inv_of_lel_iff_ramp (inv_is_321a h_321a) h_R τv_lt_a τu_ge_a
+      have := inv_of_lel_iff_ramp (τ := τ⁻¹) (β := α⁻¹)
+        (h_321a := inv_is_321a (τ := τ) (h_321a := h_321a)) (h_L := h_R) τv_lt_a τu_ge_a
       rw [τ⁻¹.dual_inverse, inv_inv] at this
       simpa using this
 
@@ -882,19 +885,18 @@ lemma inversion_in_union (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L
       constructor
       · have : τ⁻¹ (τ u) < b ∧ τ⁻¹ (τ v) ≥ b := by
           constructor <;> (simp; assumption)
-        have := split_s (inv_is_321a h_321a) τv_lt_a τu_ge_a this.1 this.2
+        have := split_s (τ := τ⁻¹) (h_321a := inv_is_321a (τ := τ) (h_321a := h_321a))
+          τv_lt_a τu_ge_a this.1 this.2
         simp [τ.inv_mul_cancel_eval] at this
         linarith [this]
-      · linarith [split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a]
+      · linarith [split_s (τ := τ) (h_321a := h_321a) u_lt_b b_le_v τv_lt_a τu_ge_a]
 
     rw [this.1, this.2] at h
     apply h.mpr at hα
 
-    exact (sr_crit τ α u v).mpr hα
+    exact (τ.sr_crit α u v).mpr hα
 
-lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
-  (a b : ℤ) (h_χ : τ.χ = α.χ + β.χ)
-  (h_union : inv_set τ ⊆ inv_set β ∪ (sr τ α) '' (inv_set α)) :
+lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.sr α) '' (inv_set α)) :
   α.dprod_geq β a b (τ.s a b)
   := by
   let M := τ.s a b
@@ -920,7 +922,8 @@ lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L �
   have τu_ge_a : τ u ≥ a := τ.τu_ge b n_ge_1 n_le_N
   -- [TODO] consider packaginga all the above into a structure for use elsewhere
 
-  have : ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b:= lel_ramp h_321a h_L b m_ge_1 n_ge_1
+  have : ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b :=
+    lel_ramp (h_321a := h_321a) (h_L := h_L) b m_ge_1 n_ge_1
   rw [← this]
 
   let u' := τ⁻¹.u a m'_ge_1
@@ -932,7 +935,7 @@ lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L �
     simp only [τ⁻¹.dual_inverse, inv_inv, τ.inv_mul_cancel_eval]
     constructor
     · suffices m + τ.s a v = M + 1 by linarith
-      have := split_s h_321a (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
+      have := split_s (h_321a := h_321a) (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
         (τ.τv_lt b m_ge_1 m_le_M) (τ.τu_ge b n_ge_1 n_le_N)
       rw [τ.s_τv_b b m_ge_1] at this
       linarith [this]
@@ -943,7 +946,7 @@ lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L �
     simp only [τ.inv_mul_cancel_eval]
     constructor
     · suffices n + τ⁻¹.s u a = N by (unfold n'; linarith)
-      have split := split_s' h_321a (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
+      have split := split_s' (h_321a := h_321a) (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
         (τ.τv_lt b m_ge_1 m_le_M) (τ.τu_ge b n_ge_1 n_le_N)
       have := τ.s'_b_τu b n_ge_1; rw [τ.dual_inverse] at this
       rw [this] at split
@@ -952,13 +955,15 @@ lemma union_sufficient (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L �
 
   have lamp_equiv : ⟨u', v'⟩ ∈ inv_set α⁻¹.func
     ↔ ⟨m', n'⟩ ∈ α.lamp a := lel_lamp h_321a h_R a m'_ge_1 n'_ge_1
-  suffices ⟨u, v⟩ ∈ inv_set β ∨ ⟨u, v⟩ ∈ (sr τ α) '' (inv_set α) by
-    rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← sr_crit τ α u v]
+  suffices ⟨u, v⟩ ∈ inv_set β ∨ ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) by
+    rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← τ.sr_crit α u v]
 
   have uv_inv : ⟨u, v⟩ ∈ inv_set τ := ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
   exact h_union uv_inv
 
-end factorization
+-- lemma excess_of_not_isolated {α β τ : AspPerm} (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
 
+end factorization
+end fixed_321a_and_lel
 end fixed_321a
 end ASP321a

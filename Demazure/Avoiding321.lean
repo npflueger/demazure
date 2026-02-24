@@ -363,6 +363,45 @@ lemma split_s {u v : ℤ} {a b : ℤ}
   have := tfree_of_321a τ h_321a u v x
   rcases this <;> contradiction
 
+lemma uv_duality {u : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (τu_ge_a : τ u ≥ a)
+  {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0) (m_sum : m + m' = τ.s a b + 1) :
+  τ (τ.v b m_pos) = τ⁻¹.u a m'_pos := by
+  rw [τ⁻¹.u_crit a m'_pos (τ (τ.v b m_pos))]
+  have s_ge_m : τ.s a b ≥ m := by
+    linarith
+  let b_le_v : b ≤ τ.v b m_pos := τ.v_ge b m_pos
+  let τv_lt_a : τ (τ.v b m_pos) < a := τ.τv_lt b m_pos s_ge_m
+
+  constructor
+  · suffices τ.s a (τ.v b m_pos) = m' by simp [τ⁻¹.dual_inverse, this]
+    have split := split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a
+    have : τ.s (τ (τ.v b m_pos)) b = m - 1 := by
+      exact ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).1
+    rw [this] at split
+    linarith
+  · exact τv_lt_a
+
+lemma uv_duality_ineq {u : ℤ} {a b : ℤ}
+  (u_lt_b : u < b) (τu_ge_a : τ u ≥ a)
+  {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0) (m_sum : m + m' > τ.s a b + 1) :
+  (τ.v b m_pos) > τ⁻¹ (τ⁻¹.u a m'_pos) := by
+  sorry
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 lemma split_s' {u v : ℤ} {a b : ℤ}
   (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
   τ⁻¹.s b (τ u) + τ⁻¹.s u a = τ⁻¹.s b a := by
@@ -961,7 +1000,88 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.
   have uv_inv : ⟨u, v⟩ ∈ inv_set τ := ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
   exact h_union uv_inv
 
--- lemma excess_of_not_isolated {α β τ : AspPerm} (h_321a : is_321a τ) (h_R : α ≤R τ) (h_L : β ≤L τ)
+lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
+  (uv₁_inv : ⟨u, v₁⟩ ∈ (τ.sr α) '' (inv_set α)) (uv₂_inv : ⟨u, v₂⟩ ∈ inv_set β) :
+  let a := τ v₁ + 1
+  let b := v₁ + 1
+
+  α.dprod_geq β a b (τ.s a b + 1)
+  := by
+  intro a b
+  have uv₁_inv_τ : ⟨u, v₁⟩ ∈ inv_set τ := by
+      exact τ.sr_subset α h_R uv₁_inv
+  have τ_zero : τ.s a b + 1 = 1 := by
+    suffices τ.s a b = 0 by linarith
+    unfold AspPerm.s
+    suffices τ.se a b = ∅ by simpa
+    apply Finset.eq_empty_iff_forall_notMem.mpr
+    intro x x_mem; simp at x_mem
+    have v₁x_inv : ⟨v₁, x⟩ ∈ inv_set τ := by
+      refine (τ.inv_iff_le ?_).mpr ?_
+      linarith [x_mem.1]
+      linarith [x_mem.2]
+    have := tfree_of_321a τ h_321a u v₁ x
+    rcases this <;> contradiction
+  rw [τ_zero]
+  let N := τ⁻¹.s b a + 1
+  have habMN : a - b + α.χ + β.χ = 1 - N := by
+    linarith [τ.duality a b, τ_zero]
+  apply (α.ramp_dprod_legos β  a b 1 N habMN).mpr
+  rintro m ⟨m_ge_1, m_le_1⟩ n ⟨n_ge_1, n_le_N⟩
+
+  obtain m_one : m = 1 := le_antisymm m_le_1 m_ge_1
+  subst m_one
+
+  -- Can probably remove this after getting the rest hashed out
+  let n' := N + 1 - n
+  change ⟨1, n⟩ ∈ β.ramp b ∨ ⟨1, n'⟩ ∈ α.lamp a
+
+  have u_lt_v₁ : u < v₁ := by linarith [uv₁_inv_τ.1]
+  have v₁_le_v₂ : v₁ ≤ v₂ := by linarith
+  -- have τv₂_ge_a : τ v₂ ≥ a := by sorry
+  have τu_ge_a : τ u ≥ a := by linarith [uv₁_inv_τ.2]
+  have τv₁_lt_a : τ v₁ < a := by linarith
+
+  have split_eq := split_s' h_321a u_lt_v₁ (le_refl v₁) τv₁_lt_a τu_ge_a
+  have : τ⁻¹.s b (τ u) = τ⁻¹.s v₁ (τ u) := by
+    apply (τ⁻¹.a_step_eq_iff v₁ (τ u)).mpr
+    simpa using uv₁_inv_τ.2
+  rw [← this] at split_eq
+  have : τ⁻¹.s b a  = τ⁻¹.s v₁ a  := by
+    apply (τ⁻¹.a_step_eq_iff v₁ a).mpr
+    simpa [inv_inv]
+  rw [← this] at split_eq
+
+  have n_bounds : n ≤ τ⁻¹.s b (τ u) ∨ n' ≤ τ⁻¹.s u a + 1:= by
+    by_contra!
+    have n_sum : n + n' ≥ τ⁻¹.s b a + 3 := by linarith
+    have : n + n' = τ⁻¹.s b a + 2 := by linarith [n']
+    rw [this] at n_sum
+    linarith [n_sum]
+  rcases n_bounds with (n_le | n'_le)
+  · left
+    have u_lt_b : u < b := by linarith [u_lt_v₁]
+    have v₂_ge_b : v₂ ≥ b := by linarith
+    have := (inv_of_lel_iff_ramp h_321a h_L u_lt_b v₂_ge_b).mp uv₂_inv
+    refine β.ramp_closed b ?_ ?_ this
+    · linarith [τ.s_nonneg (τ v₂) b]
+    · rw [τ.dual_inverse]
+      exact n_le
+  · right
+    suffices ⟨n', 1⟩ ∈ α⁻¹.ramp a by
+      rw [α⁻¹.ramp_lamp_dual a] at this
+      simpa using this
+    have h_inv : ⟨τ v₁, τ u⟩ ∈ inv_set α⁻¹.func := by
+      exact  (τ.sr_crit α u v₁).mp uv₁_inv
+    have := (inv_of_lel_iff_ramp (inv_is_321a h_321a) h_R τv₁_lt_a τu_ge_a).mp h_inv
+    simp [τ.inv_mul_cancel_eval] at this
+    refine α⁻¹.ramp_closed a ?_ ?_ this
+    · apply le_trans n'_le (le_refl _)
+    · rw [τ⁻¹.dual_inverse, inv_inv]
+      have : τ.s a v₁ = 1 + τ.s a (v₁ + 1) := by
+        linarith [(τ.b_step_one_iff a v₁).mpr τv₁_lt_a]
+      rw [this]
+      linarith [τ.s_nonneg a (τ v₁ + 1)]
 
 end factorization
 end fixed_321a_and_lel

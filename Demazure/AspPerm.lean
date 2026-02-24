@@ -697,6 +697,14 @@ def ramp (b : ℤ) : Set (ℤ × ℤ) :=
 def lamp (a : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s a l ≥ m ∧ τ.s' l a ≥ n}
 
+def ramp_closed (b : ℤ) {m₁ n₁ m₂ n₂ : ℤ} (hm : m₁ ≤ m₂) (hn : n₁ ≤ n₂) :
+  ⟨m₂, n₂⟩ ∈ τ.ramp b → ⟨m₁, n₁⟩ ∈ τ.ramp b := by
+  intro h
+  rcases h with ⟨l, hlm, hln⟩
+  use l
+  constructor <;> linarith
+
+
 lemma ramp_lamp_dual (b m n : ℤ) :
   ⟨m,n⟩ ∈ τ.ramp b ↔ ⟨n, m⟩ ∈ (τ⁻¹).lamp b := by
   unfold ramp lamp
@@ -989,6 +997,14 @@ lemma sr_crit (τ α : AspPerm) : ∀ (u v : ℤ),
       simpa
     · unfold sr
       simp
+
+lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α ⊆ inv_set τ := by
+  intro x hx; obtain ⟨u, v⟩ := x
+  apply (sr_crit τ α u v).mp at hx
+  apply h_R at hx
+  obtain ⟨τu_gt_τv, u_lt_v⟩ := hx
+  simp at u_lt_v
+  exact ⟨u_lt_v, τu_gt_τv⟩
 
 -- Proposition mean that (α ⋆ β).s a b ≥ n.
 def dprod_geq (α β : AspPerm) (a b n : ℤ) : Prop :=

@@ -1164,22 +1164,20 @@ decreasing_by
     simp_wf
     omega
 
-
-
-
-
 lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 1)) :
   ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
   := by
   let M := τ.s a b + 1
   let N := τ⁻¹.s b a + 1
+  have N_pos : N ≥ 1 := by linarith [τ⁻¹.s_nonneg b a]
+  have M_pos : M ≥ 1 := by linarith [τ.s_nonneg a b]
   have hMN : a - b + α.χ + β.χ = M - N := by linarith [τ.duality a b]
 
   have legos : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
     ⟨m, n⟩ ∈ β.ramp b ∨ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a :=
     (AspPerm.ramp_dprod_legos α β a b M N hMN).mp h_s
 
-  have corner : ⟨M, N⟩ ∉ β.ramp b := by
+  have corner_nramp : ⟨M, N⟩ ∉ β.ramp b := by
     intro mem_ramp
     -- [TODO] Consider extracting this as a general ramp ⊆ ramp lemma for ≤L.
     have M_pos : M > 0 := by linarith [τ.s_nonneg a b]
@@ -1196,12 +1194,11 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
       linarith [hMN]
     linarith [this]
 
-  have corner_lamp : ⟨M, N⟩ ∉ α.lamp a := by
+  have corner_nlamp : ⟨M, N⟩ ∉ α.lamp a := by
     intro mem_lamp
     have mem_ramp_inv : ⟨N, M⟩ ∈ α⁻¹.ramp a := by
       simpa [α⁻¹.ramp_lamp_dual a] using mem_lamp
-    have N_pos : N > 0 := by linarith [τ⁻¹.s_nonneg b a]
-    have M_pos : M > 0 := by linarith [τ.s_nonneg a b]
+
     have uv_inv_αi : ⟨α⁻¹.u a M_pos, α⁻¹.v a N_pos⟩ ∈ inv_set α⁻¹.func := by
       exact (α⁻¹.inv_ramp_correspondence a N_pos M_pos).mp mem_ramp_inv
     have uv_eq := uv_eq_of_lel' (τ := τ⁻¹) (β := α⁻¹)
@@ -1218,84 +1215,43 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
     have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp [N, this]
     linarith
 
-  have domino_helper : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
-    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a →
-    ∃ m' ∈ Set.Icc 1 M, ∃ n' ∈ Set.Icc 1 N,
-    ⟨M+1-m', N+1-n'⟩ ∈ α.lamp a
-    ∧ ( (⟨m'-1, n'⟩ ∈ (β.ramp b) ∧ m' ≥ 2) ∨ (⟨m',n'-1⟩ ∈ (β.ramp b) ∧ n' ≥ 2))
-    := by
-    intro m m_Icc n n_Icc hαmn
+  have corner_lamp: ⟨1, 1⟩ ∈ α.lamp a := by
+    have icc : M ∈ Set.Icc 1 M := ⟨M_pos, le_refl M⟩
+    have icc' : N ∈ Set.Icc 1 N := ⟨N_pos, le_refl N⟩
+    have options := legos M icc N icc'
+    rcases options with (hβ | hα)
+    · exfalso; exact corner_nramp hβ
+    · simpa using hα
+
+  have domino : ∃ m ∈ Set.Icc 1 M, ∃ n ∈ Set.Icc 1 N,
+    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
+    ∧ ((⟨m-1, n⟩ ∈ β.ramp b ∧ m ≥ 2) ∨ (⟨m, n-1⟩ ∈ β.ramp b ∧ n ≥ 2)) := by
+    -- S encodes α.lamp a via the coordinate flip (m,n) ↦ (M+1-m, N+1-n).
+    -- (M,N) ∈ S since corner_lamp gives (1,1) ∈ α.lamp a;
+    -- (1,1) ∉ S since corner_nlamp gives (M,N) ∉ α.lamp a.
+    -- A minimal element of S then gives the desired domino via legos.
     let S : Set (ℤ × ℤ) :=
       {p | p.1 ∈ Set.Icc 1 M ∧ p.2 ∈ Set.Icc 1 N ∧ ⟨M+1-p.1, N+1-p.2⟩ ∈ α.lamp a}
-    have hmnS : ⟨m, n⟩ ∈ S := by
-      exact ⟨m_Icc, n_Icc, hαmn⟩
-    have h11_notS : ⟨1, 1⟩ ∉ S := by
-      intro h11
-      have : ⟨M, N⟩ ∈ α.lamp a := by
-        simpa [S] using h11.2.2
-      exact corner_lamp this
-    obtain ⟨m', n', m'_pos, n'_pos, hm'n'S, hmin⟩ := min_helper
-      (m_pos := m_Icc.1) (n_pos := n_Icc.1) (S := S) hmnS h11_notS
-    have hmIcc' : m' ∈ Set.Icc 1 M := by
-      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
-        simpa [S] using hm'n'S
-      exact this.1
-    have hnIcc' : n' ∈ Set.Icc 1 N := by
-      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
-        simpa [S] using hm'n'S
-      exact this.2.1
-    have hLamp' : ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
-      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
-        simpa [S] using hm'n'S
-      exact this.2.2
-    refine ⟨m', hmIcc', n', hnIcc', ?_⟩
-    · refine ⟨hLamp', ?_⟩
-      rcases hmin with (hm_prev | hn_prev)
-      · left
-        refine ⟨?_, hm_prev.2⟩
-        have hmIcc : m' - 1 ∈ Set.Icc 1 M := by
-          constructor
-          · linarith [hm_prev.2]
-          · linarith [hmIcc'.2]
-        have hleg := legos (m' - 1) hmIcc n' hnIcc'
-        rcases hleg with (hβ | hα')
-        · exact hβ
-        · exfalso
-          apply hm_prev.1
-          exact ⟨hmIcc, ⟨hnIcc', hα'⟩⟩
-      · right
-        refine ⟨?_, hn_prev.2⟩
-        have hnIcc : n' - 1 ∈ Set.Icc 1 N := by
-          constructor
-          · linarith [hn_prev.2]
-          · linarith [hnIcc'.2]
-        have hleg := legos m' hmIcc' (n' - 1) hnIcc
-        rcases hleg with (hβ | hα')
-        · exact hβ
-        · exfalso
-          apply hn_prev.1
-          exact ⟨hmIcc', ⟨hnIcc, hα'⟩⟩
-
-  have domino :  ∃ m ∈ Set.Icc 1 M, ∃ n ∈ Set.Icc 1 N,
-    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
-    ∧ ( (⟨m-1, n⟩ ∈ (β.ramp b) ∧ m ≥ 2) ∨ (⟨m,n-1⟩ ∈ (β.ramp b) ∧ n ≥ 2))
-    := by
-    have M_Icc : M ∈ Set.Icc 1 M := by
-      constructor
-      · linarith [τ.s_nonneg a b]
-      · exact le_refl M
-    have N_Icc : N ∈ Set.Icc 1 N := by
-      constructor
-      · linarith [τ⁻¹.s_nonneg b a]
-      · exact le_refl N
-    have : ⟨M+1-M, N+1-N⟩ ∈ α.lamp a := by
-      have := legos M M_Icc N N_Icc
-      rcases this with (hβ | hα)
-      · contradiction
-      · exact hα
-    have := domino_helper M M_Icc N N_Icc this
-    rcases this with ⟨m, m_Icc, n, n_Icc, _, _⟩
-    use m, m_Icc, n, n_Icc
+    have hMN_S : ⟨M, N⟩ ∈ S :=
+      ⟨⟨M_pos, le_refl M⟩, ⟨N_pos, le_refl N⟩, by simpa using corner_lamp⟩
+    have h11_nS : ⟨(1 : ℤ), 1⟩ ∉ S := fun h => corner_nlamp (by simpa [S] using h.2.2)
+    obtain ⟨m, n, _, _, hmn_S, hmin⟩ :=
+      min_helper (m_pos := M_pos) (n_pos := N_pos) hMN_S h11_nS
+    obtain ⟨m_Icc, n_Icc, hLamp⟩ :
+        m ∈ Set.Icc 1 M ∧ n ∈ Set.Icc 1 N ∧ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a :=
+      by simpa [S] using hmn_S
+    refine ⟨m, m_Icc, n, n_Icc, hLamp, ?_⟩
+    rcases hmin with (⟨hnotS, hm_ge⟩ | ⟨hnotS, hn_ge⟩)
+    · left
+      have m1_Icc : m - 1 ∈ Set.Icc 1 M := ⟨by linarith, by linarith [m_Icc.2]⟩
+      rcases legos (m - 1) m1_Icc n n_Icc with (hβ | hα')
+      · exact ⟨hβ, hm_ge⟩
+      · exact absurd ⟨m1_Icc, ⟨n_Icc, hα'⟩⟩ hnotS
+    · right
+      have n1_Icc : n - 1 ∈ Set.Icc 1 N := ⟨by linarith, by linarith [n_Icc.2]⟩
+      rcases legos m m_Icc (n - 1) n1_Icc with (hβ | hα')
+      · exact ⟨hβ, hn_ge⟩
+      · exact absurd ⟨m_Icc, ⟨n1_Icc, hα'⟩⟩ hnotS
 
   rcases domino with ⟨m, m_Icc, n, n_Icc, hα, (⟨hβ,m_ge_2⟩ | ⟨hβ,n_ge_2⟩)⟩
   · -- Switch to τ⁻¹ to apply the domino helper lemma

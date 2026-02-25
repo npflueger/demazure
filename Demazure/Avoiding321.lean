@@ -1134,6 +1134,40 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
   := by
   sorry
 
+def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
+    {S : Set (ℤ × ℤ)} (mem : ⟨m, n⟩ ∈ S) (nmem : ⟨1, 1⟩ ∉ S) :
+  ∃ m' n', m' ≥ 1 ∧ n' ≥ 1 ∧ ⟨m', n'⟩ ∈ S
+  ∧ ( ⟨m'-1,n'⟩ ∉ S ∧ m' ≥ 2 ∨ ⟨m', n'-1⟩ ∉ S ∧ n' ≥ 2)
+  := by
+  by_cases h : ⟨m-1, n⟩ ∉ S ∧ m ≥ 2 ∨ ⟨m, n-1⟩ ∉ S ∧ n ≥ 2
+  · use m, n
+  push_neg at h
+  by_cases m_ge_2 : m ≥ 2
+  · have mem_m_dec : ⟨m-1, n⟩ ∈ S := by
+      by_contra! h1
+      linarith [h.1 h1]
+    exact min_helper (m := m-1) (m_pos := by linarith) n_pos mem_m_dec nmem
+  have m_one : m = 1 := le_antisymm (by linarith) m_pos
+  subst m_one
+  let h := h.2
+  by_cases n_ge_2 : n ≥ 2
+  · have mem_n_dec : ⟨1, n-1⟩ ∈ S:= by
+      by_contra! h1
+      linarith [h h1]
+    exact min_helper m_pos (n := n-1) (n_pos := by linarith) mem_n_dec nmem
+  have n_one : n = 1 := le_antisymm (by linarith) n_pos
+  subst n_one
+  exfalso; exact nmem mem
+termination_by (m+n).toNat
+decreasing_by
+  all_goals
+    simp_wf
+    omega
+
+
+
+
+
 lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 1)) :
   ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
   := by
@@ -1145,25 +1179,102 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
     ⟨m, n⟩ ∈ β.ramp b ∨ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a :=
     (AspPerm.ramp_dprod_legos α β a b M N hMN).mp h_s
 
-  have domino_helper : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
-    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a →
-    ∃ m' ∈ Set.Icc 1 M, ∃ n' ∈ Set.Icc 1 N, m' ≤ m ∧ n' ≤ n
-    ∧ ⟨M+1-m', N+1-n'⟩ ∈ α.lamp a
-    ∧ ( (⟨m'-1, n'⟩ ∈ (β.ramp b) ∧ m' ≥ 2) ∨ (⟨m',n'-1⟩ ∈ (β.ramp b) ∧ n' ≥ 2))
-    := by
-    -- Should be an straightforward induction
-    sorry
-
   have corner : ⟨M, N⟩ ∉ β.ramp b := by
     intro mem_ramp
-    have : β.ramp b ⊆ τ.ramp b := by
-      -- Make this into a general lemma
-      sorry
-    apply this at mem_ramp
+    -- [TODO] Consider extracting this as a general ramp ⊆ ramp lemma for ≤L.
+    have M_pos : M > 0 := by linarith [τ.s_nonneg a b]
+    have N_pos : N > 0 := by linarith [τ⁻¹.s_nonneg b a]
+    have uv_inv_β : ⟨β.u b N_pos, β.v b M_pos⟩ ∈ inv_set β := by
+      exact (β.inv_ramp_correspondence b M_pos N_pos).mp mem_ramp
+    have uv_eq := uv_eq_of_lel' (h_321a := h_321a) (h_L := h_L) b M_pos N_pos uv_inv_β
+    have uv_inv_τ : ⟨τ.u b N_pos, τ.v b M_pos⟩ ∈ inv_set τ := by
+      simpa [uv_eq.1, uv_eq.2] using (h_L uv_inv_β)
+    have mem_ramp_τ : ⟨M, N⟩ ∈ τ.ramp b := by
+      exact (τ.inv_ramp_correspondence b M_pos N_pos).mpr uv_inv_τ
     have : τ.s a b ≥ M := by
-      convert (τ.mem_ramp_iff_s_geq b M N).mp mem_ramp
+      convert (τ.mem_ramp_iff_s_geq b M N).mp mem_ramp_τ
       linarith [hMN]
     linarith [this]
+
+  have corner_lamp : ⟨M, N⟩ ∉ α.lamp a := by
+    intro mem_lamp
+    have mem_ramp_inv : ⟨N, M⟩ ∈ α⁻¹.ramp a := by
+      simpa [α⁻¹.ramp_lamp_dual a] using mem_lamp
+    have N_pos : N > 0 := by linarith [τ⁻¹.s_nonneg b a]
+    have M_pos : M > 0 := by linarith [τ.s_nonneg a b]
+    have uv_inv_αi : ⟨α⁻¹.u a M_pos, α⁻¹.v a N_pos⟩ ∈ inv_set α⁻¹.func := by
+      exact (α⁻¹.inv_ramp_correspondence a N_pos M_pos).mp mem_ramp_inv
+    have uv_eq := uv_eq_of_lel' (τ := τ⁻¹) (β := α⁻¹)
+      (h_321a := inv_is_321a h_321a) (h_L := h_R) a N_pos M_pos uv_inv_αi
+    have uv_inv_τi : ⟨(τ⁻¹).u a M_pos, (τ⁻¹).v a N_pos⟩ ∈ inv_set τ⁻¹.func := by
+      simpa [uv_eq.1, uv_eq.2] using (h_R uv_inv_αi)
+    have mem_ramp_τi : ⟨N, M⟩ ∈ τ⁻¹.ramp a := by
+      exact (τ⁻¹.inv_ramp_correspondence a N_pos M_pos).mpr uv_inv_τi
+    have : τ⁻¹.s b a ≥ N := by
+      have hba : a + N - M - τ⁻¹.χ = b := by
+        rw [τ.χ_dual]
+        linarith [hMN, h_χ]
+      simpa [hba] using (τ⁻¹.mem_ramp_iff_s_geq a N M).mp mem_ramp_τi
+    have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp [N, this]
+    linarith
+
+  have domino_helper : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
+    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a →
+    ∃ m' ∈ Set.Icc 1 M, ∃ n' ∈ Set.Icc 1 N,
+    ⟨M+1-m', N+1-n'⟩ ∈ α.lamp a
+    ∧ ( (⟨m'-1, n'⟩ ∈ (β.ramp b) ∧ m' ≥ 2) ∨ (⟨m',n'-1⟩ ∈ (β.ramp b) ∧ n' ≥ 2))
+    := by
+    intro m m_Icc n n_Icc hαmn
+    let S : Set (ℤ × ℤ) :=
+      {p | p.1 ∈ Set.Icc 1 M ∧ p.2 ∈ Set.Icc 1 N ∧ ⟨M+1-p.1, N+1-p.2⟩ ∈ α.lamp a}
+    have hmnS : ⟨m, n⟩ ∈ S := by
+      exact ⟨m_Icc, n_Icc, hαmn⟩
+    have h11_notS : ⟨1, 1⟩ ∉ S := by
+      intro h11
+      have : ⟨M, N⟩ ∈ α.lamp a := by
+        simpa [S] using h11.2.2
+      exact corner_lamp this
+    obtain ⟨m', n', m'_pos, n'_pos, hm'n'S, hmin⟩ := min_helper
+      (m_pos := m_Icc.1) (n_pos := n_Icc.1) (S := S) hmnS h11_notS
+    have hmIcc' : m' ∈ Set.Icc 1 M := by
+      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
+        simpa [S] using hm'n'S
+      exact this.1
+    have hnIcc' : n' ∈ Set.Icc 1 N := by
+      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
+        simpa [S] using hm'n'S
+      exact this.2.1
+    have hLamp' : ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
+      have : m' ∈ Set.Icc 1 M ∧ n' ∈ Set.Icc 1 N ∧ ⟨M + 1 - m', N + 1 - n'⟩ ∈ α.lamp a := by
+        simpa [S] using hm'n'S
+      exact this.2.2
+    refine ⟨m', hmIcc', n', hnIcc', ?_⟩
+    · refine ⟨hLamp', ?_⟩
+      rcases hmin with (hm_prev | hn_prev)
+      · left
+        refine ⟨?_, hm_prev.2⟩
+        have hmIcc : m' - 1 ∈ Set.Icc 1 M := by
+          constructor
+          · linarith [hm_prev.2]
+          · linarith [hmIcc'.2]
+        have hleg := legos (m' - 1) hmIcc n' hnIcc'
+        rcases hleg with (hβ | hα')
+        · exact hβ
+        · exfalso
+          apply hm_prev.1
+          exact ⟨hmIcc, ⟨hnIcc', hα'⟩⟩
+      · right
+        refine ⟨?_, hn_prev.2⟩
+        have hnIcc : n' - 1 ∈ Set.Icc 1 N := by
+          constructor
+          · linarith [hn_prev.2]
+          · linarith [hnIcc'.2]
+        have hleg := legos m' hmIcc' (n' - 1) hnIcc
+        rcases hleg with (hβ | hα')
+        · exact hβ
+        · exfalso
+          apply hn_prev.1
+          exact ⟨hmIcc', ⟨hnIcc, hα'⟩⟩
 
   have domino :  ∃ m ∈ Set.Icc 1 M, ∃ n ∈ Set.Icc 1 N,
     ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
@@ -1183,7 +1294,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
       · contradiction
       · exact hα
     have := domino_helper M M_Icc N N_Icc this
-    rcases this with ⟨m, m_Icc, n, n_Icc, _, _, _, _⟩
+    rcases this with ⟨m, m_Icc, n, n_Icc, _, _⟩
     use m, m_Icc, n, n_Icc
 
   rcases domino with ⟨m, m_Icc, n, n_Icc, hα, (⟨hβ,m_ge_2⟩ | ⟨hβ,n_ge_2⟩)⟩
@@ -1199,9 +1310,65 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
       (by linarith [n_Icc.2]) n_Icc.1
       (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith) (by simp; linarith) hβi hαi
     rcases this with ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩, ⟨h_mem, h_nest⟩⟩
-    use ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩, ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩
+    have h1_mem : ⟨u₁, v₁⟩ ∈ ((τ⁻¹.sr β⁻¹) '' (inv_set β⁻¹.func)) ∩ (inv_set α⁻¹.func) :=
+      h_mem (by simp : (u₁, v₁) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
+    have h2_mem : ⟨u₂, v₂⟩ ∈ ((τ⁻¹.sr β⁻¹) '' (inv_set β⁻¹.func)) ∩ (inv_set α⁻¹.func) :=
+       h_mem (by simp : (u₂, v₂) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
 
-    sorry
+    have h1_sr : ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩ ∈ (τ.sr α) '' inv_set α := by
+      apply (τ.sr_crit α (τ⁻¹ v₁) (τ⁻¹ u₁)).mpr
+      simpa using h1_mem.2
+    have h2_sr : ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩ ∈ (τ.sr α) '' inv_set α := by
+      apply (τ.sr_crit α (τ⁻¹ v₂) (τ⁻¹ u₂)).mpr
+      simpa using h2_mem.2
+
+    have h1_inv : ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩ ∈ inv_set β := by
+      have : ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩ ∈ inv_set ((β⁻¹)⁻¹).func := by
+        exact ((τ⁻¹).sr_crit β⁻¹ u₁ v₁).mp h1_mem.1
+      simpa [inv_inv] using this
+    have h2_inv : ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩ ∈ inv_set β := by
+      have : ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩ ∈ inv_set ((β⁻¹)⁻¹).func := by
+        exact ((τ⁻¹).sr_crit β⁻¹ u₂ v₂).mp h2_mem.1
+      simpa [inv_inv] using this
+
+    have h_uv : ⟨u₁, v₁⟩ ≼ ⟨u₂, v₂⟩ := h_nest.1
+    have hu : u₂ ≤ u₁ := h_uv.1
+    have hv : v₁ ≤ v₂ := h_uv.2
+
+    have u1_src : is_src (τ⁻¹) u₁ :=
+      src_of_src (τ := τ⁻¹) (β := α⁻¹) (h_L := h_R) (src_of_inv h1_mem.2)
+    have u2_src : is_src (τ⁻¹) u₂ :=
+      src_of_src (τ := τ⁻¹) (β := α⁻¹) (h_L := h_R) (src_of_inv h2_mem.2)
+    have v1_snk : is_snk (τ⁻¹) v₁ :=
+      snk_of_snk (τ := τ⁻¹) (β := α⁻¹) (h_L := h_R) (snk_of_inv h1_mem.2)
+    have v2_snk : is_snk (τ⁻¹) v₂ :=
+      snk_of_snk (τ := τ⁻¹) (β := α⁻¹) (h_L := h_R) (snk_of_inv h2_mem.2)
+
+    have hu_inv : τ⁻¹ u₂ ≤ τ⁻¹ u₁ := by
+      rcases lt_or_eq_of_le hu with (hu_lt | rfl)
+      · exact le_of_lt (src_gt (h_321a := inv_is_321a h_321a) u1_src hu_lt)
+      · exact le_rfl
+    have hv_inv : τ⁻¹ v₁ ≤ τ⁻¹ v₂ := by
+      rcases lt_or_eq_of_le hv with (hv_lt | rfl)
+      · exact le_of_lt (snk_lt (h_321a := inv_is_321a h_321a) v1_snk hv_lt)
+      · exact le_rfl
+
+    use ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩, ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩
+    refine ⟨?_, ?_, ?_⟩
+    · intro I hI
+      rcases hI with (rfl | rfl)
+      · exact ⟨h2_sr, h2_inv⟩
+      · exact ⟨h1_sr, h1_inv⟩
+    · exact ⟨hv_inv, hu_inv⟩
+    · intro h_eq
+      apply h_nest.2
+      apply Prod.ext
+      · apply τ⁻¹.injective
+        have h := congrArg Prod.snd h_eq
+        simpa [τ.inv_mul_cancel_eval] using h.symm
+      · apply τ⁻¹.injective
+        have h := congrArg Prod.fst h_eq
+        simpa [τ.inv_mul_cancel_eval] using h.symm
   · exact not_isolated_of_domino h_321a h_L h_R h_χ a b m (M+1-m)
       (n-1) (N+1-n) m_Icc.1 (by linarith [m_Icc.2])
       (by linarith [n_ge_2]) (by linarith [n_Icc.2])

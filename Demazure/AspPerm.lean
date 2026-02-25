@@ -979,6 +979,12 @@ infix:50 " ≤L " => le_weak_L
 def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
 infix:50 " ≤R " => le_weak_R
 
+lemma le_weak_L_of_R {σ τ : AspPerm} (h_R : σ ≤R τ) : σ⁻¹ ≤L τ⁻¹ := h_R
+
+lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹ := by
+  intro x; simp; intro hx
+  exact h_L hx
+
 -- "Slide right" inversions from α to inversions of τ
 noncomputable def sr (τ α : AspPerm) : (ℤ × ℤ) → (ℤ × ℤ) := fun x => ⟨ τ⁻¹ (α x.1), τ⁻¹ (α x.2) ⟩
 

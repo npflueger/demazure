@@ -180,6 +180,34 @@ lemma not_src_and_snk (n : ℤ) :
   have := tfree_of_321a τ h_321a u n v
   rcases this <;> contradiction
 
+lemma snk_lt {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
+  τ v < τ x := by
+  by_contra! h
+  have : ⟨v, x⟩ ∈ inv_set τ := by
+    use v_lt_x
+    refine lt_of_le_of_ne h ?_
+    intro heq
+    apply τ.injective at heq
+    rw [heq] at v_lt_x
+    exact lt_irrefl v v_lt_x
+  rcases v_snk with ⟨u, _⟩
+  have := tfree_of_321a τ h_321a u v x
+  rcases this <;> contradiction
+
+lemma src_gt {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
+  τ x < τ u := by
+  by_contra! h
+  have : ⟨x, u⟩ ∈ inv_set τ := by
+    use x_lt_u
+    refine lt_of_le_of_ne h ?_
+    intro heq
+    apply τ.injective at heq
+    rw [heq] at x_lt_u
+    exact lt_irrefl x x_lt_u
+  rcases u_src with ⟨v, _⟩
+  have := tfree_of_321a τ h_321a x u v
+  rcases this <;> contradiction
+
 structure between_inv_prop (u x v : ℤ) where
   src_or_snk : is_src τ x ∨ is_snk τ x
   src_iff_right_inv : is_src τ x ↔ ⟨x, v⟩ ∈ inv_set τ
@@ -382,25 +410,74 @@ lemma uv_duality {u : ℤ} {a b : ℤ}
     linarith
   · exact τv_lt_a
 
-lemma uv_duality_ineq {u : ℤ} {a b : ℤ}
-  (u_lt_b : u < b) (τu_ge_a : τ u ≥ a)
-  {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0) (m_sum : m + m' > τ.s a b + 1) :
-  (τ.v b m_pos) > τ⁻¹ (τ⁻¹.u a m'_pos) := by
-  sorry
+lemma uv_duality_ineq {u : ℤ} {a b m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
+  (h_sum : m + m' ≥ τ.s a b + 2) :
+  let v := τ.v b m_pos
+  let w := τ⁻¹.u a m'_pos
+  ⟨u, v⟩ ∈ inv_set τ → ⟨u, τ⁻¹ w⟩ ∈ inv_set τ → τ⁻¹ w < v
+  := by
+  rintro v w ⟨v_lt_w, τw_lt_τv⟩ ⟨u_lt_iw, w_lt_τu⟩
+  by_contra! v_le_iw
 
+  -- Collect a bunch of inequalities
+  have v_snk : is_snk τ v := snk_of_inv ⟨v_lt_w, τw_lt_τv⟩
+  have iw_snk : is_snk τ (τ⁻¹ w) := by
+    have : τ (τ⁻¹ w) < τ u := by
+      simpa using w_lt_τu
+    exact snk_of_inv ⟨u_lt_iw, this⟩
+  have τv_le_w : τ v ≤ w := by
+    by_cases h : v = τ⁻¹ w
+    · simp [h]
+    have v_lt_iw : v < τ⁻¹ w := lt_of_le_of_ne v_le_iw h
+    simpa using le_of_lt <| snk_lt h_321a v_snk v_lt_iw
+  have b_le_v : b ≤ v := τ.v_ge b m_pos
+  have w_lt_a : w < a := τ⁻¹.u_lt a m'_pos
 
+  -- Define the relevant sets and establish inclusions
+  let S := τ.se a b
+  let A := τ.se a (τ⁻¹ w)
+  let B := τ.se (τ v) b
+  have A_subset : A ⊆ S := by
+    intro n nA
+    obtain ⟨iw_le_n, τn_lt_a⟩ := (τ.mem_se _ _ _).mp nA
+    suffices n ≥ b ∧ τ n < a by exact (τ.mem_se a b n).mpr this
+    exact ⟨le_trans b_le_v (le_trans v_le_iw iw_le_n), τn_lt_a⟩
+  have B_subset : B ⊆ S := by
+    intro n nB
+    obtain ⟨b_le_n, τn_lt_τv⟩ := (τ.mem_se _ _ _).mp nB
+    suffices n ≥ b ∧ τ n < a by exact (τ.mem_se a b n).mpr this
+    exact ⟨b_le_n, lt_trans τn_lt_τv (lt_of_le_of_lt τv_le_w w_lt_a)⟩
 
+  have disj : Disjoint A B := by
+    apply Finset.disjoint_iff_ne.mpr
+    rintro n nA _ nB rfl
+    apply (τ.mem_se _ _ _).mp at nA
+    obtain ⟨n_ge_iw, _⟩ := nA
+    apply (τ.mem_se _ _ _).mp at nB
+    obtain ⟨_, τn_lt_τv⟩ := nB
+    have v_le_n : v ≤ n := le_trans v_le_iw n_ge_iw
+    have : ⟨v, n⟩ ∈ inv_set τ := (τ.inv_iff_lt v_le_n).mpr τn_lt_τv
+    have : is_src τ v := src_of_inv this
+    rcases not_src_and_snk h_321a v <;> contradiction
 
+  have ineq : ((A ∪ B).card : ℤ) > S.card := by
+    rw [Finset.card_union_of_disjoint disj, Nat.cast_add]
 
+    have : A.card = m' := by
+      rw [← τ⁻¹.s'_b_τu a m'_pos]
+      simp [τ⁻¹.dual_inverse]
+      congr
+    rw [this]
+    have : B.card = m - 1 := by
+      rw [← τ.s_τv_b b m_pos]
+      congr
+    rw [this]
+    have : S.card = τ.s a b := by rfl
+    rw [this]
+    linarith [h_sum]
 
-
-
-
-
-
-
-
-
+  have := Finset.card_le_card (Finset.union_subset A_subset B_subset)
+  linarith [this, ineq]
 
 lemma split_s' {u v : ℤ} {a b : ℤ}
   (u_lt_b : u < b) (b_le_v : b ≤ v) (τv_lt_a : τ v < a) (τu_ge_a : τ u ≥ a) :
@@ -559,40 +636,6 @@ lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func
     rw [avset.invSet_func]
     refine avset.prop
   · simp [avset.prop_321a.tfree, avset.invSet_func]
-
-
-
-omit h_321a h_L in
-lemma snk_lt {τ : AspPerm} (h_321a : is_321a τ)
-  {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
-  τ v < τ x := by
-  by_contra! h
-  have : ⟨v, x⟩ ∈ inv_set τ := by
-    use v_lt_x
-    refine lt_of_le_of_ne h ?_
-    intro heq
-    apply τ.injective at heq
-    rw [heq] at v_lt_x
-    exact lt_irrefl v v_lt_x
-  rcases v_snk with ⟨u, _⟩
-  have := tfree_of_321a τ h_321a u v x
-  rcases this <;> contradiction
-
-omit h_321a h_L in
-lemma src_gt {τ : AspPerm} (h_321a : is_321a τ)
-  {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
-  τ x < τ u := by
-  by_contra! h
-  have : ⟨x, u⟩ ∈ inv_set τ := by
-    use x_lt_u
-    refine lt_of_le_of_ne h ?_
-    intro heq
-    apply τ.injective at heq
-    rw [heq] at x_lt_u
-    exact lt_irrefl x x_lt_u
-  rcases u_src with ⟨v, _⟩
-  have := tfree_of_321a τ h_321a x u v
-  rcases this <;> contradiction
 
 theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
@@ -1082,6 +1125,88 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
         linarith [(τ.b_step_one_iff a v₁).mpr τv₁_lt_a]
       rw [this]
       linarith [τ.s_nonneg a (τ v₁ + 1)]
+
+lemma not_isolated_of_domino (a b m m' n n' : ℤ)
+  (m_pos : m ≥ 1) (m'_pos : m' ≥ 1) (n_pos : n ≥ 1) (n'_pos : n' ≥ 1)
+  (msum : m + m' = τ.s a b + 2) (nsum : n + n' = τ⁻¹.s b a + 1)
+  (hα : ⟨m', n'⟩ ∈ α.lamp a) (hβ : ⟨m, n⟩ ∈ β.ramp b) :
+  ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
+  := by
+  sorry
+
+lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 1)) :
+  ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
+  := by
+  let M := τ.s a b + 1
+  let N := τ⁻¹.s b a + 1
+  have hMN : a - b + α.χ + β.χ = M - N := by linarith [τ.duality a b]
+
+  have legos : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
+    ⟨m, n⟩ ∈ β.ramp b ∨ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a :=
+    (AspPerm.ramp_dprod_legos α β a b M N hMN).mp h_s
+
+  have domino_helper : ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
+    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a →
+    ∃ m' ∈ Set.Icc 1 M, ∃ n' ∈ Set.Icc 1 N, m' ≤ m ∧ n' ≤ n
+    ∧ ⟨M+1-m', N+1-n'⟩ ∈ α.lamp a
+    ∧ ( (⟨m'-1, n'⟩ ∈ (β.ramp b) ∧ m' ≥ 2) ∨ (⟨m',n'-1⟩ ∈ (β.ramp b) ∧ n' ≥ 2))
+    := by
+    -- Should be an straightforward induction
+    sorry
+
+  have corner : ⟨M, N⟩ ∉ β.ramp b := by
+    intro mem_ramp
+    have : β.ramp b ⊆ τ.ramp b := by
+      -- Make this into a general lemma
+      sorry
+    apply this at mem_ramp
+    have : τ.s a b ≥ M := by
+      convert (τ.mem_ramp_iff_s_geq b M N).mp mem_ramp
+      linarith [hMN]
+    linarith [this]
+
+  have domino :  ∃ m ∈ Set.Icc 1 M, ∃ n ∈ Set.Icc 1 N,
+    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
+    ∧ ( (⟨m-1, n⟩ ∈ (β.ramp b) ∧ m ≥ 2) ∨ (⟨m,n-1⟩ ∈ (β.ramp b) ∧ n ≥ 2))
+    := by
+    have M_Icc : M ∈ Set.Icc 1 M := by
+      constructor
+      · linarith [τ.s_nonneg a b]
+      · exact le_refl M
+    have N_Icc : N ∈ Set.Icc 1 N := by
+      constructor
+      · linarith [τ⁻¹.s_nonneg b a]
+      · exact le_refl N
+    have : ⟨M+1-M, N+1-N⟩ ∈ α.lamp a := by
+      have := legos M M_Icc N N_Icc
+      rcases this with (hβ | hα)
+      · contradiction
+      · exact hα
+    have := domino_helper M M_Icc N N_Icc this
+    rcases this with ⟨m, m_Icc, n, n_Icc, _, _, _, _⟩
+    use m, m_Icc, n, n_Icc
+
+  rcases domino with ⟨m, m_Icc, n, n_Icc, hα, (⟨hβ,m_ge_2⟩ | ⟨hβ,n_ge_2⟩)⟩
+  · -- Switch to τ⁻¹ to apply the domino helper lemma
+    have leR : β⁻¹ ≤R τ⁻¹ := AspPerm.le_weak_R_of_L h_L
+    have h_χ' : τ⁻¹.χ = β⁻¹.χ + α⁻¹.χ := by
+      rw [τ.χ_dual, α.χ_dual, β.χ_dual]
+      linarith [h_χ]
+    have hβi : ⟨n, m-1⟩ ∈ β⁻¹.lamp b := (β.ramp_lamp_dual b (m-1) n).mp hβ
+    have hαi : ⟨N+1-n, M+1-m⟩ ∈ α⁻¹.ramp a := by
+      simpa [α⁻¹.ramp_lamp_dual a]
+    have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR h_χ' b a  (N+1-n) n (M+1-m) (m-1)
+      (by linarith [n_Icc.2]) n_Icc.1
+      (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith) (by simp; linarith) hβi hαi
+    rcases this with ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩, ⟨h_mem, h_nest⟩⟩
+    use ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩, ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩
+
+    sorry
+  · exact not_isolated_of_domino h_321a h_L h_R h_χ a b m (M+1-m)
+      (n-1) (N+1-n) m_Icc.1 (by linarith [m_Icc.2])
+      (by linarith [n_ge_2]) (by linarith [n_Icc.2])
+      (by linarith) (by linarith)
+      hα hβ
 
 end factorization
 end fixed_321a_and_lel

@@ -1509,7 +1509,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       (by linarith) (by linarith)
       hα hβ
 
---- Main result
+--- Main result, in two parts
 
 theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
   constructor
@@ -1527,9 +1527,7 @@ def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J 
 theorem drop_leq_iff_isolated : α.dprod_le β τ
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   constructor
-  · intro le I I_mem J J_mem h_prec
-    obtain ⟨u, v⟩ := I
-    obtain ⟨u', v'⟩ := J
+  · rintro le ⟨u, v⟩ I_mem ⟨u', v'⟩ J_mem h_prec
     have u'_le_u : u' ≤ u := h_prec.1
     have v_le_v' : v ≤ v' := h_prec.2
     contrapose! le with I_ne_J
@@ -1543,8 +1541,7 @@ theorem drop_leq_iff_isolated : α.dprod_le β τ
         exact I_ne_J rfl
       rw [← u_eq_u'] at J_mem
       have excess := excess_of_not_isolated h_321a h_L h_R h_χ v_lt_v' I_mem.1 J_mem.2
-      use (τ v + 1)
-      use (v+1)
+      use τ v + 1, v+1
       exact excess
     -- Now assume u' < u instead
     have u'_ne_u : u' ≠ u := by

@@ -384,10 +384,8 @@ lemma split_s {u v : ℤ} {a b : ℤ}
         suffices τ n < τ v by exact ⟨n_ge_b, this⟩
         by_contra! τv_le_τn
         have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
-        have un_inv : ⟨u, n⟩ ∈ inv_set τ := by
-          have u_lt_n : u < n := lt_of_lt_of_le u_lt_b n_ge_b
-          have τu_gt_τn : τ u > τ n := lt_of_lt_of_le τn_lt_a τu_ge_a
-          exact ⟨u_lt_n, τu_gt_τn⟩
+        have un_inv : ⟨u, n⟩ ∈ inv_set τ :=
+          ⟨lt_of_lt_of_le u_lt_b n_ge_b, lt_of_lt_of_le τn_lt_a τu_ge_a⟩
         have := tfree_of_321a τ h_321a u n v
         rcases this <;> contradiction
     · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
@@ -798,7 +796,7 @@ lemma uv_eq_of_lel
   intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
   have u_crit :=  (τ.u_crit b n_pos u).mp (by rfl)
   have s'_eq : τ.s' b (τ u) = n := u_crit.1
-  have u_lt_b : u < b := ((τ.u_crit b n_pos u).mp (by rfl)).2
+  have u_lt_b : u < b := u_crit.2
   have v_crit := (τ.v_crit b m_pos v).mp (by rfl)
   have s_eq : τ.s (τ v) b = m - 1 := v_crit.1
   have b_le_v : b ≤ v := v_crit.2
@@ -823,7 +821,7 @@ lemma uv_eq_of_lel'
   intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
   have u_crit :=  (β.u_crit b n_pos u).mp (by rfl)
   have s'_eq : β.s' b (β u) = n := u_crit.1
-  have u_lt_b : u < b := ((β.u_crit b n_pos u).mp (by rfl)).2
+  have u_lt_b : u < b := u_crit.2
   have v_crit := (β.v_crit b m_pos v).mp (by rfl)
   have s_eq : β.s (β v) b = m - 1 := v_crit.1
   have b_le_v : b ≤ v := v_crit.2
@@ -916,11 +914,7 @@ theorem inv_of_lel_iff_ramp
   := by
   intro m n
   have m_pos : m > 0 := by linarith [τ.s_nonneg (τ v) b]
-  have n_pos : n > 0 := by
-    simp only [n, τ.dual_inverse]
-    have : τ⁻¹.s b (τ u) = τ⁻¹.s b (τ u + 1) + 1 := by
-      linarith [(τ⁻¹.b_step_one_iff b (τ u)).mpr (by simp [u_lt_b])]
-    linarith [this, τ⁻¹.s_nonneg b (τ u + 1)]
+  have n_pos : n > 0 := τ.s'_pos_of_lt u_lt_b
 
   rw [← lel_ramp (h_321a := h_321a) (h_L := h_L) b m_pos n_pos]
   have u_eq: u = τ.u b n_pos := by
@@ -1027,12 +1021,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
       exact (τ.s_nondec this b).1
   have n_icc : n ∈ Set.Icc 1 N := by
     constructor
-    · dsimp [n]
-      have : τ⁻¹.s b (τ u) = τ⁻¹.s b (τ u + 1) + 1 := by
-        have := (τ⁻¹.b_step_one_iff b (τ u)).mpr
-        rw [τ.inv_mul_cancel_eval] at this
-        linarith [this u_lt_b]
-      linarith [this, τ⁻¹.s_nonneg b (τ u + 1)]
+    · dsimp only [n]; rw [← τ.dual_inverse]; exact τ.s'_pos_of_lt u_lt_b
     · dsimp [n, N]
       exact (τ⁻¹.s_noninc b τu_ge_a).1
 
@@ -1493,14 +1482,10 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
     have v2_snk : is_snk (τ⁻¹) v₂ :=
       snk_of_snk (τ := τ⁻¹) (β := α⁻¹) (h_L := h_R) (snk_of_inv h2_mem.2)
 
-    have hu_inv : τ⁻¹ u₂ ≤ τ⁻¹ u₁ := by
-      rcases lt_or_eq_of_le hu with (hu_lt | rfl)
-      · exact le_of_lt (src_gt (h_321a := inv_is_321a h_321a) u1_src hu_lt)
-      · exact le_rfl
-    have hv_inv : τ⁻¹ v₁ ≤ τ⁻¹ v₂ := by
-      rcases lt_or_eq_of_le hv with (hv_lt | rfl)
-      · exact le_of_lt (snk_lt (h_321a := inv_is_321a h_321a) v1_snk hv_lt)
-      · exact le_rfl
+    have hu_inv : τ⁻¹ u₂ ≤ τ⁻¹ u₁ :=
+      src_ge (h_321a := inv_is_321a h_321a) u1_src hu
+    have hv_inv : τ⁻¹ v₁ ≤ τ⁻¹ v₂ :=
+      snk_le (h_321a := inv_is_321a h_321a) v1_snk hv
 
     use ⟨τ⁻¹ v₂, τ⁻¹ u₂⟩, ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩
     refine ⟨?_, ?_, ?_⟩

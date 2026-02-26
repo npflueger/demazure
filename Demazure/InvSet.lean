@@ -62,10 +62,8 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
       exact τ.asp
     ext v
     constructor
-    · intro hv
-      exact ⟨Int.add_one_le_iff.mpr hv.1, hv.2⟩
-    · intro hv
-      exact ⟨Int.add_one_le_iff.mp hv.1, hv.2⟩
+    · intro ⟨h1, h2⟩; exact ⟨by omega, h2⟩
+    · intro ⟨h1, h2⟩; exact ⟨by omega, h2⟩
   · show ∀ (v : ℤ), {u | (u, v) ∈ inv_set τ}.Finite
     unfold inv_set; simp
     intro v
@@ -75,10 +73,8 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
       exact τ.asp
     ext u
     constructor
-    · intro hu
-      exact ⟨hu.1, by linarith [hu.2]⟩
-    · intro hu
-      exact ⟨hu.1, by linarith [hu.2]⟩
+    · intro ⟨h1, h2⟩; exact ⟨h1, by omega⟩
+    · intro ⟨h1, h2⟩; exact ⟨h1, by omega⟩
 
 def of_AspPerm (τ : AspPerm) : AspSet :=
   ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩
@@ -591,10 +587,10 @@ lemma inset_eq_nw (n : ℤ) : (asps.inset n).toSet
     have hx' : ⟨x, n⟩ ∈ asps := by simpa using hx
     have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
     rcases h_inv with ⟨hxn, hσ⟩
-    exact ⟨hxn, Int.add_one_le_iff.mpr hσ⟩
+    exact ⟨hxn, by omega⟩
   · intro hx
     rcases hx with ⟨hxn, hσ⟩
-    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := ⟨hxn, Int.add_one_le_iff.mp hσ⟩
+    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := ⟨hxn, by omega⟩
     have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
@@ -608,10 +604,10 @@ lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
     have hx' : ⟨n, x⟩ ∈ asps := by simpa using hx
     have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
     rcases h_inv with ⟨hnx, hσ⟩
-    exact ⟨Int.add_one_le_iff.mpr hnx, hσ⟩
+    exact ⟨by omega, hσ⟩
   · intro hx
     rcases hx with ⟨hnx, hσ⟩
-    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := ⟨Int.add_one_le_iff.mp hnx, hσ⟩
+    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := ⟨by omega, hσ⟩
     have hx' : ⟨n, x⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 

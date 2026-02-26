@@ -292,6 +292,12 @@ lemma s'_nonneg (a b : ℤ) : τ.s' a b ≥ 0 := by
   unfold s'
   exact Nat.cast_nonneg _
 
+-- The s'-value at τ u (from the left of b) is positive whenever u < b.
+lemma s'_pos_of_lt {u b : ℤ} (u_lt_b : u < b) : τ.s' b (τ u) ≥ 1 := by
+  simp only [s']
+  have : (τ.nw (τ u) b).Nonempty := ⟨u, by simp [u_lt_b]⟩
+  exact_mod_cast Finset.card_pos.mpr this
+
 lemma dual_inverse : τ.s' = (τ⁻¹).s := by
   funext b a
   calc
@@ -939,9 +945,8 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
   let u := τ.u b n_pos
   let v := τ.v b m_pos
 
-  -- Consider bubbing these out as separate helpers. Might be needed elsewhere.
-  have u_lt_b : u < b := by exact ((τ.u_crit b n_pos u).mp (by rfl)).2
-  have v_gt_b : b ≤ v := by exact ((τ.v_crit b m_pos v).mp (by rfl)).2
+  have u_lt_b : u < b := τ.u_lt b n_pos
+  have v_gt_b : b ≤ v := τ.v_ge b m_pos
 
   have inv_simp : ⟨u, v⟩ ∈ inv_set τ ↔ τ v < τ u := by
     simp [inv_set, lt_of_lt_of_le u_lt_b v_gt_b]

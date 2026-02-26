@@ -1519,16 +1519,15 @@ theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) ''
     let b := v
     exact inversion_in_union h_321a h_L h_R h_χ (τ u) v u v
       (ge a b) uv_inv.1 (le_refl _) (le_refl _) uv_inv.2
-  · intro h_sub
-    intro a b
+  · intro h_sub a b
     apply union_sufficient h_321a h_L h_R h_χ a b h_sub
 
-theorem drop_leq_iff_no_excess : α.dprod_le β τ
-  ↔ ∀ I J, {I, J} ⊆ (τ.sr α) '' (inv_set α) ∩ inv_set β → I ≼ J → I = J := by
+def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
+
+theorem drop_leq_iff_isolated : α.dprod_le β τ
+  ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   constructor
-  · intro le I J h_mem h_prec
-    have I_mem := h_mem (show I ∈ {I,J} from by simp)
-    have J_mem := h_mem (show J ∈ {I,J} from by simp)
+  · intro le I I_mem J J_mem h_prec
     obtain ⟨u, v⟩ := I
     obtain ⟨u', v'⟩ := J
     have u'_le_u : u' ≤ u := h_prec.1
@@ -1547,11 +1546,40 @@ theorem drop_leq_iff_no_excess : α.dprod_le β τ
       use (τ v + 1)
       use (v+1)
       exact excess
-    have : u' ≠ u := by
+    -- Now assume u' < u instead
+    have u'_ne_u : u' ≠ u := by
       intro h; rw [h] at u_eq_u'; exact u_eq_u' rfl
-    have u_lt_u' : u' < u := lt_of_le_of_ne h_prec.1 this
-    -- Now transfer those inversions over to τ⁻¹ and argue from there as above
-    sorry
+    have v_snk_β : is_snk β v := snk_of_inv I_mem.2
+    have v_snk_τ : is_snk τ v := snk_of_inv (h_L I_mem.2)
+    have u_src_τ : is_src τ u := src_of_inv (h_L I_mem.2)
+    have βv'_ge_βv : β v' ≥ β v:= snk_le (is_321a_of_lel h_321a h_L) v_snk_β v_le_v'
+    have τu'_le_τu : τ u' ≤ τ u := src_ge (h_321a := h_321a) u_src_τ u'_le_u
+
+    have u'_lt_v : u' < v := lt_of_le_of_lt h_prec.1 I_mem.2.1
+    have βu'_gt_βv : β u' > β v := lt_of_le_of_lt βv'_ge_βv J_mem.2.2
+    have hb : ⟨τ v, τ u'⟩ ∈ (τ⁻¹.sr β⁻¹) '' (inv_set β⁻¹.func) := by
+      apply ((τ⁻¹).sr_crit β⁻¹ (τ v) (τ u')).mpr
+      suffices ⟨u', v⟩ ∈ inv_set β by simpa
+      exact ⟨u'_lt_v, βu'_gt_βv⟩
+    have dualχ : τ⁻¹.χ = β⁻¹.χ + α⁻¹.χ := by
+      repeat rw [AspPerm.χ_dual]
+      linarith [h_χ]
+
+    have τu'_lt_τu : τ u' < τ u := by
+      apply lt_of_le_of_ne τu'_le_τu
+      intro h
+      apply τ.injective at h
+      contradiction
+    have h := excess_of_not_isolated (inv_is_321a h_321a) h_R (AspPerm.le_weak_R_of_L h_L) dualχ
+      (u := τ v) (v₁ := τ u') (v₂ := τ u) τu'_lt_τu hb
+      ((τ.sr_crit α u v).mp I_mem.1)
+    let a := u' + 1
+    let b := τ u' + 1
+    use b, a
+    obtain excess : β⁻¹.dprod_val_ge α⁻¹ a b (τ⁻¹.s a b + 1) := by simpa using h
+    dsimp [AspPerm.dprod_val_ge] at excess
+    intro x; specialize excess x
+    linarith [excess, τ.duality b a, α.duality b x, β.duality x a]
   · intro no_excess a b
     contrapose! no_excess with ne_le
     dsimp [AspPerm.dprod_val_le] at ne_le; push_neg at ne_le
@@ -1559,7 +1587,14 @@ theorem drop_leq_iff_no_excess : α.dprod_le β τ
       intro x
       specialize ne_le x
       linarith
-    exact not_isolated_of_excess h_321a h_L h_R h_χ ge
+    have concl := not_isolated_of_excess h_321a h_L h_R h_χ ge
+    contrapose! concl with isolated
+    intro I J mems prec
+    have I_mem : I ∈ (τ.sr α) '' (inv_set α) ∩ inv_set β := by
+      apply mems; simp
+    have J_mem : J ∈ (τ.sr α) '' (inv_set α) ∩ inv_set β := by
+      apply mems; simp
+    exact isolated I I_mem J J_mem prec
 
 end factorization
 end fixed_321a_and_lel

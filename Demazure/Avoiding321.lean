@@ -1007,7 +1007,7 @@ section factorization
 variable {α : AspPerm} (h_R : α ≤R τ) (h_χ : τ.χ = α.χ + β.χ)
 include τ α β h_321a h_R h_L h_χ
 
-lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_geq β a b (τ.s a b)) :
+lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a b)) :
   u < b → b ≤ v → τ u ≥ a → τ v < a
   → ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
   intro u_lt_b b_le_v τu_ge_a τv_lt_a
@@ -1074,7 +1074,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_geq β a b (τ.s a b)
     exact (τ.sr_crit α u v).mpr hα
 
 lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.sr α) '' (inv_set α)) :
-  α.dprod_geq β a b (τ.s a b)
+   α.dprod_val_ge β a b (τ.s a b)
   := by
   let M := τ.s a b
   let N := τ.s' b a
@@ -1143,7 +1143,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
   let a := τ v₁ + 1
   let b := v₁ + 1
 
-  α.dprod_geq β a b (τ.s a b + 1)
+  α.dprod_val_ge β a b (τ.s a b + 1)
   := by
   intro a b
   have uv₁_inv_τ : ⟨u, v₁⟩ ∈ inv_set τ := by
@@ -1357,7 +1357,7 @@ decreasing_by
     simp_wf
     omega
 
-lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 1)) :
+lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b + 1)) :
   ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
   := by
   let M := τ.s a b + 1
@@ -1523,6 +1523,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
       (by linarith [n_ge_2]) (by linarith [n_Icc.2])
       (by linarith) (by linarith)
       hα hβ
+
 
 end factorization
 end fixed_321a_and_lel

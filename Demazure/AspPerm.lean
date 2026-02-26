@@ -1013,16 +1013,22 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
   exact ⟨u_lt_v, τu_gt_τv⟩
 
 -- Proposition mean that (α ⋆ β).s a b ≥ n.
-def dprod_geq (α β : AspPerm) (a b n : ℤ) : Prop :=
+def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∀ l : ℤ, α.s a l + β.s l b ≥ n
 
-def dprod_leq (α β : AspPerm) (a b n : ℤ) : Prop :=
+def dprod_ge (α β τ : AspPerm) : Prop :=
+  ∀ a b : ℤ, dprod_val_ge α β a b (τ.s a b)
+
+def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∃ l : ℤ, α.s a l + β.s l b ≤ n
+
+def dprod_le (α β τ : AspPerm) : Prop :=
+  ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
 
 
 theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
   (habMN : a - b + α.χ + β.χ = M - N) :
-  dprod_geq α β a b M ↔
+  dprod_val_ge α β a b M ↔
   ∀ m ∈ Set.Icc 1 M, ∀ n ∈ Set.Icc 1 N,
   ⟨m, n⟩ ∈ β.ramp b ∨ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
   := by
@@ -1040,7 +1046,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     have sβ := mem_ramp_iff_s_geq β b m n
     rw [sα, sβ]
 
-    unfold AspPerm.dprod_geq at dprod
+    unfold dprod_val_ge at dprod
     contrapose! dprod with ineqs
 
     let l := b + m - n  - β.χ
@@ -1057,7 +1063,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     have : α.s a l + β.s l b ≤ M-1 := by
       linarith [add_le_add hα hβ]
     exact Int.lt_of_le_sub_one this
-  · unfold AspPerm.dprod_geq
+  · unfold dprod_val_ge
     intro hramp l
     contrapose! hramp with ineq
     obtain ineq : α.s a l + β.s l b ≤ M - 1 := Int.le_sub_one_of_lt ineq

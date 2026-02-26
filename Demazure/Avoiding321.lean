@@ -1062,7 +1062,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
 
     exact (τ.sr_crit α u v).mpr hα
 
-lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.sr α) '' (inv_set α)) :
+lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv_set α)) ∪ inv_set β) :
    α.dprod_val_ge β a b (τ.s a b)
   := by
   let M := τ.s a b
@@ -1086,7 +1086,7 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.
   have v_ge_b : v ≥ b := (τ.v_ge b m_ge_1)
   have τv_lt_a : τ v < a := τ.τv_lt b m_ge_1 m_le_M
   have τu_ge_a : τ u ≥ a := τ.τu_ge b n_ge_1 n_le_N
-  -- [TODO] consider packaginga all the above into a structure for use elsewhere
+  -- [TODO] consider packaging all the above into a structure for use elsewhere
 
   have : ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b :=
     lel_ramp (h_321a := h_321a) (h_L := h_L) b m_ge_1 n_ge_1
@@ -1121,8 +1121,8 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ inv_set β ∪ (τ.
 
   have lamp_equiv : ⟨u', v'⟩ ∈ inv_set α⁻¹.func
     ↔ ⟨m', n'⟩ ∈ α.lamp a := lel_lamp h_321a h_R a m'_ge_1 n'_ge_1
-  suffices ⟨u, v⟩ ∈ inv_set β ∨ ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) by
-    rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← τ.sr_crit α u v]
+  suffices ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) ∨ ⟨u, v⟩ ∈ inv_set β  by
+    rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← τ.sr_crit α u v, Or.comm]
 
   have uv_inv : ⟨u, v⟩ ∈ inv_set τ := ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
   exact h_union uv_inv
@@ -1509,6 +1509,57 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       (by linarith) (by linarith)
       hα hβ
 
+--- Main result
+
+theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+  constructor
+  · intro ge
+    rintro ⟨u, v⟩ uv_inv
+    let a := τ u
+    let b := v
+    exact inversion_in_union h_321a h_L h_R h_χ (τ u) v u v
+      (ge a b) uv_inv.1 (le_refl _) (le_refl _) uv_inv.2
+  · intro h_sub
+    intro a b
+    apply union_sufficient h_321a h_L h_R h_χ a b h_sub
+
+theorem drop_leq_iff_no_excess : α.dprod_le β τ
+  ↔ ∀ I J, {I, J} ⊆ (τ.sr α) '' (inv_set α) ∩ inv_set β → I ≼ J → I = J := by
+  constructor
+  · intro le I J h_mem h_prec
+    have I_mem := h_mem (show I ∈ {I,J} from by simp)
+    have J_mem := h_mem (show J ∈ {I,J} from by simp)
+    obtain ⟨u, v⟩ := I
+    obtain ⟨u', v'⟩ := J
+    have u'_le_u : u' ≤ u := h_prec.1
+    have v_le_v' : v ≤ v' := h_prec.2
+    contrapose! le with I_ne_J
+    dsimp [AspPerm.dprod_le, AspPerm.dprod_val_le]; push_neg
+
+    by_cases u_eq_u' : u = u'
+    · have v_lt_v' : v < v' := by
+        by_contra!
+        have v_eq_v' : v = v' := le_antisymm v_le_v' this
+        subst v_eq_v' u_eq_u'
+        exact I_ne_J rfl
+      rw [← u_eq_u'] at J_mem
+      have excess := excess_of_not_isolated h_321a h_L h_R h_χ v_lt_v' I_mem.1 J_mem.2
+      use (τ v + 1)
+      use (v+1)
+      exact excess
+    have : u' ≠ u := by
+      intro h; rw [h] at u_eq_u'; exact u_eq_u' rfl
+    have u_lt_u' : u' < u := lt_of_le_of_ne h_prec.1 this
+    -- Now transfer those inversions over to τ⁻¹ and argue from there as above
+    sorry
+  · intro no_excess a b
+    contrapose! no_excess with ne_le
+    dsimp [AspPerm.dprod_val_le] at ne_le; push_neg at ne_le
+    have ge : α.dprod_val_ge β a b (τ.s a b + 1) := by
+      intro x
+      specialize ne_le x
+      linarith
+    exact not_isolated_of_excess h_321a h_L h_R h_χ ge
 
 end factorization
 end fixed_321a_and_lel

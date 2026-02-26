@@ -510,21 +510,16 @@ lemma uv_duality_ge {a b : ℤ}
     exact lt_irrefl w (lt_of_le_of_lt τv_ge_w τv_lt_w)
 
 
-lemma uv_duality_lt (a b u : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
+lemma uv_duality_lt (a b : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
   (h_sum : m + m' ≥ τ.s a b + 2) :
   let v := τ.v b m_pos
   let w := τ⁻¹.u a m'_pos
-  ⟨u, v⟩ ∈ inv_set τ → ⟨u, τ⁻¹ w⟩ ∈ inv_set τ → τ⁻¹ w < v
+  is_snk τ v → is_snk τ (τ⁻¹ w) → τ⁻¹ w < v
   := by
-  rintro v w ⟨v_lt_w, τw_lt_τv⟩ ⟨u_lt_iw, w_lt_τu⟩
+  rintro v w v_snk τiw_snk
   by_contra! v_le_iw
 
   -- Collect a bunch of inequalities
-  have v_snk : is_snk τ v := snk_of_inv ⟨v_lt_w, τw_lt_τv⟩
-  have iw_snk : is_snk τ (τ⁻¹ w) := by
-    have : τ (τ⁻¹ w) < τ u := by
-      simpa using w_lt_τu
-    exact snk_of_inv ⟨u_lt_iw, this⟩
   have τv_le_w : τ v ≤ w := by
     by_cases h : v = τ⁻¹ w
     · simp [h]
@@ -1226,6 +1221,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
       rw [this]
       linarith [τ.s_nonneg a (τ v₁ + 1)]
 
+omit h_χ in
 lemma not_isolated_of_domino (a b m m' n n' : ℤ)
   (m_pos : m ≥ 1) (m'_pos : m' ≥ 1) (n_pos : n ≥ 1) (n'_pos : n' ≥ 1)
   (msum : m + m' = τ.s a b + 2) (nsum : n + n' = τ⁻¹.s b a + 1)
@@ -1283,19 +1279,9 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
     use invα.2
     simp; use invα.1
 
-  have τiv'_v_inv : ⟨τ⁻¹ v', v⟩ ∈ inv_set τ := by
-    constructor
-    · have h1 : τ⁻¹ v' < b := by
-        have : τ⁻¹.s b a ≥ n' := by linarith
-        exact τ⁻¹.τv_lt a n'_pos this
-      have h2 : b ≤ v := τ.v_ge b m_pos
-      exact lt_of_lt_of_le h1 h2
-    · suffices τ v < v' by simpa
-
-      sorry
-
   have lt_v : τ⁻¹ u' < v :=
-    uv_duality_lt h_321a a b (τ⁻¹ v') m_pos m'_pos (le_of_eq <| Eq.symm msum) τiv'_v_inv Iτ
+    uv_duality_lt h_321a a b m_pos m'_pos (le_of_eq <| Eq.symm msum)
+      (snk_of_inv <| h_L invβ) (snk_of_inv Iτ)
 
   let I : ℤ × ℤ :=  ⟨τ⁻¹ v', τ⁻¹ u'⟩
   let J : ℤ × ℤ := ⟨u, v⟩
@@ -1469,7 +1455,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
     have hβi : ⟨n, m-1⟩ ∈ β⁻¹.lamp b := (β.ramp_lamp_dual b (m-1) n).mp hβ
     have hαi : ⟨N+1-n, M+1-m⟩ ∈ α⁻¹.ramp a := by
       simpa [α⁻¹.ramp_lamp_dual a]
-    have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR h_χ' b a  (N+1-n) n (M+1-m) (m-1)
+    have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR b a  (N+1-n) n (M+1-m) (m-1)
       (by linarith [n_Icc.2]) n_Icc.1
       (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith) (by simp; linarith) hβi hαi
     rcases this with ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩, ⟨h_mem, h_nest⟩⟩
@@ -1532,7 +1518,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_geq β a b (τ.s a b + 
       · apply τ⁻¹.injective
         have h := congrArg Prod.fst h_eq
         simpa [τ.inv_mul_cancel_eval] using h.symm
-  · exact not_isolated_of_domino h_321a h_L h_R h_χ a b m (M+1-m)
+  · exact not_isolated_of_domino h_321a h_L h_R a b m (M+1-m)
       (n-1) (N+1-n) m_Icc.1 (by linarith [m_Icc.2])
       (by linarith [n_ge_2]) (by linarith [n_Icc.2])
       (by linarith) (by linarith)

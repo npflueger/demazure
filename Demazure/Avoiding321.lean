@@ -194,6 +194,14 @@ lemma snk_lt {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
   have := tfree_of_321a τ h_321a u v x
   rcases this <;> contradiction
 
+lemma snk_le {v x : ℤ} (v_snk : is_snk τ v) (v_le_x : v ≤ x) :
+  τ v ≤ τ x := by
+  by_cases heq : v = x
+  · rw [heq]
+  · have v_lt_x : v < x := lt_of_le_of_ne v_le_x heq
+    apply le_of_lt
+    exact snk_lt h_321a v_snk v_lt_x
+
 lemma src_gt {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
   τ x < τ u := by
   by_contra! h
@@ -207,6 +215,14 @@ lemma src_gt {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
   rcases u_src with ⟨v, _⟩
   have := tfree_of_321a τ h_321a x u v
   rcases this <;> contradiction
+
+lemma src_ge {u x : ℤ} (u_src : is_src τ u) (x_le_u : x ≤ u) :
+  τ x ≤ τ u := by
+  by_cases h : x = u
+  · rw [h]
+  · have x_lt_u := lt_of_le_of_ne x_le_u h
+    apply le_of_lt
+    exact src_gt h_321a u_src x_lt_u
 
 structure between_inv_prop (u x v : ℤ) where
   src_or_snk : is_src τ x ∨ is_snk τ x
@@ -410,7 +426,91 @@ lemma uv_duality {u : ℤ} {a b : ℤ}
     linarith
   · exact τv_lt_a
 
-lemma uv_duality_ineq {u : ℤ} {a b m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
+lemma uv_duality_ge {a b : ℤ}
+  {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0) (m_sum : m + m' = τ.s a b + 1) :
+  is_snk τ (τ.v b m_pos) → is_snk τ (τ⁻¹ (τ⁻¹.u a m'_pos)) →
+  (τ (τ.v b m_pos) ≥ τ⁻¹.u a m'_pos) ∧ (τ.v b m_pos ≥ τ⁻¹ (τ⁻¹.u a m'_pos)) := by
+  let v := τ.v b m_pos
+  let w := τ⁻¹.u a m'_pos
+  suffices is_snk τ v → is_snk τ (τ⁻¹ w) → (τ v ≥ w ∧ v ≥ τ⁻¹ w) by
+    assumption
+  intro v_snk τiw_snk
+  have equiv : τ v ≥ w ↔ v ≥ τ⁻¹ w := by
+    constructor
+    · intro h; contrapose! h
+      simpa using snk_lt h_321a v_snk h
+    · intro h
+      simpa using snk_le h_321a τiw_snk h
+  suffices τ v ≥ w by
+    rw [← equiv]
+    exact ⟨this, this⟩
+  by_contra! τv_lt_w
+  let A := τ.se (τ v) b
+  let B := τ.se a (τ⁻¹ w)
+  let S := τ.se a b
+  have disj : Disjoint A B := by
+    rw [Finset.disjoint_iff_ne]
+    intro n nA _ nB rfl
+    rw [τ.mem_se] at nA nB
+    obtain ⟨_, τn_lt_τv⟩ := nA
+    obtain ⟨n_ge_τiw, _⟩ := nB
+    have τn_ge_w : τ n ≥ w := by simpa using snk_le h_321a τiw_snk n_ge_τiw
+    have w_lt_τv : w < τ v := lt_of_le_of_lt τn_ge_w τn_lt_τv
+    have w_lt_w := lt_trans w_lt_τv τv_lt_w
+    exact lt_irrefl w w_lt_w
+  have union_card : (A ∪ B).card = S.card := by
+    rw [Finset.card_union_of_disjoint disj]
+    suffices (A.card : ℤ) + (B.card : ℤ) = (S.card : ℤ) by
+      rw [← Nat.cast_add] at this
+      exact Nat.cast_inj.mp this
+    have : A.card = m - 1 := by exact τ.s_τv_b b m_pos
+    rw [this]
+    have : B.card = m' := by
+      have := τ⁻¹.s'_b_τu a m'_pos
+      simpa [τ⁻¹.dual_inverse] using this
+    rw [this]
+    have : S.card + 1 = τ.s a b + 1:= by rfl
+    linarith
+  have union_sub : A ∪ B ⊆ S := by
+    intro x
+    rw [Finset.mem_union, τ.mem_se, τ.mem_se, τ.mem_se]
+    intro hx
+    rcases hx with ( ⟨x_ge_b, τx_lt_τv⟩ | ⟨x_ge_τiw, τx_lt_a⟩)
+    · have τv_lt_a : τ v < a := by
+        have : τ.s a b ≥ m := by linarith
+        exact τ.τv_lt b m_pos this
+      exact ⟨x_ge_b, lt_trans τx_lt_τv τv_lt_a⟩
+    · have τiw_ge_b : τ⁻¹ w ≥ b := by
+        apply τ⁻¹.τu_ge a m'_pos (a := b)
+        suffices m' ≤ τ.s a b by simpa [τ⁻¹.dual_inverse]
+        linarith
+      exact ⟨le_trans τiw_ge_b x_ge_τiw, τx_lt_a⟩
+
+  have union_eq : A ∪ B = S := by
+    apply (Finset.eq_iff_card_le_of_subset union_sub).mp
+    rw [union_card]
+
+  have v_mem : v ∈ A ∪ B := by
+    rw [union_eq]
+    unfold S; rw [τ.mem_se]
+    have v_ge_b : v ≥ b := τ.v_ge b m_pos
+    have τv_lt_a : τ v < a := by
+      apply τ.τv_lt b m_pos (a := a)
+      linarith
+    exact ⟨v_ge_b, τv_lt_a⟩
+
+  rw [Finset.mem_union] at v_mem
+  rcases v_mem with (vA | vB)
+  · rw [τ.mem_se] at vA
+    exact lt_irrefl (τ v) vA.2
+  · rw [τ.mem_se] at vB
+    have v_ge_τiw : v ≥ τ⁻¹ w := vB.1
+    have τv_ge_w : τ v ≥ w := by
+      simpa using snk_le h_321a τiw_snk v_ge_τiw
+    exact lt_irrefl w (lt_of_le_of_lt τv_ge_w τv_lt_w)
+
+
+lemma uv_duality_lt (a b u : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
   (h_sum : m + m' ≥ τ.s a b + 2) :
   let v := τ.v b m_pos
   let w := τ⁻¹.u a m'_pos
@@ -1132,7 +1232,114 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
   (hα : ⟨m', n'⟩ ∈ α.lamp a) (hβ : ⟨m, n⟩ ∈ β.ramp b) :
   ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
   := by
-  sorry
+
+  have invβ : ⟨β.u b n_pos, β.v b m_pos⟩ ∈ inv_set β :=
+    (β.inv_ramp_correspondence b m_pos n_pos).mp hβ
+  have := uv_eq_of_lel' h_321a h_L b m_pos n_pos invβ
+  let u := τ.u b n_pos
+  let v := τ.v b m_pos
+  have invβ : ⟨u, v⟩ ∈ inv_set β := by
+    rwa [this.1, this.2] at invβ
+
+  have invα := (α⁻¹.inv_ramp_correspondence a n'_pos m'_pos).mp
+  have := ((α⁻¹.ramp_lamp_dual a n' m').mpr )
+  simp only [inv_inv] at this
+  have invα := invα (this hα)
+  have := uv_eq_of_lel' (h_321a := inv_is_321a h_321a) (h_L := h_R) a n'_pos m'_pos invα
+  let u' := τ⁻¹.u a m'_pos
+  let v' := τ⁻¹.v a n'_pos
+  have invα : ⟨u', v'⟩ ∈ inv_set α⁻¹.func := by
+    rwa [this.1, this.2] at invα
+  have sr : ⟨τ⁻¹ v', τ⁻¹ u'⟩ ∈ (τ.sr α) '' (inv_set α) := by
+    apply (τ.sr_crit α (τ⁻¹ v') (τ⁻¹ u')).mpr
+    simpa using invα
+
+  have u_lt_b : u < b := τ.u_lt b n_pos
+  have s'_ge : τ.s' b a ≥ n := by
+    rw [τ.dual_inverse]; linarith
+  have s'_ge' : τ⁻¹.s b a ≥ n := by
+    rwa [τ.dual_inverse] at s'_ge
+  have τu_ge_a : τ u ≥ a := τ.τu_ge b n_pos s'_ge
+  have u'_lt_a : u' < a := τ⁻¹.u_lt a m'_pos
+
+  have : n' + n = τ⁻¹.s b a + 1 := by linarith [nsum]
+  have := uv_duality_ge (inv_is_321a h_321a) n'_pos n_pos this
+  have duality : is_snk τ⁻¹ v' → is_snk τ⁻¹ (τ u) → (τ⁻¹ v' ≥ u) ∧ (v' ≥ τ u) := by
+      simpa using this
+  have v'_snk : is_snk τ⁻¹ v' := snk_of_inv (h_R invα)
+  have τiu_snk : is_snk τ⁻¹ (τ u) := by
+    have : ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
+      have := h_L invβ
+      use this.2
+      simp; exact this.1
+    exact snk_of_inv this
+  have ineqs := duality v'_snk τiu_snk
+  have u_le_τiv' : u ≤ τ⁻¹ v' := ineqs.1
+  have τu_le_v' : τ u ≤ v' := ineqs.2
+  clear ineqs duality this v'_snk τiu_snk -- bit of cleanup
+
+  have Iτ : ⟨τ⁻¹ v', τ⁻¹ u'⟩ ∈ inv_set τ := by
+    apply h_R at invα
+    use invα.2
+    simp; use invα.1
+
+  have τiv'_v_inv : ⟨τ⁻¹ v', v⟩ ∈ inv_set τ := by
+    constructor
+    · have h1 : τ⁻¹ v' < b := by
+        have : τ⁻¹.s b a ≥ n' := by linarith
+        exact τ⁻¹.τv_lt a n'_pos this
+      have h2 : b ≤ v := τ.v_ge b m_pos
+      exact lt_of_lt_of_le h1 h2
+    · suffices τ v < v' by simpa
+
+      sorry
+
+  have lt_v : τ⁻¹ u' < v :=
+    uv_duality_lt h_321a a b (τ⁻¹ v') m_pos m'_pos (le_of_eq <| Eq.symm msum) τiv'_v_inv Iτ
+
+  let I : ℤ × ℤ :=  ⟨τ⁻¹ v', τ⁻¹ u'⟩
+  let J : ℤ × ℤ := ⟨u, v⟩
+  have Iα : I ∈ (τ.sr α) '' (inv_set α) := sr
+  have Jβ : J ∈ inv_set β := invβ
+
+  have I_prec_J : I ≼ J := by
+    constructor
+    · exact u_le_τiv'
+    · change τ⁻¹ u' ≤ v
+      exact le_of_lt lt_v
+
+  have Iβ : I ∈ inv_set β :=
+    (inv_of_lel_iff h_321a h_L Jβ I_prec_J).mpr Iτ
+  have Jα : J ∈ (τ.sr α) '' (inv_set α) := by
+    let K : ℤ × ℤ := ⟨τ v, τ u⟩
+    suffices K ∈ inv_set α⁻¹.func by exact (τ.sr_crit α u v).mpr this
+    have prec : K ≼ ⟨u', v'⟩ := by
+      constructor
+      · have u'_snk : is_snk τ (τ⁻¹ u')  := snk_of_inv Iτ
+        have v_snk : is_snk τ v := snk_of_inv (h_L Jβ)
+        have := le_of_lt <| snk_lt h_321a u'_snk lt_v
+        simpa using this
+      · exact τu_le_v'
+    have lel : α⁻¹ ≤L τ⁻¹ := by
+      intro x hx
+      exact h_R hx
+    apply  (inv_of_lel_iff (τ := τ⁻¹) (β := α⁻¹) (h_321a := inv_is_321a h_321a) lel invα prec).mpr
+    use (h_L Jβ).2
+    simp
+    exact Jβ.1
+
+  have I_ne_J : I ≠ J := by
+    intro heq
+    have : I.2 = J.2 := by rw [heq]
+    linarith
+
+  use I, J
+  constructor
+  · intro x hx
+    rcases hx with (xI | xJ)
+    · subst xI; exact ⟨Iα, Iβ⟩
+    · subst xJ; exact ⟨Jα, Jβ⟩
+  exact ⟨I_prec_J, I_ne_J⟩
 
 def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
     {S : Set (ℤ × ℤ)} (mem : ⟨m, n⟩ ∈ S) (nmem : ⟨1, 1⟩ ∉ S) :

@@ -154,6 +154,16 @@ section fixed_321a
 variable {τ : AspPerm} (h_321a : is_321a τ)
 include h_321a
 
+omit h_321a in
+private lemma s_eq_se_card (τ : AspPerm) (a b : ℤ) : τ.s a b = (τ.se a b).card := by
+  unfold AspPerm.s AspPerm.se
+  rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
+
+omit h_321a in
+private lemma s'_eq_nw_card (τ : AspPerm) (b a : ℤ) : τ.s' b a = (τ.nw a b).card := by
+  unfold AspPerm.s' AspPerm.nw
+  rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
+
 lemma inv_is_321a : is_321a τ⁻¹.func := by
   intro i j k i_lt_j j_lt_k
   have h := h_321a (τ⁻¹ k) (τ⁻¹ j) (τ⁻¹ i)
@@ -370,10 +380,9 @@ lemma split_s {u v : ℤ} {a b : ℤ}
   τ.s a v + τ.s (τ v) b = τ.s a b := by
   have uv_inv : ⟨u, v⟩ ∈ inv_set τ :=
     ⟨ lt_of_lt_of_le u_lt_b b_le_v, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
-  unfold AspPerm.s
-  have : τ.se a b = τ.se a v ∪ τ.se (τ v) b := by
+  have h_union : southeast_set τ a b = southeast_set τ a v ∪ southeast_set τ (τ v) b := by
     ext n
-    simp only [Finset.mem_union, τ.mem_se]
+    simp only [Set.mem_union, southeast_set, Set.mem_setOf_eq]
     constructor
     · rintro ⟨n_ge_b, τn_lt_a⟩
       by_cases n_v : n ≥ v
@@ -391,19 +400,23 @@ lemma split_s {u v : ℤ} {a b : ℤ}
     · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
       · exact ⟨le_trans b_le_v n_ge_v, τn_lt_a⟩
       · exact ⟨n_ge_b, lt_trans τn_lt_τv τv_lt_a⟩
-
-  rw [this, Finset.card_union]
-  suffices τ.se a v ∩ τ.se (τ v) b = ∅ by
-    rw [Finset.card_eq_zero.mpr this]
-    simp
-
-  simp only [Finset.eq_empty_iff_forall_notMem, Finset.mem_inter]
-  intro x x_mem
-  simp only [τ.mem_se] at x_mem
-  obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b,τx_lt_τv⟩⟩ := x_mem
-  have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
-  have := tfree_of_321a τ h_321a u v x
-  rcases this <;> contradiction
+  have h_disj : Disjoint (southeast_set τ a v) (southeast_set τ (τ v) b) := by
+    rw [Set.disjoint_iff_inter_eq_empty]
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    intro x hx
+    simp only [Set.mem_inter_iff, southeast_set, Set.mem_setOf_eq] at hx
+    obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b, τx_lt_τv⟩⟩ := hx
+    have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
+    have := tfree_of_321a τ h_321a u v x
+    rcases this <;> contradiction
+  have h_ncard : (southeast_set τ a b).ncard =
+      (southeast_set τ a v).ncard + (southeast_set τ (τ v) b).ncard := by
+    rw [h_union]
+    exact Set.ncard_union_eq h_disj (τ.se_finite a v) (τ.se_finite (τ v) b)
+  have h_cast : ((southeast_set τ a b).ncard : ℤ) =
+      ((southeast_set τ a v).ncard : ℤ) + ((southeast_set τ (τ v) b).ncard : ℤ) := by
+    exact_mod_cast h_ncard
+  simpa [AspPerm.s, add_comm] using h_cast.symm
 
 lemma uv_duality {u : ℤ} {a b : ℤ}
   (u_lt_b : u < b) (τu_ge_a : τ u ≥ a)
@@ -461,13 +474,18 @@ lemma uv_duality_ge {a b : ℤ}
     suffices (A.card : ℤ) + (B.card : ℤ) = (S.card : ℤ) by
       rw [← Nat.cast_add] at this
       exact Nat.cast_inj.mp this
-    have : A.card = m - 1 := by exact τ.s_τv_b b m_pos
+    have : A.card = m - 1 := by
+      rw [← s_eq_se_card (τ := τ) (a := τ v) (b := b)]
+      simpa [A] using τ.s_τv_b b m_pos
     rw [this]
     have : B.card = m' := by
-      have := τ⁻¹.s'_b_τu a m'_pos
-      simpa [τ⁻¹.dual_inverse] using this
+      have hB : τ.s a (τ⁻¹ w) = m' := by
+        simpa [w, AspPerm.dual_inverse] using (τ⁻¹.s'_b_τu a m'_pos)
+      rw [s_eq_se_card (τ := τ) (a := a) (b := τ⁻¹ w)] at hB
+      simpa [B] using hB
     rw [this]
-    have : S.card + 1 = τ.s a b + 1:= by rfl
+    have : S.card + 1 = τ.s a b + 1 := by
+      rw [s_eq_se_card (τ := τ) (a := a) (b := b)]
     linarith
   have union_sub : A ∪ B ⊆ S := by
     intro x
@@ -557,15 +575,17 @@ lemma uv_duality_lt (a b : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
     rw [Finset.card_union_of_disjoint disj, Nat.cast_add]
 
     have : A.card = m' := by
-      rw [← τ⁻¹.s'_b_τu a m'_pos]
-      simp [τ⁻¹.dual_inverse]
-      congr
+      have hA : τ.s a (τ⁻¹ w) = m' := by
+        simpa [w, AspPerm.dual_inverse] using (τ⁻¹.s'_b_τu a m'_pos)
+      rw [s_eq_se_card (τ := τ) (a := a) (b := τ⁻¹ w)] at hA
+      simpa [A] using hA
     rw [this]
     have : B.card = m - 1 := by
-      rw [← τ.s_τv_b b m_pos]
-      congr
+      rw [← s_eq_se_card (τ := τ) (a := τ v) (b := b)]
+      simpa [B] using τ.s_τv_b b m_pos
     rw [this]
-    have : S.card = τ.s a b := by rfl
+    have : S.card = τ.s a b := by
+      rw [s_eq_se_card (τ := τ) (a := a) (b := b)]
     rw [this]
     linarith [h_sum]
 
@@ -733,9 +753,8 @@ lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func
 theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
   β.s (β v) b = τ.s (τ v) b := by
-  unfold AspPerm.s
-  suffices β.se (β v) b = τ.se (τ v) b by
-    rw [this]
+  rw [s_eq_se_card (τ := β) (a := β v) (b := b), s_eq_se_card (τ := τ) (a := τ v) (b := b)]
+  suffices hse : β.se (β v) b = τ.se (τ v) b by rw [hse]
   ext x
   suffices x ≥ b → (β x < β v ↔ τ x < τ v) by
     simpa [AspPerm.se, southeast_set, this]
@@ -764,9 +783,8 @@ theorem eq_s_of_lel
 lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
   β.s' b (β u) = τ.s' b (τ u) := by
-  unfold AspPerm.s'
-  suffices β.nw (β u) b = τ.nw (τ u) b by
-    rw [this]
+  rw [s'_eq_nw_card (τ := β) (b := b) (a := β u), s'_eq_nw_card (τ := τ) (b := b) (a := τ u)]
+  suffices hnw : β.nw (β u) b = τ.nw (τ u) b by rw [hnw]
   ext x
   suffices x < b → (β x ≥ β u ↔ τ x ≥ τ u) by
     simpa [AspPerm.nw, northwest_set, this]
@@ -1139,16 +1157,20 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
       exact τ.sr_subset α h_R uv₁_inv
   have τ_zero : τ.s a b + 1 = 1 := by
     suffices τ.s a b = 0 by linarith
-    unfold AspPerm.s
-    suffices τ.se a b = ∅ by simpa
-    apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x x_mem; simp at x_mem
-    have v₁x_inv : ⟨v₁, x⟩ ∈ inv_set τ := by
-      refine (τ.inv_iff_le ?_).mpr ?_
-      linarith [x_mem.1]
-      linarith [x_mem.2]
-    have := tfree_of_321a τ h_321a u v₁ x
-    rcases this <;> contradiction
+    have h_empty : southeast_set τ a b = ∅ := by
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      intro x x_mem
+      simp [southeast_set] at x_mem
+      have v₁x_inv : ⟨v₁, x⟩ ∈ inv_set τ := by
+        refine (τ.inv_iff_le ?_).mpr ?_
+        linarith [x_mem.1]
+        linarith [x_mem.2]
+      have := tfree_of_321a τ h_321a u v₁ x
+      rcases this <;> contradiction
+    have h_ncard : (southeast_set τ a b).ncard = 0 := by
+      exact (Set.ncard_eq_zero (s := southeast_set τ a b) (hs := τ.se_finite a b)).2 h_empty
+    have h_cast : ((southeast_set τ a b).ncard : ℤ) = 0 := by exact_mod_cast h_ncard
+    simpa [AspPerm.s] using h_cast
   rw [τ_zero]
   let N := τ⁻¹.s b a + 1
   have habMN : a - b + α.χ + β.χ = 1 - N := by

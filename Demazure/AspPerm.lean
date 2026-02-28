@@ -256,13 +256,17 @@ noncomputable instance : Group AspPerm where
   change τ.func (Function.invFun τ.func n) = n
   exact Function.rightInverse_invFun τ.surjective n
 
-noncomputable def se (a b : ℤ) : Finset ℤ := (se_finite_of_asp τ.injective a b τ.asp).toFinset
+lemma se_finite (a b : ℤ) : (southeast_set τ a b).Finite := se_finite_of_asp τ.injective a b τ.asp
+
+lemma nw_finite (a b : ℤ) : (northwest_set τ a b).Finite := nw_finite_of_asp τ.injective a b τ.asp
+
+noncomputable def se (a b : ℤ) : Finset ℤ := (τ.se_finite a b).toFinset
 
 @[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se a b) ↔ n ≥ b ∧ τ n < a := by
   unfold se southeast_set
   simp
 
-noncomputable def nw (a b : ℤ) : Finset ℤ := (nw_finite_of_asp τ.injective a b τ.asp).toFinset
+noncomputable def nw (a b : ℤ) : Finset ℤ := (τ.nw_finite a b).toFinset
 
 @[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw a b) ↔ n < b ∧ τ n ≥ a := by
   unfold nw northwest_set
@@ -279,9 +283,17 @@ lemma inv_set_inverse (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u�
     simp at u_lt_v
     exact ⟨u_lt_v, τv_lt_τu⟩
 
-noncomputable def s (a b : ℤ) : ℤ := (τ.se a b).card
-noncomputable def s' (a b : ℤ) : ℤ := (τ.nw b a).card
+noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
+noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
+
+lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se a b).card := by
+  unfold AspPerm.s AspPerm.se
+  rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
+
+lemma s'_eq_nw_card (b a : ℤ) : τ.s' b a = (τ.nw a b).card := by
+  unfold AspPerm.s' AspPerm.nw
+  rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
 
 
 lemma s_nonneg (a b : ℤ) : τ.s a b ≥ 0 := by
@@ -295,29 +307,28 @@ lemma s'_nonneg (a b : ℤ) : τ.s' a b ≥ 0 := by
 -- The s'-value at τ u (from the left of b) is positive whenever u < b.
 lemma s'_pos_of_lt {u b : ℤ} (u_lt_b : u < b) : τ.s' b (τ u) ≥ 1 := by
   simp only [s']
-  have : (τ.nw (τ u) b).Nonempty := ⟨u, by simp [u_lt_b]⟩
-  exact_mod_cast Finset.card_pos.mpr this
+  have h_nonempty : ↑(northwest_set τ (τ u) b).Nonempty := by use u, u_lt_b
+  have := (Set.ncard_pos (τ.nw_finite (τ u) b)).mpr h_nonempty
+  linarith
 
 lemma dual_inverse : τ.s' = (τ⁻¹).s := by
   funext b a
   calc
-    τ.s' b a = (τ.nw a b).card := by rfl
-    _ = (Finset.image τ.func (τ.nw a b)).card := by
-      have := Finset.card_image_of_injective (τ.nw a b) τ.injective
-      rw [this]
-    _ = ((τ⁻¹).se b a).card := by
+    τ.s' b a = (northwest_set τ a b).ncard := by rfl
+    _ = ( τ.func '' (northwest_set τ a b)).ncard := by
+      rw [Set.ncard_image_of_injective (northwest_set τ a b) τ.injective]
+    _ = (southeast_set τ⁻¹.func b a).ncard := by
       congr
       ext n
-      simp only [Finset.mem_image, mem_nw, mem_se]
       constructor
-      · intro h
-        rcases h with ⟨m, hm, rfl⟩
-        rw [τ.inv_mul_cancel_eval m]
+      · intro h; unfold southeast_set
+        rcases h with ⟨m, hm, rfl⟩; simp
         exact ⟨hm.2, hm.1⟩
       · intro h
         use τ⁻¹ n
-        rw [τ.mul_inv_cancel_eval n]
-        simp [h]
+        unfold northwest_set; unfold southeast_set at h
+        obtain ⟨a_le_n, τin_lt_b⟩ := h
+        simpa using ⟨τin_lt_b, a_le_n⟩
     _ = (τ⁻¹).s b a := by rfl
 
 lemma χ_dual : τ⁻¹.χ = - τ.χ := by
@@ -384,26 +395,20 @@ lemma flip_flip : τ.flip.flip = τ := by
 
 lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
   unfold AspPerm.s AspPerm.s'
-  let A := τ.flip.se a b
-  let B := τ.nw (-a) (-b)
-  suffices A.card = B.card by congr
-  apply Finset.card_bij (fun n _ => -1 - n)
-  · show ∀ n ∈ A, -1 - n ∈ B
-    intro n hn
-    have : n ≥ b ∧ -1 - τ (-1 - n) < a := by rwa [mem_se] at hn
-    rw [mem_nw]
-    constructor <;> linarith
-  · -- Injectivity
-    intro _ _ _ _  _; linarith
-  · -- Surjectivity
-    intro n hn
-    have : -1 - n ∈ A := by
-      rw [mem_nw] at hn
-      rw [mem_se]
-      unfold flip; simp
-      constructor <;> linarith
-    use (-1 - n),  this
-    linarith
+  let A := southeast_set τ.flip a b
+  let B := northwest_set τ (-a) (-b)
+  suffices A.ncard = B.ncard by congr
+  have hflip : flip_func τ.flip = τ := by
+    funext n
+    simp [flip_func, AspPerm.flip]
+  have himage : (-1 - ·) '' A = B := by
+    dsimp [A, B]
+    simpa [hflip] using (flip_quadrant τ.flip a b)
+  have himage_card : ((-1 - ·) '' A).ncard = A.ncard :=
+    Set.ncard_image_of_injective A (fun x y h => by linarith)
+  calc
+    A.ncard = ((-1 - ·) '' A).ncard := by simpa using himage_card.symm
+    _ = B.ncard := by simp [himage]
 
 lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
   rw [flip_s, dual_inverse, inv_inv, neg_neg, neg_neg]
@@ -416,7 +421,9 @@ lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
 
   suffices B.card = A.card + C.card by
     unfold A B at this
-    unfold AspPerm.s
+    have hcard : ((τ.se a b).card : ℤ) = (τ.se a b').card + C.card := by
+      exact_mod_cast this
+    rw [τ.s_eq_se_card, τ.s_eq_se_card]
     linarith
 
   have h_disj : Disjoint A C := by
@@ -520,7 +527,11 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
   have h_sub : τ.se a b ⊆ τ.se a' b := fun k hk => by
     simp only [mem_se] at *; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
   suffices (τ.se a' b).card = (τ.se a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card by
-    unfold AspPerm.s; linarith
+    have hcard : ((τ.se a' b).card : ℤ) =
+        (τ.se a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+      exact_mod_cast this
+    rw [τ.s_eq_se_card, τ.s_eq_se_card]
+    linarith
   rw [← se_diff_card τ a a' b]
   have h_disj : Disjoint (τ.se a b) (τ.se a' b \ τ.se a b) := disjoint_sdiff_self_right
   have h_union : τ.se a b ∪ τ.se a' b \ τ.se a b = τ.se a' b :=
@@ -667,10 +678,14 @@ def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
   · use 0
   · let S := Finset.image τ (τ.se 0 b)
     have S_nonempty : S.Nonempty := by
-      unfold S; apply Finset.image_nonempty.mpr
-      apply Finset.card_pos.mp
-      apply Nat.pos_iff_ne_zero.mpr
-      simpa [AspPerm.s] using h
+      have h_ne : (southeast_set τ 0 b).ncard ≠ 0 := by
+        simpa [AspPerm.s] using h
+      have h_nonempty : (southeast_set τ 0 b).Nonempty := Set.nonempty_of_ncard_ne_zero h_ne
+      have h_se_nonempty : (τ.se 0 b).Nonempty := by
+        rcases h_nonempty with ⟨n, hn⟩
+        exact ⟨n, by simpa [AspPerm.se] using hn⟩
+      unfold S
+      exact Finset.image_nonempty.mpr h_se_nonempty
     let a := Finset.min' S S_nonempty
     have a_lt_0 : a < 0 := by
       have : a ∈ S := Finset.min'_mem S S_nonempty
@@ -680,7 +695,12 @@ def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
       rwa [n_eq] at this
     use a
     suffices southeast_set τ (Finset.min' S S_nonempty) b = ∅ by
-      unfold AspPerm.s; simpa [AspPerm.se, Finset.card_eq_zero.mpr] using this
+      have h_ncard : (southeast_set τ (Finset.min' S S_nonempty) b).ncard = 0 := by
+        exact (Set.ncard_eq_zero
+          (s := southeast_set τ (Finset.min' S S_nonempty) b)
+          (hs := τ.se_finite (Finset.min' S S_nonempty) b)).2 this
+      unfold AspPerm.s
+      exact_mod_cast h_ncard
     apply Set.eq_empty_iff_forall_notMem.mpr
     rintro n ⟨b_le_n, τn_lt_min⟩
     have : τ n < 0 := lt_trans τn_lt_min a_lt_0

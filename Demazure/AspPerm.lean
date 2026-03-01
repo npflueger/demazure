@@ -66,7 +66,7 @@ lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
     simp [flip_func]
   have hf_inj : Function.Injective (flip_func τ) := fun x y h => by
     unfold flip_func at h
-    linarith [h_inj (show τ (-1 - x) = τ (-1 - y) from by linarith)]
+    linarith [h_inj (show τ (-1 - x) = τ (-1 - y) from by omega)]
   have key : ∀ a b : ℤ, (northwest_set τ a b).Finite ↔
       (southeast_set (flip_func τ) (-a) (-b)).Finite := fun a b => by
     have hq := flip_quadrant (flip_func τ) (-a) (-b)
@@ -89,7 +89,7 @@ lemma se_finite_of_asp {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n :
       intro k hk
       simp [southeast_set] at hk
       obtain ⟨k_pos, τk_neg⟩ := hk
-      have : k > 0 := by linarith
+      have : k > 0 := by omega
       exact mul_neg_of_pos_of_neg this τk_neg
     exact Set.Finite.subset h_asp this
   exact se_finite_of_finite h_inj 0 1 m n h_se
@@ -103,7 +103,7 @@ lemma nw_finite_of_asp {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n :
       intro k hk
       simp [northwest_set] at hk
       obtain ⟨k_neg, τk_pos⟩ := hk
-      have : τ k > 0 := by linarith
+      have : τ k > 0 := by omega
       exact mul_neg_of_neg_of_pos k_neg this
     exact Set.Finite.subset h_asp this
   exact nw_finite_of_finite h_inj 1 0 m n h_nw
@@ -309,7 +309,7 @@ lemma s'_pos_of_lt {u b : ℤ} (u_lt_b : u < b) : τ.s' b (τ u) ≥ 1 := by
   simp only [s']
   have h_nonempty : ↑(northwest_set τ (τ u) b).Nonempty := by use u, u_lt_b
   have := (Set.ncard_pos (τ.nw_finite (τ u) b)).mpr h_nonempty
-  linarith
+  omega
 
 lemma dual_inverse : τ.s' = (τ⁻¹).s := by
   funext b a
@@ -343,7 +343,7 @@ lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
   · intro x y h; simp at h
     apply τ.injective at h
-    linarith
+    omega
   · intro y
     use -1 - τ⁻¹ (-1 - y)
     simp [flip_func]
@@ -373,9 +373,10 @@ def flip : AspPerm := {
       have h : (g '' (southeast_set f 0 0)).Finite := by
         rw [this]
         exact nw_finite_of_asp τ.injective 0 0 τ.asp
-      have : Set.InjOn g (southeast_set f 0 0) := by
-        intro x _ y _ h; linarith
-      apply Set.Finite.of_finite_image h this
+      have h_inj : Set.InjOn g (southeast_set f 0 0) := by
+        intro x _ y _ h
+        linarith
+      exact Set.Finite.of_finite_image h h_inj
     exact asp_of_finite_quadrants hinj se_finite nw_finite
 }
 
@@ -405,7 +406,7 @@ lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
     dsimp [A, B]
     simpa [hflip] using (flip_quadrant τ.flip a b)
   have himage_card : ((-1 - ·) '' A).ncard = A.ncard :=
-    Set.ncard_image_of_injective A (fun x y h => by linarith)
+    Set.ncard_image_of_injective A (fun x y h => by omega)
   calc
     A.ncard = ((-1 - ·) '' A).ncard := by simpa using himage_card.symm
     _ = B.ncard := by simp [himage]
@@ -459,16 +460,16 @@ lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
     simp [S]
   constructor
   · have : S.card ≥ 0 := by simp
-    linarith
+    omega
   · have : τ.s a b = τ.s a b' ↔ S.card = 0 := by
       rw [heq]
-      constructor <;> (intro; linarith)
+      constructor <;> (intro; omega)
     rw [this, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
     unfold S
     simp
 
 lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0) := by
-  have move_up := b_move_up τ a b (b+1) (by linarith)
+  have move_up := b_move_up τ a b (b+1) (by omega)
   suffices {x ∈ Finset.Ico b (b + 1) | τ.func x < a}.card = if τ b < a then 1 else 0 by linarith
   by_cases h_lt : τ b < a
   · simp [h_lt]
@@ -480,10 +481,10 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
       linarith [h.1]
     · intro h; simp at h ⊢
       simp [h, h_lt]
-  · have ge_a : τ b ≥ a := by linarith
+  · have ge_a : τ b ≥ a := by omega
     simp [h_lt]
     intro x x_ge_b x_le_b
-    have x_eq_b : x = b := by linarith
+    have x_eq_b : x = b := by omega
     rwa [x_eq_b]
 
 lemma b_step_one_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b - 1 ↔ τ b < a := by
@@ -492,14 +493,14 @@ lemma b_step_one_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b - 1 ↔ τ b < a := b
   · simp [h_lt]
   · simp [h_lt]
     intro h_eq
-    linarith
+    omega
 
 lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
   rw [b_step τ a b]
   by_cases h_lt : τ b < a
   · simp [h_lt]
   · simp [h_lt]
-    linarith
+    omega
 
 -- Helper: the number of elements of se(a',b) \ se(a,b) equals the number of
 -- elements of Ico a a' whose τ-preimage is ≥ b, via the bijection k ↦ τ k.
@@ -521,7 +522,7 @@ private lemma se_diff_card (a a' b : ℤ) :
     obtain ⟨⟨x_ge_a, x_lt_a'⟩, τinv_ge_b⟩ := hx
     refine ⟨τ⁻¹ x, ?_, τ.mul_inv_cancel_eval x⟩
     simp only [Finset.mem_sdiff, mem_se, τ.mul_inv_cancel_eval]
-    exact ⟨⟨τinv_ge_b, x_lt_a'⟩, fun ⟨_, h⟩ => by linarith⟩
+    exact ⟨⟨τinv_ge_b, x_lt_a'⟩, fun ⟨_, h⟩ => by omega⟩
 
 lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
@@ -533,7 +534,7 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
         (τ.se_finset a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
       exact_mod_cast this
     rw [τ.s_eq_se_card, τ.s_eq_se_card]
-    linarith
+    omega
   rw [← se_diff_card τ a a' b]
   have h_disj : Disjoint (τ.se_finset a b) (τ.se_finset a' b \ τ.se_finset a b) :=
     disjoint_sdiff_self_right
@@ -541,7 +542,7 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     Finset.union_sdiff_of_subset h_sub
   have h_card := Finset.card_union_of_disjoint h_disj
   rw [h_union] at h_card
-  linarith
+  omega
 
 lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
   τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
@@ -550,7 +551,7 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
 
   constructor
   · have : S.card ≥ 0 := by simp
-    linarith
+    omega
 
   -- Now handle the equality case
   suffices (∀ (x : ℤ), a ≤ τ.func x → τ.func x < a' → x < b) ↔ S.card = 0 by
@@ -562,7 +563,7 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
     specialize h (τ⁻¹ x)
     simp [S] at xS
     simp [τ.mul_inv_cancel_eval, xS] at h
-    linarith
+    omega
   · intro hS x a_le τx_le
     specialize hS (τ x)
     simp [S, a_le, τx_le] at hS
@@ -570,7 +571,7 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
 
 
 lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
-  rw [a_move_up τ a (a + 1) b (by linarith)]
+  rw [a_move_up τ a (a + 1) b (by omega)]
   by_cases h : τ⁻¹ a ≥ b
   · have hfilt : ((Finset.Ico a (a + 1)).filter (τ⁻¹ · ≥ b)) = {a} := by
       ext x
@@ -600,7 +601,7 @@ lemma a_step_eq_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b ↔ τ⁻¹ a < b := b
   by_cases h_ge : τ⁻¹ a ≥ b
   · simp [h_ge]
   · simp [h_ge]
-    linarith
+    omega
 
 lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b := by
   have := a_step_eq_iff τ (τ u) b
@@ -615,23 +616,23 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   have change_a : ∀ (a a' b : ℤ), h a' b = h a b := by
     intro a a' b
     wlog a_le_a' : a ≤ a' generalizing a a'
-    · specialize this a' a (by linarith)
+    · specialize this a' a (by omega)
       rw [this]
     calc
       h a' b = τ.s a' b - τ⁻¹.s b a' - a' + b := by rfl
       _ = τ.s a b - τ⁻¹.s b a' - a' + b
         + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
         rw [a_move_up τ a a' b a_le_a']
-        linarith
+        omega
       _ = τ.s a b - τ⁻¹.s b a - a' + b
         + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card
         + ((Finset.Ico a a').filter (τ⁻¹ · < b)).card := by
-        rw [b_move_up (τ⁻¹) b a a' (by linarith)]
-        linarith
+        rw [b_move_up (τ⁻¹) b a a' (by omega)]
+        omega
       _ = τ.s a b - τ⁻¹.s b a - a' + b
         + (Finset.Ico a a').card := by
         rw [← Utils.card_filter_helper (Finset.Ico a a') (τ⁻¹).func b]
-        simp; linarith
+        simp; omega
       _ = τ.s a b - τ⁻¹.s b a - a' + b + (a' - a) := by
         simp [a_le_a']
       _ = h a b := by linarith
@@ -645,16 +646,16 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
       _ = τ.s a b - τ⁻¹.s b' a - a + b'
         - ((Finset.Ico b b').filter (τ · < a)).card := by
         rw [b_move_up τ a b b' b_le_b']
-        linarith
+        omega
       _ = τ.s a b - τ⁻¹.s b a - a + b'
         - ((Finset.Ico b b').filter (τ · < a)).card
         - ((Finset.Ico b b').filter (τ · ≥ a)).card := by
-        rw [a_move_up (τ⁻¹) b b' a (by linarith)]
-        simp; linarith
+        rw [a_move_up (τ⁻¹) b b' a (by omega)]
+        simp; omega
       _ = τ.s a b - τ⁻¹.s b a - a + b'
         - (Finset.Ico b b').card := by
         rw [← Utils.card_filter_helper (Finset.Ico b b') τ.func a]
-        simp; linarith
+        simp; omega
       _ = τ.s a b - τ⁻¹.s b a - a + b' - (b' - b) := by
         simp [b_le_b']
       _ = h a b := by linarith
@@ -731,7 +732,7 @@ def ramp_closed (b : ℤ) {m₁ n₁ m₂ n₂ : ℤ} (hm : m₁ ≤ m₂) (hn :
   intro h
   rcases h with ⟨l, hlm, hln⟩
   use l
-  constructor <;> linarith
+  constructor <;> omega
 
 
 lemma ramp_lamp_dual (b m n : ℤ) :
@@ -747,8 +748,8 @@ lemma mem_ramp_iff_s_geq (b m n : ℤ) :
     rcases mn_ramp with ⟨l, hm, hn⟩
     by_cases hl : l ≤ b + m - n - τ.χ
     · have := a_move_up τ l (b + m - n - τ.χ) b hl
-      linarith
-    · have ineq := b_move_up τ⁻¹ b (b + m - n - τ.χ) l (by linarith)
+      omega
+    · have ineq := b_move_up τ⁻¹ b (b + m - n - τ.χ) l (by omega)
       rw [dual_inverse τ] at hn
       linarith [τ.duality (b + m - n - τ.χ) b, τ.duality l b]
   · intro s_geq
@@ -764,7 +765,7 @@ lemma mem_lamp_iff_s_geq (a m n : ℤ) :
   rw [inv_inv] at this
   rw [← this]
   rw [mem_ramp_iff_s_geq, χ_dual]
-  constructor <;> (intro h; convert h using 2; linarith)
+  constructor <;> (intro h; convert h using 2; omega)
 
 namespace Wings
 variable (b m n : ℤ) (m_pos : m > 0) (n_pos : n > 0)
@@ -784,7 +785,7 @@ lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
   simp [R] at hn
   have dual := τ.duality n b
   have : τ⁻¹.s b n ≥ 0 := (τ⁻¹).s_nonneg b n
-  linarith
+  omega
 
 def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
 
@@ -804,7 +805,7 @@ lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := b
   contrapose! a'_L with a_lt_a'
   have := (τ⁻¹.s_noninc b (le_of_lt a_lt_a')).1
   rw [dual_inverse τ]
-  linarith
+  omega
 
 end Wings
 
@@ -836,7 +837,7 @@ lemma v_crit (b : ℤ) {m : ℤ} (m_pos : m > 0) (v : ℤ) :
     have s_next : τ.s (τ v + 1) b ≥ m := by
       by_contra! s_next_lt
       have a_le : τ v + 1 ≤ τ v := τv_max (τ v + 1) s_next_lt
-      linarith
+      omega
     have s_inc : τ.s (τ v) b < τ.s (τ v + 1) b := lt_of_lt_of_le s_lt_m s_next
     have v_ge_b : b ≤ v := by
       by_contra! v_lt_b
@@ -908,7 +909,7 @@ lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
     have s_next : τ.s' b (τ u + 1) < n := by
       by_contra! s_next_ge
       have a_le : τ u + 1 ≤ τ u := τu_max (τ u + 1) s_next_ge
-      linarith
+      omega
     have s_ge_n_inv : (τ⁻¹).s b (τ u) ≥ n := by
       simpa [dual_inverse τ] using s_ge_n
     have s_next_inv : (τ⁻¹).s b (τ u + 1) < n := by
@@ -925,7 +926,7 @@ lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
       simpa using u_lt_b
     have hs_eq_n : (τ⁻¹).s b (τ u) = n := by
       rw [hs_dec] at s_next_inv
-      linarith
+      omega
     exact ⟨by simpa [dual_inverse τ] using hs_eq_n, u_lt_b⟩
   · rintro ⟨s_eq, u_lt_b⟩
     let u₀ := τ.u b n_pos
@@ -934,7 +935,7 @@ lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
       rw [s_eq]
     have τu_ge : τ u₀ ≤ τ u := by
       by_contra! τu_lt
-      have τu_succ_le : τ u + 1 ≤ τ u₀ := by linarith
+      have τu_succ_le : τ u + 1 ≤ τ u₀ := by omega
       have hs_noninc : (τ⁻¹).s b (τ u₀) ≤ (τ⁻¹).s b (τ u + 1) := by
         exact ((τ⁻¹).s_noninc (a := b) τu_succ_le).1
       have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
@@ -946,8 +947,8 @@ lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
         rw [hs_dec] at hs_noninc
         have hs_eq_inv : (τ⁻¹).s b (τ u) = n := by
           simpa [dual_inverse τ] using s_eq
-        linarith
-      linarith
+        omega
+      omega
     exact τ.injective <| le_antisymm τu_le τu_ge
 
 lemma s'_b_τu (b : ℤ) {n : ℤ} (n_pos : n > 0) :
@@ -961,7 +962,7 @@ lemma τu_ge (b : ℤ) {n : ℤ} (n_pos : n > 0)
   {a : ℤ} (s_ge_n : n ≤ τ.s' b a) : τ (τ.u b n_pos) ≥ a := by
   by_contra! τu_lt_a
   have hu_ge : a ≤ τ (τ.u b n_pos) := (τ.u_spec b n_pos).2 a s_ge_n
-  linarith
+  omega
 
 theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨m, n⟩ ∈ τ.ramp b ↔ ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set τ := by
@@ -982,7 +983,7 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
     have s'_ge_n : τ.s' b a ≥ n := by
       rw [dual_inverse τ]
       have := τ.duality a b
-      linarith
+      omega
     have a_gt_v : a > τ v := by
       contrapose! s_ge_m with a_le_v
       have h_lt : τ.s (τ v) b < m := (τ.v_spec b m_pos).1

@@ -172,7 +172,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
       rintro a ha b hb
       unfold A at ha; simp at ha
       unfold B at hb; simp at hb
-      linarith
+      omega
     rw [← Finset.card_union_of_disjoint this]
     suffices (A ∪ B) = (asps.outset m \ asps.outset n) by
       rw [this]
@@ -185,7 +185,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
       · simp [hA]
         intro h
         have : n < x := asps.directed n x h
-        linarith
+        omega
       · exact hB.1
     · intro h
       simp [h, le_of_lt (asps.directed m x h.1)]
@@ -200,7 +200,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
       unfold A at ha; simp at ha
       unfold B at hb; simp at hb
       intro a_eq_b
-      linarith
+      omega
     have := Finset.card_union_of_disjoint this
     rw [← this]
     suffices (A ∪ B) = (asps.inset n \ asps.inset m) by
@@ -213,7 +213,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
       · suffices ⟨x, m⟩ ∉ asps by tauto
         intro xm_I
         apply asps.directed x m at xm_I
-        linarith
+        omega
       · exact hB.1
     · intro h
       have x_lt_n : x < n := asps.directed x n h.1
@@ -294,7 +294,7 @@ lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ m < asps.�
   by_contra! h
   have h_empty : asps.md_pos m n = ∅ := by
     rw [← Finset.card_eq_zero]
-    linarith
+    omega
   apply Finset.eq_empty_iff_forall_notMem.mp at h_empty
   specialize h_empty m
   have : ⟨m, m⟩ ∈ asps := by
@@ -322,7 +322,7 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ m > asps.σ
   by_contra! h
   have h_empty : asps.rt_neg m n = ∅ := by
     rw [← Finset.card_eq_zero]
-    linarith
+    omega
   apply Finset.eq_empty_iff_forall_notMem.mp at h_empty
   specialize h_empty n
   have : ⟨n, n⟩ ∈ asps := by
@@ -338,7 +338,7 @@ lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ n < asps.�
   · intro h
     contrapose! h
     wlog m_lt_n : m < n
-    · have h_eq : m = n := by linarith
+    · have h_eq : m = n := by omega
       rw [h_eq]
     apply le_of_lt
     exact σ_inc asps m n m_lt_n h
@@ -346,7 +346,7 @@ lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ n < asps.�
 theorem func_injective (asps : AspSet) : Function.Injective (asps.to_func) := by
   intro m n h
   wlog m_le_n : m ≤ n generalizing m n
-  · specialize this (h.symm) (by linarith)
+  · specialize this (h.symm) (by omega)
     rw [this]
   contrapose! h
   have m_lt_n : m < n := lt_of_le_of_ne m_le_n h
@@ -371,32 +371,32 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     have h1 : ⟨m, k⟩ ∉ asps := by
       intro h
       have := asps.directed m k h
-      linarith
+      omega
     have h2 : ⟨n, k⟩ ∉ asps := by
       intro h
       have := asps.directed n k h
-      linarith
+      omega
     have h3 : asps.σ m ≤ asps.σ k ↔ ⟨k,m⟩ ∈ asps := by
       rw [mem_iff_lt asps k m (le_of_lt k_lt_m)]
       constructor
       · intro h
         by_contra! h'
         have : m = k := func_injective asps (le_antisymm h h')
-        linarith
+        omega
       · intro h; exact le_of_lt h
     have h4 : asps.σ k < asps.σ n ↔ ⟨k,n⟩ ∉ asps := by
       rw [mem_iff_lt asps k n (le_of_lt (lt_trans k_lt_m m_lt_n))]
       have : k ≠ n := by
         intro h_eq
         rw [h_eq] at k_lt_m
-        linarith
+        omega
       have : asps.σ k ≠ asps.σ n := by
         contrapose! this
         exact func_injective asps this
       constructor
       · intro h
         push_neg
-        linarith
+        omega
       · intro h
         push_neg at h
         exact lt_of_le_of_ne h this
@@ -417,7 +417,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
         by_contra!
         have h_eq := le_antisymm h this
         have h_eq : k = n := func_injective asps h_eq
-        linarith
+        omega
     rw [h1, h2]
     constructor
     · intro h
@@ -428,11 +428,11 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
       have km_nI : ⟨k, m⟩ ∉ asps := by
         intro h
         have := asps.directed k m h
-        linarith
+        omega
       have nk_nI : ⟨n, k⟩ ∉ asps := by
         intro h
         have := asps.directed n k h
-        linarith
+        omega
       simp at km_nI nk_nI
       simp [km_nI, nk_nI] at h
       simp [h]
@@ -454,7 +454,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     · absurd h.1
       intro h'
       have : k < m := asps.directed k m h'
-      linarith
+      omega
     · tauto
 
 lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
@@ -474,7 +474,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     unfold J
     have : ⟨m, n⟩ ∉ asps := by
       rw [mem_iff_lt asps m n (le_of_lt m_lt_n)]
-      linarith
+      omega
     rw [σ_diff_pos asps m n m_lt_n this]
     simp
     let L := asps.lf_pos m n
@@ -482,7 +482,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     let R := asps.rt_pos m n
     suffices (L ∪ (M ∪ R)).card = L.card + M.card + R.card by
       unfold L M R at this
-      linarith
+      omega
     have : Disjoint L (M ∪ R) := by
       rw [Finset.disjoint_iff_ne]
       rintro a ha b hb
@@ -496,10 +496,10 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
         · tauto
         · have : ⟨n,b⟩ ∈ asps := by tauto
           have := asps.directed n b this
-          linarith
-      linarith
+          omega
+      omega
     rw [Finset.card_union_of_disjoint this]
-    suffices (M ∪ R).card = M.card + R.card by linarith
+    suffices (M ∪ R).card = M.card + R.card by omega
     have : Disjoint M R := by
       rw [Finset.disjoint_iff_ne]; intro a ha b hb
       have a_small : a < n := by
@@ -508,8 +508,8 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
         unfold R at hb; simp at hb
         have : ⟨n, b⟩ ∈ asps := by tauto
         have := asps.directed n b this
-        linarith
-      linarith
+        omega
+      omega
     rw [Finset.card_union_of_disjoint this]
   have card_K : (K.card : ℤ) = (σ n - σ m) := by
     rw [← card_J]
@@ -632,13 +632,13 @@ lemma surj_helper_up (m : ℤ) (n : ℕ) :
     exact Set.Ioi_infinite x hfin
   use y
   constructor
-  · linarith
+  · omega
   · simp at y_not_outset_x
     have h_ineq : asps.to_func x ≤ asps.to_func y := by
       rw [← not_lt, ← mem_iff_lt asps x y (le_of_lt y_gt_x)]
       exact y_not_outset_x
     have h_ne : asps.to_func x ≠ asps.to_func y :=
-      fun h => absurd (func_injective asps h) (by linarith)
+      fun h => absurd (func_injective asps h) (by omega)
     have hlt := lt_of_le_of_ne h_ineq h_ne
     simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
 
@@ -660,13 +660,13 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
     exact Set.Iio_infinite x hfin
   use y
   constructor
-  · linarith
+  · omega
   · simp at y_not_inset_x
     have h_ineq : asps.to_func y ≤ asps.to_func x := by
       rw [← not_lt, ← mem_iff_lt asps y x (le_of_lt y_lt_x)]
       exact y_not_inset_x
     have h_ne : asps.to_func y ≠ asps.to_func x :=
-      fun h => absurd (func_injective asps h) (by linarith)
+      fun h => absurd (func_injective asps h) (by omega)
     have hlt := lt_of_le_of_ne h_ineq h_ne
     simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
@@ -683,7 +683,7 @@ theorem func_surjective : Function.Surjective (asps.to_func) := by
     simp at fm_le
     simp [m_le_0]
     apply le_trans fm_le
-    rw [max_eq_left (by linarith)]
+    rw [max_eq_left (by omega)]
     simp
   rcases this with ⟨m, m_le_0, fm_le_y⟩
   have : ∃ n : ℤ, n ≥ 1 ∧ asps.to_func n ≥ y + 1 := by
@@ -694,12 +694,12 @@ theorem func_surjective : Function.Surjective (asps.to_func) := by
       ⟨n, n_ge_1, fn_ge⟩
     use n
     simp at fn_ge
-    rw [max_eq_left (by linarith)] at fn_ge
+    rw [max_eq_left (by omega)] at fn_ge
     simp [n_ge_1]
-    linarith
+    omega
   rcases this with ⟨n, n_ge_1, fn_ge_y1⟩
-  have m_le_n : m ≤ n := by linarith
-  have contig := func_contiguous asps m n (by linarith) (lt_of_le_of_lt fm_le_y fn_ge_y1)
+  have m_le_n : m ≤ n := by omega
+  have contig := func_contiguous asps m n (by omega) (lt_of_le_of_lt fm_le_y fn_ge_y1)
   specialize contig y fm_le_y fn_ge_y1
   rcases contig with ⟨l, hl⟩
   use l

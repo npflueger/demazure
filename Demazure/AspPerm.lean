@@ -260,16 +260,16 @@ lemma se_finite (a b : ℤ) : (southeast_set τ a b).Finite := se_finite_of_asp 
 
 lemma nw_finite (a b : ℤ) : (northwest_set τ a b).Finite := nw_finite_of_asp τ.injective a b τ.asp
 
-noncomputable def se (a b : ℤ) : Finset ℤ := (τ.se_finite a b).toFinset
+noncomputable def se_finset (a b : ℤ) : Finset ℤ := (τ.se_finite a b).toFinset
 
-@[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se a b) ↔ n ≥ b ∧ τ n < a := by
-  unfold se southeast_set
+@[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se_finset a b) ↔ n ≥ b ∧ τ n < a := by
+  unfold se_finset southeast_set
   simp
 
-noncomputable def nw (a b : ℤ) : Finset ℤ := (τ.nw_finite a b).toFinset
+noncomputable def nw_finset (a b : ℤ) : Finset ℤ := (τ.nw_finite a b).toFinset
 
-@[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw a b) ↔ n < b ∧ τ n ≥ a := by
-  unfold nw northwest_set
+@[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw_finset a b) ↔ n < b ∧ τ n ≥ a := by
+  unfold nw_finset northwest_set
   simp
 
 lemma inv_set_inverse (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
@@ -287,12 +287,12 @@ noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
-lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se a b).card := by
-  unfold AspPerm.s AspPerm.se
+lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := by
+  unfold AspPerm.s se_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
 
-lemma s'_eq_nw_card (b a : ℤ) : τ.s' b a = (τ.nw a b).card := by
-  unfold AspPerm.s' AspPerm.nw
+lemma s'_eq_nw_card (b a : ℤ) : τ.s' b a = (τ.nw_finset a b).card := by
+  unfold AspPerm.s' nw_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
 
 
@@ -415,13 +415,13 @@ lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
 
 lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
   τ.s a b' = τ.s a b - ((Finset.Ico b b').filter (τ · < a)).card := by
-  let A := τ.se a b'
-  let B := τ.se a b
+  let A := τ.se_finset a b'
+  let B := τ.se_finset a b
   let C := (Finset.Ico b b').filter (τ · < a)
 
   suffices B.card = A.card + C.card by
     unfold A B at this
-    have hcard : ((τ.se a b).card : ℤ) = (τ.se a b').card + C.card := by
+    have hcard : ((τ.se_finset a b).card : ℤ) = (τ.se_finset a b').card + C.card := by
       exact_mod_cast this
     rw [τ.s_eq_se_card, τ.s_eq_se_card]
     linarith
@@ -504,7 +504,8 @@ lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
 -- Helper: the number of elements of se(a',b) \ se(a,b) equals the number of
 -- elements of Ico a a' whose τ-preimage is ≥ b, via the bijection k ↦ τ k.
 private lemma se_diff_card (a a' b : ℤ) :
-    ((τ.se a' b) \ (τ.se a b)).card = ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+    ((τ.se_finset a' b) \ (τ.se_finset a b)).card =
+      ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
   apply Finset.card_bij (fun k _ => τ k)
   · intro k hk
     simp only [Finset.mem_sdiff, mem_se] at hk
@@ -524,17 +525,19 @@ private lemma se_diff_card (a a' b : ℤ) :
 
 lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
-  have h_sub : τ.se a b ⊆ τ.se a' b := fun k hk => by
+  have h_sub : τ.se_finset a b ⊆ τ.se_finset a' b := fun k hk => by
     simp only [mem_se] at *; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
-  suffices (τ.se a' b).card = (τ.se a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card by
-    have hcard : ((τ.se a' b).card : ℤ) =
-        (τ.se a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+  suffices (τ.se_finset a' b).card
+    = (τ.se_finset a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card by
+    have hcard : ((τ.se_finset a' b).card : ℤ) =
+        (τ.se_finset a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
       exact_mod_cast this
     rw [τ.s_eq_se_card, τ.s_eq_se_card]
     linarith
   rw [← se_diff_card τ a a' b]
-  have h_disj : Disjoint (τ.se a b) (τ.se a' b \ τ.se a b) := disjoint_sdiff_self_right
-  have h_union : τ.se a b ∪ τ.se a' b \ τ.se a b = τ.se a' b :=
+  have h_disj : Disjoint (τ.se_finset a b) (τ.se_finset a' b \ τ.se_finset a b) :=
+    disjoint_sdiff_self_right
+  have h_union : τ.se_finset a b ∪ τ.se_finset a' b \ τ.se_finset a b = τ.se_finset a' b :=
     Finset.union_sdiff_of_subset h_sub
   have h_card := Finset.card_union_of_disjoint h_disj
   rw [h_union] at h_card
@@ -676,14 +679,14 @@ variable (τ : AspPerm)
 def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
   by_cases h : τ.s 0 b = 0
   · use 0
-  · let S := Finset.image τ (τ.se 0 b)
+  · let S := Finset.image τ (τ.se_finset 0 b)
     have S_nonempty : S.Nonempty := by
       have h_ne : (southeast_set τ 0 b).ncard ≠ 0 := by
         simpa [AspPerm.s] using h
       have h_nonempty : (southeast_set τ 0 b).Nonempty := Set.nonempty_of_ncard_ne_zero h_ne
-      have h_se_nonempty : (τ.se 0 b).Nonempty := by
+      have h_se_nonempty : (τ.se_finset 0 b).Nonempty := by
         rcases h_nonempty with ⟨n, hn⟩
-        exact ⟨n, by simpa [AspPerm.se] using hn⟩
+        exact ⟨n, by simpa [se_finset] using hn⟩
       unfold S
       exact Finset.image_nonempty.mpr h_se_nonempty
     let a := Finset.min' S S_nonempty
@@ -704,7 +707,7 @@ def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
     apply Set.eq_empty_iff_forall_notMem.mpr
     rintro n ⟨b_le_n, τn_lt_min⟩
     have : τ n < 0 := lt_trans τn_lt_min a_lt_0
-    have : n ∈ τ.se 0 b := (τ.mem_se 0 b n).mpr ⟨b_le_n, this⟩
+    have : n ∈ τ.se_finset 0 b := (τ.mem_se 0 b n).mpr ⟨b_le_n, this⟩
     have : τ n ∈ S := Finset.mem_image.mpr ⟨n, this, rfl⟩
     have : a ≤ τ n := Finset.min'_le S (τ n) this
     exact lt_irrefl (τ n) <| lt_of_lt_of_le τn_lt_min this

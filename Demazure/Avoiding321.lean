@@ -155,13 +155,13 @@ variable {τ : AspPerm} (h_321a : is_321a τ)
 include h_321a
 
 omit h_321a in
-private lemma s_eq_se_card (τ : AspPerm) (a b : ℤ) : τ.s a b = (τ.se a b).card := by
-  unfold AspPerm.s AspPerm.se
+private lemma s_eq_se_card (τ : AspPerm) (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := by
+  unfold AspPerm.s AspPerm.se_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
 
 omit h_321a in
-private lemma s'_eq_nw_card (τ : AspPerm) (b a : ℤ) : τ.s' b a = (τ.nw a b).card := by
-  unfold AspPerm.s' AspPerm.nw
+private lemma s'_eq_nw_card (τ : AspPerm) (b a : ℤ) : τ.s' b a = (τ.nw_finset a b).card := by
+  unfold AspPerm.s' AspPerm.nw_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
 
 lemma inv_is_321a : is_321a τ⁻¹.func := by
@@ -456,9 +456,9 @@ lemma uv_duality_ge {a b : ℤ}
     rw [← equiv]
     exact ⟨this, this⟩
   by_contra! τv_lt_w
-  let A := τ.se (τ v) b
-  let B := τ.se a (τ⁻¹ w)
-  let S := τ.se a b
+  let A := τ.se_finset (τ v) b
+  let B := τ.se_finset a (τ⁻¹ w)
+  let S := τ.se_finset a b
   have disj : Disjoint A B := by
     rw [Finset.disjoint_iff_ne]
     intro n nA _ nB rfl
@@ -545,9 +545,9 @@ lemma uv_duality_lt (a b : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
   have w_lt_a : w < a := τ⁻¹.u_lt a m'_pos
 
   -- Define the relevant sets and establish inclusions
-  let S := τ.se a b
-  let A := τ.se a (τ⁻¹ w)
-  let B := τ.se (τ v) b
+  let S := τ.se_finset a b
+  let A := τ.se_finset a (τ⁻¹ w)
+  let B := τ.se_finset (τ v) b
   have A_subset : A ⊆ S := by
     intro n nA
     obtain ⟨iw_le_n, τn_lt_a⟩ := (τ.mem_se _ _ _).mp nA
@@ -754,10 +754,10 @@ theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
   β.s (β v) b = τ.s (τ v) b := by
   rw [s_eq_se_card (τ := β) (a := β v) (b := b), s_eq_se_card (τ := τ) (a := τ v) (b := b)]
-  suffices hse : β.se (β v) b = τ.se (τ v) b by rw [hse]
+  suffices hse : β.se_finset (β v) b = τ.se_finset (τ v) b by rw [hse]
   ext x
   suffices x ≥ b → (β x < β v ↔ τ x < τ v) by
-    simpa [AspPerm.se, southeast_set, this]
+    simpa [AspPerm.se_finset, southeast_set, this]
   intro x_ge_b
   have u_lt_x : u < x := lt_of_lt_of_le u_lt_b x_ge_b
 
@@ -784,10 +784,10 @@ lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
   β.s' b (β u) = τ.s' b (τ u) := by
   rw [s'_eq_nw_card (τ := β) (b := b) (a := β u), s'_eq_nw_card (τ := τ) (b := b) (a := τ u)]
-  suffices hnw : β.nw (β u) b = τ.nw (τ u) b by rw [hnw]
+  suffices hnw : β.nw_finset (β u) b = τ.nw_finset (τ u) b by rw [hnw]
   ext x
   suffices x < b → (β x ≥ β u ↔ τ x ≥ τ u) by
-    simpa [AspPerm.nw, northwest_set, this]
+    simpa [AspPerm.nw_finset, northwest_set, this]
   intro x_lt_b
 
   wlog u_le_x : u ≤ x

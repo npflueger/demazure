@@ -1,4 +1,6 @@
 import Demazure.Utils
+import Mathlib.Algebra.CharP.Defs
+import Mathlib.Data.Set.Card
 
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}

@@ -1,4 +1,5 @@
 import Demazure.InvSet
+import Mathlib.Order.CompletePartialOrder
 
 def is_321a (τ : ℤ → ℤ) : Prop :=
   ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k

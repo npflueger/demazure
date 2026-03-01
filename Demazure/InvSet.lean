@@ -1,4 +1,5 @@
 import Demazure.AspPerm
+import Mathlib.Order.Interval.Set.Infinite
 
 structure AspSet_prop (I : Set (ℤ × ℤ)) where
   directed :

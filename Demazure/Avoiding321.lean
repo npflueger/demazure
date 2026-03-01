@@ -1547,7 +1547,7 @@ theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) ''
 
 def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
 
-theorem drop_leq_iff_isolated : α.dprod_le β τ
+theorem dprop_leq_iff_isolated : α.dprod_le β τ
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   constructor
   · rintro le ⟨u, v⟩ I_mem ⟨u', v'⟩ J_mem h_prec

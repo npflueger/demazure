@@ -1,4 +1,5 @@
 import Demazure.InvSet
+import Demazure.Submodular
 import Mathlib.Order.CompletePartialOrder
 
 def is_321a (τ : ℤ → ℤ) : Prop :=
@@ -1532,9 +1533,9 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       (by linarith) (by linarith)
       hα hβ
 
---- Main result, in two parts
+--- Main result
 
-theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+theorem dprod_ge_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
   constructor
   · intro ge
     rintro ⟨u, v⟩ uv_inv
@@ -1547,7 +1548,7 @@ theorem dprod_geq_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) ''
 
 def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
 
-theorem dprop_leq_iff_isolated : α.dprod_le β τ
+theorem dprod_le_iff_isolated : α.dprod_le β τ
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   constructor
   · rintro le ⟨u, v⟩ I_mem ⟨u', v'⟩ J_mem h_prec
@@ -1615,6 +1616,47 @@ theorem dprop_leq_iff_isolated : α.dprod_le β τ
     have J_mem : J ∈ (τ.sr α) '' (inv_set α) ∩ inv_set β := by
       apply mems; simp
     exact isolated I I_mem J J_mem prec
+
+omit h_L h_R h_χ in
+theorem dprod_eq_iff : AspPerm.dprod_eq α β τ
+  ↔ (α.χ + β.χ = τ.χ)
+    ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β
+    ∧ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)
+  := by
+  constructor
+  · intro dprod
+    have h_χ : α.χ + β.χ = τ.χ := AspPerm.chi_eq_of_drop_eq dprod
+    apply And.intro h_χ
+    have h_R : α ≤R τ := ler_of_dprod dprod
+    have h_L : β ≤L τ := lel_of_dprod dprod
+    have subset := (dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)).mp dprod.1
+    constructor
+    · apply subset.antisymm
+      rintro ⟨u, v⟩ uv_union
+      rcases uv_union with (h_sr | h_β)
+      · exact (τ.sr_subset α) h_R h_sr
+      · exact h_L h_β
+    · rw [← dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ) ]
+      exact dprod.2
+  · rintro ⟨h_χ, ⟨h_union, h_isol⟩⟩
+    have h_L : β ≤L τ := by
+      intro x hx
+      rw [h_union]
+      exact Or.inr hx
+    have h_R : α ≤R τ := by
+      rintro ⟨u, v⟩ hx
+      have sr := (τ.sr_crit α (τ⁻¹ v) (τ⁻¹ u)).mpr
+      simp only [τ.mul_inv_cancel_eval] at sr
+      apply sr at hx
+      have := τ.inv_set_inverse (τ⁻¹ v) (τ⁻¹ u)
+      simp only [τ.mul_inv_cancel_eval] at this
+      rw [← this]
+      rw [h_union]
+      exact Or.inl hx
+    constructor
+    · rw [dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)]
+      rw [h_union]
+    · exact (dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ)).mpr h_isol
 
 end factorization
 end fixed_321a_and_lel

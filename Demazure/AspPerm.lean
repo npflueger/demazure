@@ -1056,6 +1056,78 @@ def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
 def dprod_le (α β τ : AspPerm) : Prop :=
   ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
 
+def dprod_eq (α β τ : AspPerm) : Prop :=
+  dprod_ge α β τ ∧ dprod_le α β τ
+
+lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : dprod_ge α β τ) :
+  α.χ + β.χ ≥ τ.χ := by
+  rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
+  rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
+  have eqα : α.s 0 l = -l + α.χ := by
+    have := α.duality 0 l
+    omega
+  have eqβ : β.s l c = l-c + β.χ := by
+    have := β.duality l c
+    omega
+  have eq := h_ge 0 c l
+  rw [eqα, eqβ] at eq
+  have dual := τ.duality 0 c
+  have pos := τ⁻¹.s_nonneg c 0
+  omega
+
+lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : dprod_le α β τ) :
+  α.χ + β.χ ≤ τ.χ := by
+  rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
+  rcases h_le 0 c with ⟨l, hl⟩
+  have eq : τ.s 0 c = -c + τ.χ := by
+    have := τ.duality 0 c
+    omega
+  rw [eq] at hl
+
+  have posα := α⁻¹.s_nonneg l 0
+  have posβ := β⁻¹.s_nonneg c l
+
+  have dualα := α.duality 0 l
+  have dualβ := β.duality l c
+  have dualτ := τ.duality 0 c
+
+  omega
+
+lemma chi_eq_of_drop_eq {α β τ : AspPerm} (h_eq : dprod_eq α β τ) :
+  α.χ + β.χ = τ.χ :=
+  le_antisymm (chi_le_of_drop_le h_eq.2) (chi_ge_of_drop_ge h_eq.1)
+
+lemma dprod_inv_eq_inv_dprod (α β τ : AspPerm) (h_eq : dprod_eq α β τ) :
+  dprod_eq (β⁻¹) (α⁻¹) (τ⁻¹) := by
+  have hχ : α.χ + β.χ = τ.χ := chi_eq_of_drop_eq h_eq
+  constructor
+  · intro a b l
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by
+      have := α.duality b l
+      omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by
+      have := β.duality l a
+      omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by
+      have := τ.duality b a
+      omega
+    rw [eqα, eqβ, eqτ, ← hχ]
+    have := h_eq.1 b a l
+    omega
+  · intro a b
+    rcases h_eq.2 b a with ⟨l, hl⟩
+    use l
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by
+      have := α.duality b l
+      omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by
+      have := β.duality l a
+      omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by
+      have := τ.duality b a
+      omega
+    rw [eqα, eqβ, eqτ, ← hχ]
+    omega
 
 theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
   (habMN : a - b + α.χ + β.χ = M - N) :

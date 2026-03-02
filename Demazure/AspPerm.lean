@@ -666,15 +666,22 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   unfold h at this
   linarith
 
-lemma s_ge_diff (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := by
+lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
   have := duality τ a b
+  omega
+
+lemma s'_eq (a b : ℤ) : τ⁻¹.s a b = τ.s b a - τ.χ + a - b := by
+  have := duality τ b a
+  omega
+
+lemma s_ge (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := by
+  rw [τ.s_eq a b]
   linarith [τ⁻¹.s_nonneg b a]
 
-lemma s'_ge_diff (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
+lemma s'_ge (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
   rw [dual_inverse τ]
-  have := duality τ⁻¹ a b
-  rw [inv_inv, χ_dual] at this
-  linarith [τ.s_nonneg b a]
+  have := (τ⁻¹).s_ge a b
+  rwa [χ_dual] at this
 
 section RampWings
 variable (τ : AspPerm)
@@ -753,13 +760,15 @@ lemma mem_ramp_iff_s_geq (b m n : ℤ) :
       omega
     · have ineq := b_move_up τ⁻¹ b (b + m - n - τ.χ) l (by omega)
       rw [dual_inverse τ] at hn
-      linarith [τ.duality (b + m - n - τ.χ) b, τ.duality l b]
+      rw [τ.s_eq (b + m - n - τ.χ) b]
+      omega
   · intro s_geq
     use b + m - n - τ.χ
     rw [dual_inverse τ]
     constructor
     · exact s_geq
-    · linarith [τ.duality (b + m - n - τ.χ) b]
+    · rw [s_eq] at s_geq
+      omega
 
 lemma mem_lamp_iff_s_geq (a m n : ℤ) :
   ⟨m, n⟩ ∈ τ.lamp a ↔ τ⁻¹.s (a - m + n + τ.χ) a ≥ n := by
@@ -785,18 +794,16 @@ lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
   use m + b - τ.χ
   intro n hn
   simp [R] at hn
-  have dual := τ.duality n b
-  have : τ⁻¹.s b n ≥ 0 := (τ⁻¹).s_nonneg b n
+  have := lt_of_le_of_lt (τ.s_ge n b) hn
   omega
 
 def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
 
 lemma L_nonnempty : (L τ b n).Nonempty := by
   use b - n - τ.χ
-  unfold L; simp; rw [dual_inverse τ]
-  have dual := τ.duality (b - n - τ.χ) b
-  have : τ.s (b - n - τ.χ) b ≥ 0 := τ.s_nonneg (b - n - τ.χ) b
-  linarith [dual]
+  unfold L; simp
+  refine le_trans ?_ (τ.s'_ge b (b - n - τ.χ))
+  omega
 
 lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
   have := tend_zero_b (τ := τ⁻¹) b
@@ -1047,85 +1054,54 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
 def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∀ l : ℤ, α.s a l + β.s l b ≥ n
 
-def dprod_ge (α β τ : AspPerm) : Prop :=
+def ge_dprod (τ α β : AspPerm) : Prop :=
   ∀ a b : ℤ, dprod_val_ge α β a b (τ.s a b)
 
 def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∃ l : ℤ, α.s a l + β.s l b ≤ n
 
-def dprod_le (α β τ : AspPerm) : Prop :=
+def le_dprod (τ α β : AspPerm) : Prop :=
   ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
 
-def dprod_eq (α β τ : AspPerm) : Prop :=
-  dprod_ge α β τ ∧ dprod_le α β τ
+def eq_dprod (τ α β : AspPerm) : Prop :=
+  τ.ge_dprod α β ∧ τ.le_dprod α β
 
-lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : dprod_ge α β τ) :
+lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.ge_dprod α β) :
   α.χ + β.χ ≥ τ.χ := by
   rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
   rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
-  have eqα : α.s 0 l = -l + α.χ := by
-    have := α.duality 0 l
-    omega
-  have eqβ : β.s l c = l-c + β.χ := by
-    have := β.duality l c
-    omega
   have eq := h_ge 0 c l
-  rw [eqα, eqβ] at eq
-  have dual := τ.duality 0 c
-  have pos := τ⁻¹.s_nonneg c 0
-  omega
+  rw [α.s_eq, β.s_eq] at eq
+  linarith [τ.s_ge 0 c]
 
-lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : dprod_le α β τ) :
+lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.le_dprod α β) :
   α.χ + β.χ ≤ τ.χ := by
   rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
   rcases h_le 0 c with ⟨l, hl⟩
-  have eq : τ.s 0 c = -c + τ.χ := by
-    have := τ.duality 0 c
-    omega
-  rw [eq] at hl
+  rw [τ.s_eq] at hl
+  linarith [α.s_ge 0 l, β.s_ge l c]
 
-  have posα := α⁻¹.s_nonneg l 0
-  have posβ := β⁻¹.s_nonneg c l
-
-  have dualα := α.duality 0 l
-  have dualβ := β.duality l c
-  have dualτ := τ.duality 0 c
-
-  omega
-
-lemma chi_eq_of_drop_eq {α β τ : AspPerm} (h_eq : dprod_eq α β τ) :
+lemma chi_eq_of_drop_eq {τ α β : AspPerm} (h_eq : τ.eq_dprod α β) :
   α.χ + β.χ = τ.χ :=
   le_antisymm (chi_le_of_drop_le h_eq.2) (chi_ge_of_drop_ge h_eq.1)
 
-lemma dprod_inv_eq_inv_dprod (α β τ : AspPerm) (h_eq : dprod_eq α β τ) :
-  dprod_eq (β⁻¹) (α⁻¹) (τ⁻¹) := by
+lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
+  τ⁻¹.eq_dprod (β⁻¹) (α⁻¹) := by
   have hχ : α.χ + β.χ = τ.χ := chi_eq_of_drop_eq h_eq
   constructor
   · intro a b l
-    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by
-      have := α.duality b l
-      omega
-    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by
-      have := β.duality l a
-      omega
-    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by
-      have := τ.duality b a
-      omega
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     have := h_eq.1 b a l
     omega
   · intro a b
     rcases h_eq.2 b a with ⟨l, hl⟩
     use l
-    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by
-      have := α.duality b l
-      omega
-    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by
-      have := β.duality l a
-      omega
-    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by
-      have := τ.duality b a
-      omega
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     omega
 
@@ -1162,21 +1138,21 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     obtain ⟨hβ, hα⟩ := ineqs
     have hβ : β.s l b ≤ m-1 := by exact Int.le_sub_one_of_lt hβ
     have hα : α.s a l ≤ M  - m := by
-      linarith [hα, α.duality a l]
+      linarith [α.s_eq a l]
     have : α.s a l + β.s l b ≤ M-1 := by
-      linarith [add_le_add hα hβ]
+      linarith [add_le_add (α.s_ge a l) hβ]
     exact Int.lt_of_le_sub_one this
   · unfold dprod_val_ge
     intro hramp l
     contrapose! hramp with ineq
     obtain ineq : α.s a l + β.s l b ≤ M - 1 := Int.le_sub_one_of_lt ineq
     have ineq' : α⁻¹.s l a + β⁻¹.s b l ≤ N -1 := by
-      linarith [β.duality l b, α.duality a l]
+      linarith [α.s'_eq l a, β.s'_eq b l]
 
     let m := β.s l b + 1
     let n := β⁻¹.s b l + 1
     have l_eq : l = m - n + b - β.χ := by
-      linarith [β.duality l b]
+      linarith [β.s_eq l b]
 
     have m_icc : m ∈ Set.Icc 1 M := by
       constructor

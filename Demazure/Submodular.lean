@@ -149,10 +149,10 @@ noncomputable def DemValley (α β : AspPerm) (a b : ℤ) : Valley where
       simp at hn
       suffices n ≥ L ∧ n ≤ R by simpa
       constructor
-      · linarith [β.s_nonneg n b, α.duality a n, α⁻¹.s_nonneg n a]
-      · linarith [α.s_nonneg a n, β.duality n b, β⁻¹.s_nonneg b n]
+      · linarith [β.s_nonneg n b, α.s_ge a n]
+      · linarith [α.s_nonneg a n, β.s_ge n b]
 
-lemma DemValley_min_eq_s {α β τ : AspPerm} (dprod : AspPerm.dprod_eq α β τ) (a b : ℤ) :
+lemma DemValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
   (DemValley α β a b).min = τ.s a b := by
   apply le_antisymm
   · have := dprod.2 a b
@@ -319,7 +319,7 @@ lemma DemValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
     rw [Nat.cast_add, add_assoc, Nat.cast_one]
 
 /-- Lemma 4.9, part 1 -/
-theorem lel_of_dprod {α β τ : AspPerm} (dprod : α.dprod_eq β τ) : β ≤L τ := by
+theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L τ := by
   rintro ⟨u, v⟩ ⟨u_lt_v, βv_lt_βu⟩
   apply And.intro u_lt_v
   contrapose! βv_lt_βu with τu_le_τv
@@ -356,8 +356,8 @@ theorem lel_of_dprod {α β τ : AspPerm} (dprod : α.dprod_eq β τ) : β ≤L 
   omega
 
 /-- Lemma 4.9, part 2 -/
-theorem ler_of_dprod {α β τ : AspPerm} (dprod : AspPerm.dprod_eq α β τ) : α ≤R τ := by
+theorem ler_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : α ≤R τ := by
   suffices α⁻¹ ≤L τ⁻¹ by
     simpa using AspPerm.le_weak_R_of_L this
   apply lel_of_dprod (α := β⁻¹) (β := α⁻¹) (τ := τ⁻¹)
-  exact AspPerm.dprod_inv_eq_inv_dprod α β τ dprod
+  exact AspPerm.dprod_inv_eq_inv_dprod τ α β dprod

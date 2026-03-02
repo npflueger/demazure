@@ -1046,7 +1046,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
       exact (τ⁻¹.s_noninc b τu_ge_a).1
 
   have habMN : a - b + α.χ + β.χ = M - N := by
-    linarith [τ.duality a b, h_χ]
+    linarith [τ.duality a b]
 
   have legos := (α.ramp_dprod_legos β a b M N habMN).mp dprod m m_icc n n_icc
   rcases legos with (hβ | hα)
@@ -1089,7 +1089,7 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv
   let N := τ.s' b a
   have habMN : a - b + α.χ + β.χ = M - N := by
     have : N = τ⁻¹.s b a := by rw [← τ.dual_inverse]
-    linarith [τ.duality a b, h_χ]
+    linarith [τ.duality a b]
   apply (α.ramp_dprod_legos β a b M N habMN).mpr
 
   rintro m ⟨m_ge_1, m_le_M⟩ n ⟨n_ge_1, n_le_N⟩
@@ -1535,7 +1535,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
 
 --- Main result
 
-theorem dprod_ge_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+theorem dprod_ge_iff_union : τ.ge_dprod α β ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
   constructor
   · intro ge
     rintro ⟨u, v⟩ uv_inv
@@ -1548,14 +1548,14 @@ theorem dprod_ge_iff_union : α.dprod_ge β τ ↔ inv_set τ ⊆ (τ.sr α) '' 
 
 def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
 
-theorem dprod_le_iff_isolated : α.dprod_le β τ
+theorem dprod_le_iff_isolated : τ.le_dprod α β
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   constructor
   · rintro le ⟨u, v⟩ I_mem ⟨u', v'⟩ J_mem h_prec
     have u'_le_u : u' ≤ u := h_prec.1
     have v_le_v' : v ≤ v' := h_prec.2
     contrapose! le with I_ne_J
-    dsimp [AspPerm.dprod_le, AspPerm.dprod_val_le]; push_neg
+    dsimp [AspPerm.le_dprod, AspPerm.dprod_val_le]; push_neg
 
     by_cases u_eq_u' : u = u'
     · have v_lt_v' : v < v' := by
@@ -1600,7 +1600,8 @@ theorem dprod_le_iff_isolated : α.dprod_le β τ
     obtain excess : β⁻¹.dprod_val_ge α⁻¹ a b (τ⁻¹.s a b + 1) := by simpa using h
     dsimp [AspPerm.dprod_val_ge] at excess
     intro x; specialize excess x
-    linarith [excess, τ.duality b a, α.duality b x, β.duality x a]
+    rw [α.s'_eq, β.s'_eq, τ.s'_eq] at excess
+    omega
   · intro no_excess a b
     contrapose! no_excess with ne_le
     dsimp [AspPerm.dprod_val_le] at ne_le; push_neg at ne_le
@@ -1618,7 +1619,7 @@ theorem dprod_le_iff_isolated : α.dprod_le β τ
     exact isolated I I_mem J J_mem prec
 
 omit h_L h_R h_χ in
-theorem dprod_eq_iff : AspPerm.dprod_eq α β τ
+theorem dprod_eq_iff : τ.eq_dprod α β
   ↔ (α.χ + β.χ = τ.χ)
     ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β
     ∧ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)

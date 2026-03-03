@@ -1,4 +1,6 @@
 import Demazure.Utils
+import Demazure.Valley
+import Demazure.SlipFace
 import Demazure.AspPerm
 import Demazure.Submodular
 import Demazure.InvSet

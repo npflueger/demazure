@@ -195,4 +195,6 @@ lemma D_props_of_sf (sf : SlipFace) : D_props sf.s ∧ D_props sf.dual.s := by
     · intro b
       exact sf.dual.small_a b
 
+
+
 end SlipFace

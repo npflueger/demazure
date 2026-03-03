@@ -1,4 +1,5 @@
 import Demazure.Utils
+import Demazure.SlipFace
 import Mathlib.Algebra.CharP.Defs
 import Mathlib.Data.Set.Card
 
@@ -683,9 +684,6 @@ lemma s'_ge (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
   have := (τ⁻¹).s_ge a b
   rwa [χ_dual] at this
 
-section RampWings
-variable (τ : AspPerm)
-
 def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
   by_cases h : τ.s 0 b = 0
   · use 0
@@ -729,6 +727,62 @@ def tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
   rw [τ⁻¹.flip_s, τ⁻¹.dual_inverse] at hb
   simpa using hb
 
+noncomputable def sf : SlipFace := {
+  func := τ.s
+  χ := τ.χ
+  a_step := by
+    intro a b
+    rw [τ.a_step a b]
+    by_cases h : τ⁻¹ a ≥ b <;> simp [h]
+  b_step := by
+    intro a b
+    rw [τ.b_step a b]
+    by_cases h : τ b < a <;> simp [h]
+  nonneg := τ.s_nonneg
+  ge_diff := τ.s_ge
+  small_a := by
+    intro b
+    obtain ⟨A, hA⟩ := τ.tend_zero_a b
+    use A
+    intro a a_le_A
+    have := (τ.s_nondec a_le_A b).1
+    rw [hA] at this
+    apply le_antisymm this
+    exact τ.s_nonneg a b
+  large_a := by
+    intro b
+    obtain ⟨A, hA⟩ := τ⁻¹.tend_zero_b b
+    use A; intro a a_ge_A
+    have ha : τ⁻¹.s b a = 0 := by
+      apply le_antisymm
+      · have := (τ⁻¹.s_noninc b a_ge_A).1
+        rwa [hA] at this
+      · exact τ⁻¹.s_nonneg b a
+    rw [τ.s_eq a b, ha]
+    omega
+  small_b := by
+    intro a
+    obtain ⟨B, hB⟩ := τ⁻¹.tend_zero_a a
+    use B; intro b b_le_B
+    have hb : τ⁻¹.s b a = 0 := by
+      apply le_antisymm
+      · have := (τ⁻¹.s_nondec b_le_B a).1
+        rwa [hB] at this
+      · exact τ⁻¹.s_nonneg b a
+    rw [τ.s_eq a b, hb]
+    omega
+  large_b := by
+    intro a
+    obtain ⟨B, hB⟩ := τ.tend_zero_b a
+    use B; intro b b_ge_B
+    apply le_antisymm
+    · have := (τ.s_noninc a b_ge_B).1
+      rwa [hB] at this
+    · exact τ.s_nonneg a b
+}
+
+section RampWings
+variable (τ : AspPerm)
 
 def ramp (b : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}

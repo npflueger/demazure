@@ -1,141 +1,11 @@
 import Demazure.AspPerm
-
-
-/-- Function f satisfying the hypotheses of Lemma 4.6. -/
-structure Valley where
-  f : ℤ → ℤ
-  rises : ∀ m : ℤ, {n : ℤ | f n ≤ m}.Finite
-
-instance : CoeFun Valley (fun _ => ℤ → ℤ) :=
-  ⟨Valley.f⟩
-
-
-namespace Valley
-variable (v : Valley)
-
-noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m)
-
-lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Nonempty := by
-  use v.f n; unfold Valley.floor;
-  simp only [Finset.mem_image, Set.Finite.mem_toFinset]
-  use n
-  constructor
-  · exact le_refl (v.f n)
-  · rfl
-
-noncomputable def min : ℤ := Finset.min' (Finset.image v.f (v.floor (v.f 0)))
-  (v.floor_image_nonempty 0)
-
-lemma min_mem : ∃ a ∈ {n | v.f n ≤ v.f 0}, v.f a = v.min := by
-    have := Finset.min'_mem (Finset.image v.f (v.floor (v.f 0))) (v.floor_image_nonempty 0)
-    unfold Valley.floor at this
-    simpa only [Finset.mem_image, Set.Finite.mem_toFinset] using this
-
-lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
-  intro n
-  by_cases h : v.f n > v.f 0
-  · rcases v.min_mem with ⟨m, hm⟩
-    have := le_trans (hm.1) (le_of_lt h)
-    rwa [hm.2] at this
-  have mem_floor : n ∈ v.floor (v.f 0) := by
-    unfold Valley.floor
-    simp only [Set.Finite.mem_toFinset]
-    exact le_of_not_gt h
-  have mem_image_floor : v.f n ∈ Finset.image v.f (v.floor (v.f 0)) := by
-    simp only [Finset.mem_image]
-    use n
-  exact Finset.min'_le (Finset.image v.f (v.floor (v.f 0))) (v.f n) mem_image_floor
-
-lemma argmin_set_nonempty : (v.floor v.min).Nonempty := by
-  rcases v.min_mem with ⟨m, hm⟩
-  use m
-  unfold Valley.floor
-  simp only [Set.Finite.mem_toFinset]
-  exact le_of_eq hm.2
-
-/-- The *maximum* preimage of the minimum value of f. -/
-noncomputable def M : ℤ := Finset.max' (v.floor v.min) v.argmin_set_nonempty
-
-lemma f_M : v.f v.M = v.min := by
-  have ge : v.f v.M ≥ v.min := v.min_spec v.M
-  have le : v.f v.M ≤ v.min := by
-    have : v.M ∈ v.floor v.min := Finset.max'_mem (v.floor v.min) v.argmin_set_nonempty
-    unfold Valley.floor at this
-    simpa [Set.Finite.mem_toFinset] using this
-  exact le_antisymm le ge
-
-lemma M_spec : ∀ n : ℤ, v.f n ≥ v.f v.M ∧ (n > v.M → v.f n > v.f v.M) := by
-  intro n
-  constructor
-  · have := v.min_spec n
-    rwa [v.f_M]
-  · intro n_gt_vM
-    contrapose! n_gt_vM with fn_le_fM
-    have : n ∈ v.floor v.min := by
-      unfold Valley.floor
-      simp only [Set.Finite.mem_toFinset]
-      rwa [v.f_M] at fn_le_fM
-    simpa using Finset.le_max' (v.floor v.min) n this
-
-def shift_down (k : ℤ) : Valley where
-  f := fun n => v.f n - k
-  rises := by
-    intro m
-    have : {n : ℤ | v.f n - k ≤ m} = {n : ℤ | v.f n ≤ m + k} := by
-      ext n
-      simp only [Set.mem_setOf_eq]
-      constructor
-      · intro h; linarith
-      · intro h; linarith
-    rw [this]
-    apply v.rises
-
-lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
-  let v' := v.shift_down k
-  -- let M' := (v.shift_down k).M
-  suffices v.M = v'.M by rw [this]
-  have ge : v.f v'.M ≥ v.f v.M := (v.M_spec v'.M).1
-  have le : v'.f v'.M ≤ v'.f v.M := by
-    exact ((v.shift_down k).M_spec v.M).1
-  have f_eq : v.f v.M = v.f v'.M := by
-    subst v'
-    unfold Valley.shift_down at le ge ⊢
-    simp at le
-    omega
-  have f'_eq : v'.f v.M = v'.f v'.M := by
-    subst v'
-    unfold Valley.shift_down at le ge ⊢
-    simp at le ⊢
-    omega
-
-  have M_le_M' : v.M ≤ v'.M := by
-    have := (v'.M_spec v.M).2
-    contrapose! ge with h
-    have := this h
-    rw [f'_eq] at this
-    exfalso; apply lt_irrefl (v'.f v'.M) this
-  have M'_le_M : v'.M ≤ v.M := by
-    have := (v.M_spec v'.M).2
-    contrapose! le with h
-    have := this h
-    rw [f_eq] at this
-    exfalso; apply lt_irrefl (v.f v'.M) this
-  exact le_antisymm M_le_M' M'_le_M
-
-lemma shift_down_min (k : ℤ) : (v.shift_down k).min = v.min - k := by
-  let v' := v.shift_down k
-  rw [← v'.f_M, ← v.f_M, v.shift_down_M k]
-  subst v'
-  unfold Valley.shift_down
-  simp
-
-end Valley
+import Demazure.Valley
 
 /-- The ``Demazure valley of α β a b is the function of l that
   is minimized to compute sα ⋆ sβ (a,b). It is useful to consider
   the largest l where the minimum is attained, which is denoted
   M_{α ⋆ β}(a,b) in Definition 4.5. -/
-noncomputable def DemValley (α β : AspPerm) (a b : ℤ) : Valley where
+noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
     f := fun l => α.s a l + β.s l b
     rises := by
       intro m
@@ -153,22 +23,22 @@ noncomputable def DemValley (α β : AspPerm) (a b : ℤ) : Valley where
       · linarith [α.s_nonneg a n, β.s_ge n b]
 
 lemma DemValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
-  (DemValley α β a b).min = τ.s a b := by
+  (AspValley α β a b).min = τ.s a b := by
   apply le_antisymm
   · have := dprod.2 a b
     unfold AspPerm.dprod_val_le at this
     rcases this with ⟨l, hl⟩
     refine le_trans ?_ hl
-    exact (DemValley α β a b).min_spec l
+    exact (AspValley α β a b).min_spec l
   · have := dprod.1 a b
     unfold AspPerm.dprod_val_ge at this
-    specialize this (DemValley α β a b).M
+    specialize this (AspValley α β a b).M
     refine le_trans this ?_
-    rw [← (DemValley α β a b).f_M]
-    unfold DemValley
+    rw [← (AspValley α β a b).f_M]
+    unfold AspValley
     simp
 
-/-- Lemma 4.6 of ``An extended Demazure product'' -/
+/-- Lemma 4.6 -/
 lemma sediment (v w : Valley) {A : ℤ}
   (low : ∀ l : ℤ, l ≤ A → w.f l = v.f l + 1) (high : ∀ l : ℤ, l > A → w.f l = v.f l) :
   ((v.M ≤ A → w.min = v.min + 1)
@@ -244,13 +114,13 @@ lemma sediment (v w : Valley) {A : ℤ}
 
 /-- Lemma 4.7, in slightly different phrasing. -/
 lemma DemValley_step_a (α β : AspPerm) (a b : ℤ) :
-  let v := DemValley α β a b
-  let w := DemValley α β (a+1) b
+  let v := AspValley α β a b
+  let w := AspValley α β (a+1) b
   w.min = v.min + (if v.M ≤ α⁻¹ a then 1 else 0) ∧ v.M ≤ w.M := by
   intro v w
   have : ∀ n : ℤ, w.f n = v.f n + (if n ≤ α⁻¹ a then 1 else 0) := by
     intro n
-    subst v w; simp [DemValley]
+    subst v w; simp [AspValley]
     rw [α.a_step a n]
     omega
   have low : (∀ n : ℤ, n ≤ α⁻¹ a → w.f n = v.f n + 1) := by
@@ -269,13 +139,13 @@ lemma DemValley_step_a (α β : AspPerm) (a b : ℤ) :
 
 /-- Lemma 4.8, in slightly different phrasing. -/
 lemma DemValley_step_b (α β : AspPerm) (a b : ℤ) :
-  let v := (DemValley α β a b).shift_down 1
-  let w := DemValley α β a (b+1)
+  let v := (AspValley α β a b).shift_down 1
+  let w := AspValley α β a (b+1)
   w.min = v.min + (if v.M ≤ β b then 1 else 0) ∧ v.M ≤ w.M := by
   intro v w
   have : ∀ n : ℤ, w.f n = v.f n + (if n ≤ β b then 1 else 0) := by
     intro n
-    subst v w; simp [DemValley]
+    subst v w; simp [AspValley]
     rw [β.b_step n b]
     unfold Valley.shift_down
     by_cases h : n ≤ β b
@@ -296,8 +166,8 @@ lemma DemValley_step_b (α β : AspPerm) (a b : ℤ) :
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
 lemma DemValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
-  let v := DemValley α β a b
-  let w := DemValley α β a c
+  let v := AspValley α β a b
+  let w := AspValley α β a c
   v.M ≤ w.M := by
   let n : ℕ := (c - b).toNat
   have : c = b + n := by omega
@@ -307,12 +177,12 @@ lemma DemValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
     rw [Nat.cast_zero, add_zero]
   | succ n ih =>
     intro v w
-    let v' := DemValley α β a (b + n)
+    let v' := AspValley α β a (b + n)
     obtain ih : v.M ≤ v'.M := ih
     apply le_trans ih
     subst v' w
     have := (DemValley_step_b α β a (b + n)).2
-    rw [((DemValley α β a (b + ↑n))).shift_down_M] at this
+    rw [((AspValley α β a (b + ↑n))).shift_down_M] at this
     refine le_trans this ?_
     apply le_of_eq
     congr 2
@@ -330,8 +200,8 @@ theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L 
     exact lt_irrefl v u_lt_v
   have τv_le_τu : τ u < τ v := lt_of_le_of_ne τu_le_τv this; clear this τu_le_τv
   let a := τ v
-  let val_au := DemValley α β a u
-  let val_av := DemValley α β a v
+  let val_au := AspValley α β a u
+  let val_av := AspValley α β a v
   have Mau_gt_βu : val_au.M > β u := by
     contrapose! τv_le_τu with h
     have := (DemValley_step_b α β a u).1

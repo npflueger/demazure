@@ -1,29 +1,52 @@
-import Mathlib
 import Demazure.Valley
+import Mathlib.Algebra.CharP.Defs
 
 /-- Definition 3.1 -/
 structure SlipFace where
-  s : ℤ → ℤ → ℤ
+  func : ℤ → ℤ → ℤ
   χ : ℤ
-  a_step : ∀ a b : ℤ, s a b ≤ s (a+1) b ∧ s (a+1) b ≤ s a b + 1
-  b_step : ∀ a b : ℤ, s a (b+1) ≤ s a b ∧ s a b ≤ s a (b+1) + 1
-  nonneg : ∀ a b, s a b ≥ 0
-  ge_diff : ∀ a b, s a b ≥ a - b + χ
-  small_a : ∀ b, ∃ A, ∀ a ≤ A, s a b  = 0
-  large_a : ∀ b, ∃ A, ∀ a ≥ A, s a b = a - b + χ
-  small_b : ∀ a, ∃ B, ∀ b ≤ B, s a b = a - b + χ
-  large_b : ∀ a, ∃ B, ∀ b ≥ B, s a b = 0
+  a_step : ∀ a b : ℤ, func a b ≤ func (a+1) b ∧ func (a+1) b ≤ func a b + 1
+  b_step : ∀ a b : ℤ, func a (b+1) ≤ func a b ∧ func a b ≤ func a (b+1) + 1
+  nonneg : ∀ a b, func a b ≥ 0
+  ge_diff : ∀ a b, func a b ≥ a - b + χ
+  small_a : ∀ b, ∃ A, ∀ a ≤ A, func a b  = 0
+  large_a : ∀ b, ∃ A, ∀ a ≥ A, func a b = a - b + χ
+  small_b : ∀ a, ∃ B, ∀ b ≤ B, func a b = a - b + χ
+  large_b : ∀ a, ∃ B, ∀ b ≥ B, func a b = 0
 
 instance : CoeFun SlipFace (fun _ => ℤ → ℤ → ℤ) :=
-  ⟨SlipFace.s⟩
+  ⟨SlipFace.func⟩
 
+lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
+  constructor
+  · rintro rfl
+    simp
+  · intro h
+    have : s.χ = t.χ := by
+      obtain ⟨As, hAs⟩ := s.large_a 0
+      obtain ⟨At, hAt⟩ := t.large_a 0
+      let A := max As At
+      have hs : s.χ = s A 0 - A := by
+        have := hAs A (le_max_left _ _)
+        omega
+      have ht : t.χ = t A 0 - A := by
+        have := hAt A (le_max_right _ _)
+        omega
+      rw [hs, ht, h A 0]
+    cases s
+    cases t
+    simp at h this ⊢
+    constructor
+    · funext a b
+      exact h a b
+    · exact this
 
 namespace SlipFace
 variable (sf : SlipFace)
 
 /-- Definition 3.4 -/
 def dual : SlipFace := {
-  s := fun b a => sf a b - a + b - sf.χ
+  func := fun b a => sf a b - a + b - sf.χ
   χ := -sf.χ,
   a_step := by
     rintro b a
@@ -35,10 +58,12 @@ def dual : SlipFace := {
     constructor <;> omega
   nonneg := by
     rintro b a
-    linarith [sf.ge_diff a b]
+    have h := sf.ge_diff a b
+    linarith
   ge_diff := by
     rintro b a
-    linarith [sf.nonneg a b]
+    have h := sf.nonneg a b
+    linarith
   small_a := by
     rintro b
     obtain ⟨A, hA⟩ := sf.small_b b
@@ -68,6 +93,12 @@ def dual : SlipFace := {
     rw [hB b hb]
     omega
 }
+
+lemma dual_dual (s : SlipFace) : s.dual.dual = s := by
+  apply (SF_ext s.dual.dual s).mpr
+  intro a b
+  dsimp [SlipFace.dual]
+  omega
 
 lemma duality (a b : ℤ) : sf a b - sf.dual b a = a - b + sf.χ := by
   dsimp [SlipFace.dual]
@@ -109,10 +140,10 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) : ∀ a b b', 
 /-- Lemma 3.6 -/
 lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ} (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
-  ∃ sf : SlipFace, (sf.s = s ∧ sf.χ = χ) ∧ sf.dual.s = t := by
+  ∃ sf : SlipFace, (sf.func = s ∧ sf.χ = χ) ∧ sf.dual.func = t := by
   rintro ⟨sp, tp⟩
   let sf : SlipFace := {
-    s := s,
+    func := s,
     χ := χ,
     a_step := by
       intro a b
@@ -172,9 +203,12 @@ lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ} (h : ∀ a b, s a b -
   · constructor <;> rfl
   · ext a b
     dsimp [SlipFace.dual]
+    have hsf_func : sf.func = s := rfl
+    have hsf_χ : sf.χ = χ := rfl
+    rw [hsf_func, hsf_χ]
     linarith [h b a]
 
-lemma D_props_of_sf (sf : SlipFace) : D_props sf.s ∧ D_props sf.dual.s := by
+lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func := by
   constructor
   · constructor
     · intro a b
@@ -195,6 +229,154 @@ lemma D_props_of_sf (sf : SlipFace) : D_props sf.s ∧ D_props sf.dual.s := by
     · intro b
       exact sf.dual.small_a b
 
+noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
+  f := fun l => s a l + t l b
+  rises := by
+    intro m
+    let L := a - m + s.χ
+    let R := b + m - t.χ
+    suffices {n : ℤ | s a n + t n b ≤ m} ⊆ Finset.Icc L R by
+      apply Set.Finite.subset _ this
+      apply Set.Finite.ofFinset (Finset.Icc L R)
+      intro x; simp
+    intro n hn
+    simp at hn
+    suffices n ≥ L ∧ n ≤ R by simpa
+    constructor
+    · linarith [t.nonneg n b, s.ge_diff a n]
+    · linarith [s.nonneg a n, t.ge_diff n b]
+
+noncomputable def star_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
+  fun a b => (SlipValley s t a b).min
+
+lemma star_dual_ineq (s t : SlipFace) (a b : ℤ) :
+  star_func t.dual s.dual b a ≤ star_func s t a b - a + b - s.χ - t.χ := by
+  let v := SlipValley s t a b
+  let l := v.M
+  have hl : s a l + t l b = star_func s t a b := by
+    exact (SlipValley s t a b).f_M
+  have ineq : star_func t.dual s.dual b a ≤ t.dual b l + s.dual l a := by
+    exact (SlipValley t.dual s.dual b a).min_spec l
+  apply le_trans ineq
+  dsimp [SlipFace.dual]
+  omega
+
+lemma star_dual_eq (s t : SlipFace) (a b : ℤ) :
+  star_func s t a b - star_func t.dual s.dual b a = a - b + s.χ + t.χ := by
+  suffices star_func t.dual s.dual b a = star_func s t a b - a + b - s.χ - t.χ by omega
+  apply le_antisymm
+  · exact star_dual_ineq s t a b
+  let s' := s.dual
+  let t' := t.dual
+  have s'' : s = s'.dual := by rw [SlipFace.dual_dual s]
+  have t'' : t = t'.dual := by rw [SlipFace.dual_dual t]
+  have ineq := star_dual_ineq t' s' b a
+  rw [← s'', ← t''] at ineq
+  subst s' t'
+  have : s.dual.χ = - s.χ := by dsimp [SlipFace.dual]
+  rw [this] at ineq
+  have : t.dual.χ = - t.χ := by dsimp [SlipFace.dual]
+  rw [this] at ineq
+  omega
+
+lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
+  constructor
+  · intro a b
+    let v := SlipValley s t (a+1) b
+    let l := v.M
+    have hl : s (a+1) l + t l b = s.star_func t (a+1) b := by
+      exact (SlipValley s t (a+1) b).f_M
+    rw [← hl]
+    have hmin : s.star_func t a b ≤ s a l + t l b := by
+      exact (SlipValley s t a b).min_spec l
+    apply le_trans hmin
+    have step : s a l ≤ s (a+1) l := (s.a_step a l).1
+    omega
+  · intro a b
+    let v := SlipValley s t a b
+    let l := v.M
+    have hl : s a l + t l b = s.star_func t a b := by
+      exact (SlipValley s t a b).f_M
+    rw [← hl]
+    have hmin : s.star_func t a (b+1) ≤ s a l + t l (b+1) := by
+      exact (SlipValley s t a (b+1)).min_spec l
+    apply le_trans hmin
+    have step : t l (b+1) ≤ t l b := (t.b_step l b).1
+    omega
+  · intro a
+    obtain ⟨l, hl⟩ := s.large_b a
+    specialize hl l (le_refl l)
+    obtain ⟨B, hB⟩ := t.large_b l
+    use B
+    intro b hb
+    specialize hB b hb
+    have : s.star_func t a b ≤ s a l + t l b := by
+      exact (SlipValley s t a b).min_spec l
+    have le_zero : s.star_func t a b ≤ 0 := by
+      rwa [hl, hB, add_zero] at this
+    have ge_zero : s.star_func t a b ≥ 0 := by
+      let v := SlipValley s t a b
+      let l := v.M
+      have hl : s a l + t l b = s.star_func t a b := by
+        exact (SlipValley s t a b).f_M
+      rw [← hl]
+      linarith [s.nonneg a l, t.nonneg l b]
+    exact le_antisymm le_zero ge_zero
+  · intro b
+    obtain ⟨l, hl⟩ := t.small_a b
+    specialize hl l (le_refl l)
+    obtain ⟨A, hA⟩ := s.small_a l
+    use A
+    intro a ha
+    specialize hA a ha
+    have : s.star_func t a b ≤ s a l + t l b := by
+      exact (SlipValley s t a b).min_spec l
+    have le_zero : s.star_func t a b ≤ 0 := by
+      rwa [hA, hl, zero_add] at this
+    have ge_zero : s.star_func t a b ≥ 0 := by
+      let v := SlipValley s t a b
+      let l := v.M
+      have hl : s a l + t l b = s.star_func t a b := by
+        exact (SlipValley s t a b).f_M
+      linarith [s.nonneg a l, t.nonneg l b]
+    exact le_antisymm le_zero ge_zero
+
+lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
+  ((p.func = star_func s t ∧ p.χ = s.χ + t.χ)
+  ∧ p.dual.func = star_func t.dual s.dual) := by
+  let P := star_func s t
+  let P' := star_func t.dual s.dual
+  let χ := s.χ + t.χ
+  have : ∀ a b : ℤ, P a b - P' b a = a - b + χ := by
+    intro a b
+    rw [star_dual_eq s t a b]
+    omega
+  have h := sf_of_D_props this
+  suffices D_props P ∧ D_props P' by
+    exact h this
+  exact ⟨D_props_of_star_func s t, D_props_of_star_func t.dual s.dual⟩
+
+noncomputable def star (s t : SlipFace) : SlipFace :=
+  Classical.choose (star_exists s t)
+
+infixl:70 " ⋆ " => star
+
+lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
+  have h := star_exists s t
+  exact (Classical.choose_spec h).1.1
+
+@[simp] lemma star_chi (s t : SlipFace) : (s ⋆ t).χ = s.χ + t.χ := by
+  have h := star_exists s t
+  exact (Classical.choose_spec h).1.2
+
+@[simp] lemma star_dual (s t : SlipFace) : (s ⋆ t).dual = t.dual ⋆ s.dual := by
+  have h := star_exists s t
+  have := (Classical.choose_spec h).2
+  apply (SF_ext _ _).mpr
+  rw [star_func_eq]
+  rw [← this]
+  intro a b
+  rfl
 
 
 end SlipFace

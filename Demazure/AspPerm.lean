@@ -781,6 +781,41 @@ noncomputable def sf : SlipFace := {
     · exact τ.s_nonneg a b
 }
 
+lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
+  let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
+  let d2 := τ.s a b - τ.s a (b+1)
+  suffices d1 - d2 = if τ b = a then 1 else 0 by
+    unfold SlipFace.Δ AspPerm.sf
+    simp; omega
+  have h1 : d1 = if τ b ≤ a then 1 else 0 := by
+    unfold d1; rw [τ.b_step (a+1) b]
+    omega
+  have h2 : d2 = if τ b < a then 1 else 0 := by
+    unfold d2; rw [τ.b_step a b]
+    omega
+  rw [h1, h2]
+  by_cases h : τ b < a
+  · have h' : τ b ≤ a := le_of_lt h
+    have h'' : τ b ≠ a := ne_of_lt h
+    simp [h, h', h'']
+  simp [h]
+  by_cases h' : τ b = a
+  · simp [h']
+  have h' : ¬ (τ b ≤ a) := by
+    contrapose! h'
+    push_neg at h
+    exact le_antisymm h' h
+  simpa [h, h']
+
+lemma Γ_eq : τ.sf.Γ = { ⟨a, b⟩ | τ b = a } := by
+  ext ⟨a, b⟩
+  simp [SlipFace.Γ, τ.Δ_eq]
+
+lemma submodular : τ.sf.submodular := by
+  intro a b
+  have Δ_eq := τ.Δ_eq a b
+  by_cases h : τ b = a <;> simp [h, Δ_eq]
+
 section RampWings
 variable (τ : AspPerm)
 

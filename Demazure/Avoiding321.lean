@@ -1628,8 +1628,8 @@ theorem dprod_eq_iff : τ.eq_dprod α β
   · intro dprod
     have h_χ : α.χ + β.χ = τ.χ := AspPerm.chi_eq_of_drop_eq dprod
     apply And.intro h_χ
-    have h_R : α ≤R τ := ler_of_dprod dprod
-    have h_L : β ≤L τ := lel_of_dprod dprod
+    have h_R : α ≤R τ := Submodular.ler_of_dprod dprod
+    have h_L : β ≤L τ := Submodular.lel_of_dprod dprod
     have subset := (dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)).mp dprod.1
     constructor
     · apply subset.antisymm

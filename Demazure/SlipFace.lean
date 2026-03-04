@@ -104,6 +104,12 @@ lemma duality (a b : ℤ) : sf a b - sf.dual b a = a - b + sf.χ := by
   dsimp [SlipFace.dual]
   omega
 
+lemma s_eq (a b : ℤ) : sf a b = a - b + sf.χ + sf.dual b a := by
+  linarith [sf.duality a b]
+
+lemma s'_eq (b a : ℤ) : sf.dual b a = sf a b - a + b - sf.χ := by
+  linarith [sf.duality a b]
+
 /-- Properties D1 and D2 -/
 structure D_props (f : ℤ → ℤ → ℤ) : Prop where
   a_step : ∀ a b : ℤ, f (a+1) b ≥ f a b
@@ -378,5 +384,71 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   intro a b
   rfl
 
+def Δ (a b : ℤ) : ℤ :=
+  sf (a+1) b - sf a b - sf (a+1) (b+1) + sf a (b+1)
+
+/-- Equation (18) -/
+lemma Δ_dual (a b : ℤ) : sf.dual.Δ b a = sf.Δ a b := by
+  dsimp [SlipFace.dual, Δ]
+  omega
+
+lemma Δ_values (a b : ℤ) : sf.Δ a b = 0 ∨ sf.Δ a b = 1 ∨ sf.Δ a b = -1 := by
+  suffices sf.Δ a b ≥ -1 ∧ sf.Δ a b ≤ 1 by omega
+  let d1 := sf (a+1) b - sf a b
+  let d2 := sf (a+1) (b+1) - sf a (b+1)
+  have diff : sf.Δ a b = d1 - d2 := by (dsimp [Δ]; omega)
+  suffices d1 - d2 ≥ -1 ∧ d1 - d2 ≤ 1 by (rw [diff]; simpa)
+  obtain ⟨h11, h12⟩ := sf.a_step a b
+  obtain ⟨h21, h22⟩ := sf.a_step a (b+1)
+  omega
+
+lemma sum_a {a₁ a₂ : ℤ} (ha : a₁ ≤ a₂) (b : ℤ) :
+  ∑ a ∈ Finset.Ico a₁ a₂, sf.Δ a b
+  = (sf a₂ b  - sf a₂ (b+1)) - (sf a₁ b - sf a₁ (b+1)) := by
+  let n : ℕ := (a₂ - a₁).toNat
+  have a₂_eq : a₂ = a₁ + n := by omega
+  rw [a₂_eq]
+  induction n with
+  | zero =>
+    simp
+  | succ n ih =>
+    rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
+    have disj : Disjoint (Finset.Ico a₁ (a₁ + n)) {a₁ + n} := by simp
+    have union : Finset.Ico a₁ (a₁ + n + 1) = Finset.Ico a₁ (a₁ + n) ∪ {a₁ + n} := by
+      apply Finset.ext
+      intro x
+      repeat rw [Finset.mem_union, Finset.mem_Ico, Finset.mem_Ico]
+      grind
+    rw [union, Finset.sum_union disj, Finset.sum_singleton, SlipFace.Δ, ih]
+    omega
+
+lemma sum_b (a : ℤ) {b₁ b₂ : ℤ} (hb : b₁ ≤ b₂) :
+  ∑ b ∈ Finset.Ico b₁ b₂, sf.Δ a b
+  = (sf (a+1) b₁ - sf a b₁) - (sf (a+1) b₂ - sf a b₂) := by
+  let n : ℕ := (b₂ - b₁).toNat
+  have b₂_eq : b₂ = b₁ + n := by omega
+  rw [b₂_eq]
+  induction n with
+  | zero =>
+    simp
+  | succ n ih =>
+    rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
+    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by simp
+    have union : Finset.Ico b₁ (b₁ + n + 1) = Finset.Ico b₁ (b₁ + n) ∪ {b₁ + n} := by
+      apply Finset.ext
+      intro x
+      repeat rw [Finset.mem_union, Finset.mem_Ico, Finset.mem_Ico]
+      grind
+    rw [union, Finset.sum_union disj, Finset.sum_singleton, SlipFace.Δ, ih]
+    omega
+
+/-- Definition 4.2 -/
+def submodular : Prop := ∀ a b : ℤ, sf.Δ a b ≥ 0
+
+def Γ : Set (ℤ × ℤ) := {(a, b) | sf.Δ a b = 1}
+
+lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := by
+  intro a b
+  simp [SlipFace.Γ, sf.Δ_dual]
 
 end SlipFace

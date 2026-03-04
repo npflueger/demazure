@@ -1,6 +1,169 @@
 import Demazure.AspPerm
 import Demazure.Valley
 
+namespace Submodular
+
+lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
+  (A A' b : ℤ) (hA : ∀ a ≤ A, s a b = 0) (hA' : ∀ a ≥ A', s.dual (b + 1) a = 0) :
+  A ≤ A' ∧ ∑ a ∈ Finset.Ico A A', s.Δ a b = 1 := by
+  specialize hA A (le_refl A)
+  have hbA : s A (b+1) = 0 := by
+    have := (s.b_step A b).1
+    rw [hA] at this
+    exact le_antisymm this (s.nonneg A (b+1))
+  have A_le_A' : A ≤ A' := by
+    by_contra! h
+    have : A' ≤ A - 1 := by linarith
+    specialize hA' (A-1) (by linarith)
+
+    have hAb : s.dual b (A-1) = 0 := by
+      have := (s.dual.a_step b (A-1)).1
+      rw [hA'] at this
+      exact le_antisymm this (s.dual.nonneg b (A-1))
+
+    have : s.Δ (A-1) b = -1 := by
+      dsimp [SlipFace.Δ]
+      have : A - 1 + 1 = A := by omega
+      rw [this]
+      rw [s.s_eq (A-1) b, s.s_eq (A-1) (b+1)]
+      rw [hA', hA, hAb, hbA]
+      omega
+    linarith [hsub (A-1) b]
+  apply And.intro A_le_A'
+  suffices s.dual b A' + s A (b+1) = 0 by
+    rw [s.sum_a A_le_A', s.s_eq A' b, s.s_eq A' (b+1), hA' A' (le_refl A'), hA]
+    linarith
+  suffices s.dual b A' = 0 by rwa [hbA, add_zero]
+  have := hA' A' (le_refl A')
+  have : s.dual b A' ≤ 0 := by
+    have := (s.dual.a_step b A').1
+    rwa [hA' A' (le_refl A')] at this
+  exact le_antisymm this (s.dual.nonneg b A')
+
+lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
+  ∃! a : ℤ, ⟨a, b⟩ ∈ s.Γ := by
+  rcases s.dual.large_b (b+1) with ⟨A', hA'⟩
+  rcases s.small_a b with ⟨A, hA⟩
+  obtain ⟨A_le_A', h_sum⟩ := unique_a_helper hsub A A' b hA hA'
+  have : ∃ a ∈ Finset.Ico A A', ⟨a, b⟩ ∈ s.Γ := by
+    by_contra! h
+    have : ∀ a ∈ Finset.Ico A A', s.Δ a b = 0 := by
+      intro a ha
+      have := s.Δ_values a b
+      rcases this with (h0 | (h1 | hn))
+      · exact h0
+      · have mem : ⟨a, b⟩ ∈ s.Γ := by
+          simpa [SlipFace.Γ] using h1
+        have nmem := h a ha
+        contradiction
+      · linarith [hsub a b]
+    have : (0 : ℤ) = 1 := by rwa [Finset.sum_eq_zero this] at h_sum
+    contradiction
+  rcases this with ⟨a, ⟨a_Ico, hΓ⟩⟩
+  obtain ⟨a_ge_A, a_lt_A'⟩ := Finset.mem_Ico.mp a_Ico
+  use a
+  constructor
+  · simp; exact hΓ
+  intro a' ha'
+
+  let A'new := max A' (a' + 1)
+  have A_le_A'new : A' ≤ A'new := by apply Int.le_max_left
+  let Anew := min A a'
+  have Anew_le_A : Anew ≤ A := by apply Int.min_le_left
+  have a'_Ico : a' ∈ Finset.Ico Anew A'new := by
+    simp only [Finset.mem_Ico]
+    constructor <;> linarith [Int.le_max_right A' (a' + 1), Int.min_le_right A a']
+  have a_Ico : a ∈ Finset.Ico Anew A'new := by
+    simp only [Finset.mem_Ico]
+    constructor <;> linarith
+
+  have hAnew : ∀ a ≤ Anew, s a b = 0 := by
+    intro a ha
+    have : a ≤ A := by linarith [Anew_le_A]
+    exact hA a this
+  have hA'new : ∀ a ≥ A'new, s.dual (b + 1) a = 0 := by
+    intro a ha
+    have : a ≥ A' := by linarith [A_le_A'new]
+    exact hA' a this
+
+  obtain ⟨A'new_le_A'new, h_sum⟩ := unique_a_helper hsub Anew A'new b hAnew hA'new
+
+  have : (∑ x ∈ Finset.Ico Anew A'new, s.Δ x b)
+    = s.Δ a b + ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b := by
+    apply Finset.sum_eq_add_sum_diff_singleton a_Ico
+  rw [this] at h_sum
+  have sum0 : ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b  = 0 := by
+    have : s.Δ a b = 1 := by
+      dsimp [SlipFace.Γ] at hΓ
+      exact hΓ
+    omega
+  have : ∀ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b ≥ 0 := by
+    intro x hx
+    exact hsub x b
+  have all0 : ∀ i ∈ Finset.Ico Anew A'new \ {a}, s.Δ i b = 0 :=
+    (Finset.sum_eq_zero_iff_of_nonneg this).mp sum0
+  specialize all0 a'
+
+  by_contra! a'_ne_a
+  have : a' ∈ Finset.Ico Anew A'new \ {a} := by
+    simp only [Finset.mem_sdiff, Finset.mem_Ico, Finset.mem_singleton]
+    constructor
+    · simpa using a'_Ico
+    · exact a'_ne_a
+  have eq0 : s.Δ a' b = 0 := by
+    exact all0 this
+  have eq1 : s.Δ a' b = 1 := by
+    simpa [SlipFace.Γ] using ha'
+  rw [eq0] at eq1
+  norm_num at eq1
+
+lemma unique_b {s : SlipFace} (hsub : s.submodular) (a : ℤ) :
+  ∃! b : ℤ, ⟨a, b⟩ ∈ s.Γ := by
+  suffices ∃! b : ℤ, ⟨b, a⟩ ∈ s.dual.Γ by
+    simpa [s.Γ_dual] using this
+  have hsub_dual : s.dual.submodular := by
+    intro a b
+    rw [← s.dual.Δ_dual, s.dual_dual]
+    exact hsub b a
+  exact unique_a hsub_dual a
+
+noncomputable def asp_of_submodular (s : SlipFace) (hsub : s.submodular) : AspPerm where
+  func := fun b => (unique_a hsub b).choose
+  bijective := by
+    constructor
+    · intro b1 b2 h
+      let a1 := (unique_a hsub b1).choose
+      let a2 := (unique_a hsub b2).choose
+      have mem1 : ⟨a1, b1⟩ ∈ s.Γ := (unique_a hsub b1).choose_spec.1
+      have mem2 : ⟨a2, b2⟩ ∈ s.Γ := (unique_a hsub b2).choose_spec.1
+      have eq : a1 = a2 := h
+
+      let b := (unique_b hsub a1).choose
+      have eq1 : b1 = b :=
+        (unique_b hsub a1).choose_spec.2 b1 mem1
+
+      rw [← eq] at mem2
+      have eq2 : b2 = b :=
+        (unique_b hsub a1).choose_spec.2 b2 mem2
+
+      rw [eq1, eq2]
+    · intro a
+      let b := (unique_b hsub a).choose
+      use b
+      have mem : ⟨a, b⟩ ∈ s.Γ := (unique_b hsub a).choose_spec.1
+      let a' := (unique_a hsub b).choose
+      suffices a = a' by rw [this]
+      exact (unique_a hsub b).choose_spec.2 a mem
+  asp := by
+    sorry
+
+theorem asp_of_submodular_spec (s : SlipFace) (hsub : s.submodular) :
+  (asp_of_submodular s hsub).sf = s := by
+  apply (SF_ext _ _).mpr
+  intro a b
+
+  sorry
+
 /-- The ``Demazure valley of α β a b is the function of l that
   is minimized to compute sα ⋆ sβ (a,b). It is useful to consider
   the largest l where the minimum is attained, which is denoted
@@ -231,3 +394,5 @@ theorem ler_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : α ≤R 
     simpa using AspPerm.le_weak_R_of_L this
   apply lel_of_dprod (α := β⁻¹) (β := α⁻¹) (τ := τ⁻¹)
   exact AspPerm.dprod_inv_eq_inv_dprod τ α β dprod
+
+end Submodular

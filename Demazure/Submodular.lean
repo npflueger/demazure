@@ -127,42 +127,234 @@ lemma unique_b {s : SlipFace} (hsub : s.submodular) (a : ℤ) :
     exact hsub b a
   exact unique_a hsub_dual a
 
-noncomputable def asp_of_submodular (s : SlipFace) (hsub : s.submodular) : AspPerm where
+noncomputable def asp_func {s : SlipFace} (hsub : s.submodular) : ℤ → ℤ :=
+  fun b => (unique_a hsub b).choose
+
+lemma asp_func_spec {s : SlipFace} (hsub : s.submodular) (a b : ℤ) :
+  asp_func hsub b = a ↔ ⟨a, b⟩ ∈ s.Γ := by
+  constructor
+  · intro eq
+    dsimp [asp_func] at eq
+    rw [← eq]
+    exact (unique_a hsub b).choose_spec.1
+  · intro mem
+    dsimp [asp_func]
+    have := (unique_a hsub b).choose_spec.2 a mem
+    rw [this]
+
+lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
+  (asp_func hsub).Bijective := by
+  constructor
+  · intro b1 b2 h
+    let a1 := (unique_a hsub b1).choose
+    let a2 := (unique_a hsub b2).choose
+    have mem1 : ⟨a1, b1⟩ ∈ s.Γ := (unique_a hsub b1).choose_spec.1
+    have mem2 : ⟨a2, b2⟩ ∈ s.Γ := (unique_a hsub b2).choose_spec.1
+    have eq : a1 = a2 := h
+
+    let b := (unique_b hsub a1).choose
+    have eq1 : b1 = b :=
+      (unique_b hsub a1).choose_spec.2 b1 mem1
+
+    rw [← eq] at mem2
+    have eq2 : b2 = b :=
+      (unique_b hsub a1).choose_spec.2 b2 mem2
+
+    rw [eq1, eq2]
+  · intro a
+    let b := (unique_b hsub a).choose
+    use b
+    have mem : ⟨a, b⟩ ∈ s.Γ := (unique_b hsub a).choose_spec.1
+    let a' := (unique_a hsub b).choose
+    suffices a = a' by
+      dsimp [asp_func]
+      rw [this]
+    exact (unique_a hsub b).choose_spec.2 a mem
+
+noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
   func := fun b => (unique_a hsub b).choose
-  bijective := by
-    constructor
-    · intro b1 b2 h
-      let a1 := (unique_a hsub b1).choose
-      let a2 := (unique_a hsub b2).choose
-      have mem1 : ⟨a1, b1⟩ ∈ s.Γ := (unique_a hsub b1).choose_spec.1
-      have mem2 : ⟨a2, b2⟩ ∈ s.Γ := (unique_a hsub b2).choose_spec.1
-      have eq : a1 = a2 := h
-
-      let b := (unique_b hsub a1).choose
-      have eq1 : b1 = b :=
-        (unique_b hsub a1).choose_spec.2 b1 mem1
-
-      rw [← eq] at mem2
-      have eq2 : b2 = b :=
-        (unique_b hsub a1).choose_spec.2 b2 mem2
-
-      rw [eq1, eq2]
-    · intro a
-      let b := (unique_b hsub a).choose
-      use b
-      have mem : ⟨a, b⟩ ∈ s.Γ := (unique_b hsub a).choose_spec.1
-      let a' := (unique_a hsub b).choose
-      suffices a = a' by rw [this]
-      exact (unique_a hsub b).choose_spec.2 a mem
+  bijective := asp_bijective hsub
   asp := by
-    sorry
+    let S := {b : ℤ | b * (asp_func hsub b) < 0}
+    suffices S.Finite by exact this
+    obtain ⟨B, hB⟩ := s.dual.small_a 0
+    obtain ⟨B', hB'⟩ := s.large_b 0
 
-theorem asp_of_submodular_spec (s : SlipFace) (hsub : s.submodular) :
-  (asp_of_submodular s hsub).sf = s := by
+    have b_lt : ∀ b ∈ S, b < max 0 B' := by
+      intro b hb
+      by_cases b_neg : b < 0
+      · exact lt_of_lt_of_le b_neg (le_max_left 0 B')
+      have b_nonneg : b ≥ 0 := by linarith
+      clear b_neg
+      suffices b < B' by
+        exact lt_of_lt_of_le this (le_max_right 0 B')
+
+      let a := asp_func hsub b
+      have a_neg : a < 0 := by
+        by_contra! a_nonneg
+        have neg : b * a < 0 := by exact hb
+        have nonneg : b * a ≥ 0 := by exact mul_nonneg b_nonneg a_nonneg
+        linarith
+      have mem : ⟨a, b⟩ ∈ s.Γ := by
+        apply (asp_func_spec hsub a b).mp
+        rfl
+      have h0 : s.Δ a b = 1 := by
+        simpa using mem
+      contrapose! h0 with b_ge_B'
+      have s0 : s (a+1) b = 0 := by
+        have : s 0 b = 0 := hB' b b_ge_B'
+        apply s.zero_below (a' := 0) (b' := b)
+        repeat linarith
+      have : s.Δ a b = 0 := s.Δ_zero_of_s_zero a b s0
+      rw [this]
+      norm_num
+
+    have b_ge : ∀ b ∈ S, b ≥ min 0 B := by
+      intro b hb
+      by_cases b_nonneg : b ≥ 0
+      · exact le_trans (min_le_left 0 B) b_nonneg
+      have b_neg : b < 0 := by linarith
+      clear b_nonneg
+      suffices b ≥ B by
+        exact le_trans (min_le_right 0 B) this
+      let a := asp_func hsub b
+      have a_pos : a > 0 := by
+        by_contra! a_nonpos
+        have nonneg : b * a ≥ 0 := by
+          apply mul_nonneg_of_nonpos_of_nonpos (le_of_lt b_neg) a_nonpos
+        have neg : b * a < 0 := by exact hb
+        linarith
+      have mem : ⟨a, b⟩ ∈ s.Γ := by
+        apply (asp_func_spec hsub a b).mp
+        rfl
+      have h0 : s.Δ a b = 1 := by
+        simpa using mem
+      contrapose! h0 with b_lt_B
+      have s0 : s.dual (b+1) a = 0 := by
+        have : b + 1 ≤ B := by linarith
+        have : s.dual (b+1) 0 = 0 := hB (b+1) this
+        apply s.dual.zero_below (a' := b+1) (b' := 0)
+        repeat linarith
+      have : s.Δ a b = 0 := by
+        rw [← s.Δ_dual a b]
+        apply s.dual.Δ_zero_of_s_zero b a s0
+      rw [this]
+      norm_num
+
+    have : S ⊆ Set.Ico (min 0 B) (max 0 B') := by
+      intro b hb
+      have lt := b_lt b hb
+      have ge := b_ge b hb
+      simp [lt, ge]
+
+    apply Set.Finite.subset _ this
+    apply Set.finite_Ico
+
+theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
+  (asp hsub).sf = s := by
   apply (SF_ext _ _).mpr
   intro a b
+  let τ := asp hsub
+  suffices τ.s = s by
+    subst τ
+    rw [← this]
+    congr
+  ext a b
+  have : ∃ A ≤ a, s A b = 0 := by
+    obtain ⟨A, hA⟩ := s.small_a b
+    by_cases h : A ≤ a
+    · use A
+      exact ⟨h, hA A (le_refl A)⟩
+    · use a
+      have : a ≤ A := by linarith
+      have := hA a this
+      exact ⟨le_refl a, this⟩
+  obtain ⟨A, hA⟩ := this
+  have : ∃ B ≥ b, s a B = 0 := by
+    obtain ⟨B, hB⟩ := s.large_b a
+    by_cases h : B ≥ b
+    · use B
+      exact ⟨h, hB B (le_refl B)⟩
+    · use b
+      have : b ≥ B := by linarith
+      have := hB b this
+      exact ⟨le_refl b, this⟩
+  obtain ⟨B, hB⟩ := this
 
-  sorry
+  have hAB : s A B = 0 := by
+    apply s.zero_below (a' := A) (b' := b)
+    repeat linarith
+  suffices τ.s a b = ∑ b ∈ Finset.Ico b B, ∑ a ∈ Finset.Ico A a, s.Δ a b by
+    rw [this]
+    rw [s.sum_ab hA.1 hB.1]
+    omega
+
+  classical
+  have ite : ∀ a' b' : ℤ, s.Δ a' b' = if τ b' = a' then 1 else 0 := by
+    intro a' b'
+    have : τ b' = a' ↔ s.Δ a' b' = 1 := asp_func_spec hsub a' b'
+    simp only [this]
+    have := s.Δ_values a' b'
+    rcases this with (h | (h | h)) <;> simp [h]
+    have := hsub a' b'
+    linarith
+
+  have inner_sum : ∀ b' ∈ Finset.Ico b B,
+    ∑ a' ∈ Finset.Ico A a, s.Δ a' b' = if τ b' < a ∧ τ b' ≥ A then 1 else 0 := by
+    intro b' hb'
+    simp [ite]
+    congr 1
+    rw [And.comm]
+  simp [ite]
+  rw [τ.s_eq_se_card]
+  suffices τ.se_finset a b = {x ∈ Finset.Ico b B | A ≤ τ.func x ∧ τ.func x < a} by congr
+  ext b'
+  simp only [τ.mem_se, Finset.mem_filter, Finset.mem_Ico]
+
+  by_cases h : b' < b
+  · have : ¬ (b' ≥ b) := by linarith
+    simp [this]
+  have b_le_b' : b ≤ b' := by linarith
+  simp [b_le_b']
+
+  by_cases h : τ b' ≥ a
+  · have : ¬ (τ b' < a) := by linarith
+    simp [this]
+  have τb'_lt_a : τ b' < a := by linarith
+  simp [τb'_lt_a]
+  clear h
+
+  -- We now have an element b' of the southeast set. It remains to show b' < B and τ b' ≥ A.
+  have : s.Δ (τ b') b' = 1 := by
+    simpa using ite (τ b') b'
+  have : s (τ b' + 1) b' ≠ 0 := by
+    contrapose! this with h_zero
+    have := s.Δ_zero_of_s_zero (τ b') b' h_zero
+    rw [this]; norm_num
+  constructor
+  · -- show b' < B
+    contrapose! this with b'_ge_B
+
+    apply s.zero_below (a' := a) (b' := B)
+    · exact Int.add_one_le_iff.mpr τb'_lt_a
+    · exact b'_ge_B
+    · exact hB.2
+  · -- show τ b' ≥ A
+    contrapose! this with a'_lt_A
+    apply s.zero_below (a' := A) (b' := b)
+    · exact Int.add_one_le_iff.mpr a'_lt_A
+    · exact b_le_b'
+    · exact hA.2
+
+/-- Proposition 4.3 -/
+theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
+  constructor
+  · intro hsub
+    use asp hsub
+    exact asp_spec s hsub
+  · rintro ⟨α, rfl⟩
+    exact α.submodular
+
 
 /-- The ``Demazure valley of α β a b is the function of l that
   is minimized to compute sα ⋆ sβ (a,b). It is useful to consider
@@ -185,7 +377,14 @@ noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
       · linarith [β.s_nonneg n b, α.s_ge a n]
       · linarith [α.s_nonneg a n, β.s_ge n b]
 
-lemma DemValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
+lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
+  (AspValley α β a b) = (SlipFace.SlipValley α.sf β.sf a b) := by
+  suffices (AspValley α β a b).f = (SlipFace.SlipValley α.sf β.sf a b).f by
+    rwa [Valley.mk.injEq]
+  ext l
+  dsimp [AspValley, SlipFace.SlipValley, AspPerm.sf]
+
+lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
   (AspValley α β a b).min = τ.s a b := by
   apply le_antisymm
   · have := dprod.2 a b
@@ -276,7 +475,7 @@ lemma sediment (v w : Valley) {A : ℤ}
     rw [← w.f_M, ← eq, high v.M h, v.f_M]
 
 /-- Lemma 4.7, in slightly different phrasing. -/
-lemma DemValley_step_a (α β : AspPerm) (a b : ℤ) :
+lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   let v := AspValley α β a b
   let w := AspValley α β (a+1) b
   w.min = v.min + (if v.M ≤ α⁻¹ a then 1 else 0) ∧ v.M ≤ w.M := by
@@ -301,11 +500,25 @@ lemma DemValley_step_a (α β : AspPerm) (a b : ℤ) :
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
 /-- Lemma 4.8, in slightly different phrasing. -/
-lemma DemValley_step_b (α β : AspPerm) (a b : ℤ) :
-  let v := (AspValley α β a b).shift_down 1
+lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
+  let v := (AspValley α β a b)
   let w := AspValley α β a (b+1)
-  w.min = v.min + (if v.M ≤ β b then 1 else 0) ∧ v.M ≤ w.M := by
-  intro v w
+  w.min = v.min - 1 + (if v.M ≤ β b then 1 else 0) ∧ v.M ≤ w.M := by
+  intro v₀ w
+  let v := v₀.shift_down 1
+  have : v₀.min = v.min + 1 := by
+    subst v
+    have := v₀.shift_down_min 1
+    omega
+  rw [this]
+  have : v₀.M = v.M := by
+    subst v
+    have := v₀.shift_down_M 1
+    omega
+  suffices w.min = v.min  + (if v.M ≤ β b then 1 else 0) ∧ v.M ≤ w.M by
+    omega
+  subst v₀
+
   have : ∀ n : ℤ, w.f n = v.f n + (if n ≤ β b then 1 else 0) := by
     intro n
     subst v w; simp [AspValley]
@@ -328,7 +541,7 @@ lemma DemValley_step_b (α β : AspPerm) (a b : ℤ) :
   · simp [h]
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
-lemma DemValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
+lemma AspValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
   let v := AspValley α β a b
   let w := AspValley α β a c
   v.M ≤ w.M := by
@@ -344,12 +557,77 @@ lemma DemValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
     obtain ih : v.M ≤ v'.M := ih
     apply le_trans ih
     subst v' w
-    have := (DemValley_step_b α β a (b + n)).2
-    rw [((AspValley α β a (b + ↑n))).shift_down_M] at this
+    have := (AspValley_step_b α β a (b + n)).2
     refine le_trans this ?_
     apply le_of_eq
     congr 2
     rw [Nat.cast_add, add_assoc, Nat.cast_one]
+
+/-- A useful submodularity criterion: s is submodular at a, b if and only if
+  s (a+1) b not dropping when b increasing implies the same is true of
+  s a b. This corresponds to the geometric situation: if a linear series L has a
+  base point at p, then so does L - q if q ≠ p. -/
+lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
+  s.Δ a b ≥ 0 ↔ (s (a + 1) b = s (a + 1) (b + 1) → s a b = s a (b + 1)) := by
+  let d1 := s (a + 1) b - s (a + 1) (b + 1)
+  let d2 := s a b - s a (b + 1)
+  suffices d1 ≥ d2 ↔ (d1 = 0 → d2 = 0) by
+    subst d1 d2
+    dsimp [SlipFace.Δ]
+    omega
+  constructor
+  · intro ge zero
+    have : d2 ≤ 0 := by
+      rwa [zero] at ge
+    apply le_antisymm this
+    linarith [s.b_step a b]
+  · intro h
+    by_cases h1 : d1 = 0
+    · rw [h1, h h1]
+    · have h1 : d1 ≥ 1 := by
+        have : d1 ≥ 0 := by linarith [(s.b_step (a+1) b).1]
+        apply lt_of_le_of_ne this
+        contrapose! h1
+        rw [← h1]
+      have h2 : d2 ≤ 1 := by linarith [s.b_step a b]
+      exact le_trans h2 h1
+
+theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.submodular) :
+  (s.star t).submodular := by
+  intro a b
+  suffices
+    (s ⋆ t) (a + 1) b = (s ⋆ t) (a + 1) (b + 1)
+    → (s ⋆ t) a b = (s ⋆ t) a (b + 1) by
+    exact (submodular_of_basepoint_preserved (s ⋆ t) a b).mpr this
+  let α := asp subS
+  have α_spec : α.sf = s := asp_spec s subS
+  let β := asp subT
+  have β_spec : β.sf = t := asp_spec t subT
+
+  intro eq
+  have : ∀ a b : ℤ, (s ⋆ t) a b = (AspValley α β a b).min := by
+    intro a b
+    have : (s ⋆ t) a b = (SlipFace.SlipValley s t a b).min := by
+      rw [SlipFace.star_func_eq]
+      dsimp [SlipFace.star_func, SlipFace.SlipValley]
+    rw [this]
+    rw [AspSlipValley, α_spec, β_spec]
+  simp only [this] at eq ⊢
+  have := (AspValley_step_b α β (a+1) b).1
+  simp at this
+  rw [this] at eq
+  let M' := (AspValley α β (a + 1) b).M
+  have M'_ge_b : M' ≤ β b := by
+    have : 1 = if (AspValley α β (a + 1) b).M ≤ β.func b then 1 else 0 := by
+      linarith [eq]
+    simpa using this
+  let M := (AspValley α β a b).M
+  have M_le_M' : M ≤ M' := by
+    exact (AspValley_step_a α β a b).2
+  have M_le_βb : M ≤ β b := le_trans M_le_M' M'_ge_b
+  rw [(AspValley_step_b α β a b).1]
+  subst M
+  simp [M_le_βb]
 
 /-- Lemma 4.9, part 1 -/
 theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L τ := by
@@ -367,24 +645,22 @@ theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L 
   let val_av := AspValley α β a v
   have Mau_gt_βu : val_au.M > β u := by
     contrapose! τv_le_τu with h
-    have := (DemValley_step_b α β a u).1
-    simp [Valley.shift_down_M, Valley.shift_down_min] at this
+    have := (AspValley_step_b α β a u).1
     subst val_au
     simp [h] at this
-    rw [DemValley_min_eq_s dprod a (u+1), DemValley_min_eq_s dprod a u, τ.b_step_eq_iff a u] at this
+    rw [AspValley_min_eq_s dprod a (u+1), AspValley_min_eq_s dprod a u, τ.b_step_eq_iff a u] at this
     exact this
   have Mav_le_βv : val_av.M ≤ β v := by
     by_contra h
 
-    have := (DemValley_step_b α β a v).1
-    simp [Valley.shift_down_M, Valley.shift_down_min] at this
+    have := (AspValley_step_b α β a v).1
     subst val_av
     simp [h] at this
-    rw [DemValley_min_eq_s dprod a (v+1), DemValley_min_eq_s dprod a v,
+    rw [AspValley_min_eq_s dprod a (v+1), AspValley_min_eq_s dprod a v,
       τ.b_step_one_iff a v] at this
     exact lt_irrefl a this
   have Mau_le_Mav : val_au.M ≤ val_av.M := by
-    apply DemValley_noninc α β a u v
+    apply AspValley_noninc α β a u v
     exact le_of_lt u_lt_v
   omega
 

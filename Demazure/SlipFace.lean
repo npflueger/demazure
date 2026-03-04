@@ -235,6 +235,23 @@ lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func :
     · intro b
       exact sf.dual.small_a b
 
+lemma nondec {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) : sf a b ≤ sf a' b' := by
+  have dp := D_props_of_sf sf
+  have h1 : sf a b ≤ sf a' b := by
+    exact mono_a_of_D_props sf.func dp.1 a a' b a_le_a'
+  have h2 : sf a' b ≤ sf a' b' := by
+    exact mono_b_of_D_props sf.func dp.1 a' b' b b'_le_b
+  exact le_trans h1 h2
+
+lemma zero_below {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) :
+  sf a' b' = 0 → sf a b = 0 := by
+  intro eq0
+  have := sf.nondec a_le_a' b'_le_b
+  have le_zero : sf a b ≤ 0 := by
+    rwa [eq0] at this
+  have ge_zero : sf a b ≥ 0 := sf.nonneg a b
+  exact le_antisymm le_zero ge_zero
+
 noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
   f := fun l => s a l + t l b
   rises := by
@@ -402,6 +419,20 @@ lemma Δ_values (a b : ℤ) : sf.Δ a b = 0 ∨ sf.Δ a b = 1 ∨ sf.Δ a b = -1
   obtain ⟨h21, h22⟩ := sf.a_step a (b+1)
   omega
 
+lemma Δ_zero_of_s_zero (a b : ℤ) (h0 : sf (a + 1) b = 0) : sf.Δ a b = 0 := by
+  have h1 : sf a b = 0 := by
+    apply sf.zero_below (a' := a+1) (b' := b)
+    repeat linarith
+  have h2 : sf (a+1) (b+1) = 0 := by
+    apply sf.zero_below (a' := a+1) (b' := b)
+    repeat linarith
+  have h3 : sf a (b+1) = 0 := by
+    apply sf.zero_below (a' := a+1) (b' := b)
+    repeat linarith
+  dsimp [Δ]
+  rw [h0, h1, h2, h3]
+  norm_num
+
 lemma sum_a {a₁ a₂ : ℤ} (ha : a₁ ≤ a₂) (b : ℤ) :
   ∑ a ∈ Finset.Ico a₁ a₂, sf.Δ a b
   = (sf a₂ b  - sf a₂ (b+1)) - (sf a₁ b - sf a₁ (b+1)) := by
@@ -440,6 +471,27 @@ lemma sum_b (a : ℤ) {b₁ b₂ : ℤ} (hb : b₁ ≤ b₂) :
       repeat rw [Finset.mem_union, Finset.mem_Ico, Finset.mem_Ico]
       grind
     rw [union, Finset.sum_union disj, Finset.sum_singleton, SlipFace.Δ, ih]
+    omega
+
+/-- Modification of Equation (17) to a finite sum -/
+lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b₂) :
+  ∑ b ∈ Finset.Ico b₁ b₂, ∑ a ∈ Finset.Ico a₁ a₂, sf.Δ a b
+  = (sf a₂ b₁ - sf a₁ b₁) - (sf a₂ b₂ - sf a₁ b₂) := by
+  let n : ℕ := (b₂ - b₁).toNat
+  have b₂_eq : b₂ = b₁ + n := by omega
+  rw [b₂_eq]
+  induction n with
+  | zero =>
+    simp
+  | succ n ih =>
+    rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
+    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by simp
+    have union : Finset.Ico b₁ (b₁ + n + 1) = Finset.Ico b₁ (b₁ + n) ∪ {b₁ + n} := by
+      apply Finset.ext
+      intro x
+      repeat rw [Finset.mem_union, Finset.mem_Ico, Finset.mem_Ico]
+      grind
+    rw [union, Finset.sum_union disj, Finset.sum_singleton, ih, sf.sum_a ha (b₁ + n)]
     omega
 
 /-- Definition 4.2 -/

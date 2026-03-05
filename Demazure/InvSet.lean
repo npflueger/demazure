@@ -54,28 +54,8 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
     have h4 := le_trans h2 h3
     contrapose! h4
     exact h4.2
-  · show ∀ (u : ℤ), {v | (u, v) ∈ inv_set τ}.Finite
-    unfold inv_set; simp
-    intro u
-    suffices {v | u < v ∧ τ v < τ u} = southeast_set τ (τ u) (u+1) by
-      rw [this]
-      apply se_finite_of_asp τ.bijective.injective
-      exact τ.asp
-    ext v
-    constructor
-    · intro ⟨h1, h2⟩; exact ⟨by omega, h2⟩
-    · intro ⟨h1, h2⟩; exact ⟨by omega, h2⟩
-  · show ∀ (v : ℤ), {u | (u, v) ∈ inv_set τ}.Finite
-    unfold inv_set; simp
-    intro v
-    suffices {u | u < v ∧ τ u > τ v} = northwest_set τ (τ v + 1) v by
-      rw [this]
-      apply nw_finite_of_asp τ.bijective.injective
-      exact τ.asp
-    ext u
-    constructor
-    · intro ⟨h1, h2⟩; exact ⟨h1, by omega⟩
-    · intro ⟨h1, h2⟩; exact ⟨h1, by omega⟩
+  · exact τ.outset_finite
+  · exact τ.inset_finite
 
 def of_AspPerm (τ : AspPerm) : AspSet :=
   ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩

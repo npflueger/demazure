@@ -592,6 +592,7 @@ lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
       have h2 : d2 ≤ 1 := by linarith [s.b_step a b]
       exact le_trans h2 h1
 
+/-- Theorem 4.4, part 1 -/
 theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.submodular) :
   (s.star t).submodular := by
   intro a b
@@ -628,6 +629,152 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
   rw [(AspValley_step_b α β a b).1]
   subst M
   simp [M_le_βb]
+
+end Submodular
+
+/- Back to AspPerm namespace to define Demazure product and its properties. -/
+namespace AspPerm
+
+lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
+  suffices α.func = β.func by
+    cases α; cases β
+    congr
+  ext n
+  have : β.sf.Δ (β n) n = 1 := by
+    simpa using β.Δ_eq (β n) n
+  rw [← eq_sf] at this
+  rw [α.Δ_eq (β n) n] at this
+  contrapose! this with neq
+  simp [neq]
+
+/-- Theorem 4.4, part 2 -/
+lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
+  intro α β
+  have : (α.sf ⋆ β.sf).submodular := by
+    exact Submodular.submodular_of_star (α.submodular) (β.submodular)
+  have ex := (Submodular.submodular_iff_asp (α.sf ⋆ β.sf)).mp this
+  rcases ex with ⟨τ, hτ⟩
+  use τ
+  constructor
+  · exact hτ
+  · intro σ hσ
+    rw [← hσ] at hτ
+    rw [τ.eq_of_sf_eq hτ]
+
+noncomputable def star (α β : AspPerm) : AspPerm :=
+  Classical.choose (star_exists α β)
+
+@[simp] lemma star_spec (α β : AspPerm) : (star α β).sf = α.sf ⋆ β.sf :=
+  (Classical.choose_spec (star_exists α β)).1
+
+infixl:70 " ⋆ " => star
+
+lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
+  = (Submodular.AspValley α β a b).min := by
+  let v := (Submodular.AspValley α β a b)
+  have : (α ⋆ β).s a b = (α ⋆ β).sf.func a b := by
+    rw [AspPerm.sf_func_eq_s]
+  rw [this]
+  rw [star_spec]
+  let w := SlipFace.SlipValley α.sf β.sf a b
+  suffices w.min = v.min by
+    rw [← this, SlipFace.star_func_eq]
+    rfl
+  have : w = v := by exact Submodular.AspSlipValley α β a b
+  rw [this]
+
+/-- Theorem 4.4, part 3 -/
+lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
+  have ex := star_exists (β⁻¹) (α⁻¹)
+  let τ := β⁻¹ ⋆ α⁻¹
+  have τ_eq : τ.sf = β⁻¹.sf ⋆ α⁻¹.sf  := (ex.choose_spec).1
+  apply (ex.choose_spec).2 (α ⋆ β)⁻¹
+  simp only [SF_ext]
+  intro a b
+  repeat rw [← AspPerm.sf_dual]
+  simp
+
+/-- Theorem 4.4, part 4 -/
+lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
+  have ex := star_exists α β
+  let τ := α ⋆ β
+  have τ_eq : τ.sf = α.sf ⋆ β.sf  := (ex.choose_spec).1
+  repeat rw [← AspPerm.sf_χ_eq]
+  simp
+
+lemma le_refl (σ : AspPerm) : σ ≤ σ := by
+  intro a b
+  exact Int.le_refl (σ.s a b)
+
+lemma le_antisymm {σ τ : AspPerm} (h₁ : σ ≤ τ) (h₂ : τ ≤ σ) : σ = τ := by
+  apply eq_of_sf_eq
+  rw [SF_ext]
+  intro a b
+  exact Int.le_antisymm (h₁ a b) (h₂ a b)
+
+lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by
+  constructor
+  · intro le a b
+    specialize le a b
+    let v := (Submodular.AspValley α β a b)
+    unfold AspPerm.dprod_val_ge
+    intro l
+    apply le_trans le
+    rw [star_valley]
+    exact v.min_spec l
+  · intro dle a b
+    let v := (Submodular.AspValley α β a b)
+    specialize dle a b v.M
+    apply le_trans dle
+    rw [star_valley, ← v.f_M]
+    exact Int.le_refl (v.f v.M)
+
+lemma ge_star_iff (τ α β : AspPerm) : α ⋆ β ≤ τ ↔ τ.ge_dprod α β := by
+  constructor
+  · intro ge a b
+    specialize ge a b
+    let v := (Submodular.AspValley α β a b)
+    use v.M
+    have : α.s a v.M + β.s v.M b = v.f v.M := by rfl
+    rw [this, v.f_M]
+    rwa [star_valley] at ge
+  · intro dge a b
+    let v := (Submodular.AspValley α β a b)
+    rcases dge a b with ⟨l, hl⟩
+    apply le_trans _ hl
+    suffices v.f v.M ≤ v.f l by
+      convert this using 1
+      rw [star_valley]
+      rw [v.f_M]
+    rw [v.f_M]
+    exact v.min_spec l
+
+lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β := by
+  constructor
+  · intro eq
+    have le : τ ≤ α ⋆ β := by
+      rw [eq]
+      apply le_refl
+    have ge : α ⋆ β ≤ τ := by
+      rw [eq]
+      apply le_refl
+    constructor
+    · rwa [← le_star_iff]
+    · rwa [← ge_star_iff]
+  · intro eq
+    have le : τ ≤ α ⋆ β := by
+      rw [le_star_iff]
+      exact eq.1
+    have ge : α ⋆ β ≤ τ := by
+      rw [ge_star_iff]
+      exact eq.2
+    apply le_antisymm le ge
+
+-- [TODO] prove assocaitivity of ⋆, first in the case of SlipFaces.
+
+end AspPerm
+
+namespace Submodular
 
 /-- Lemma 4.9, part 1 -/
 theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L τ := by

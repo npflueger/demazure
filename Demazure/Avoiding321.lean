@@ -1535,7 +1535,8 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
 
 --- Main result
 
-theorem dprod_ge_iff_union : τ.ge_dprod α β ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+theorem dprod_ge_iff_union : τ ≤ α ⋆ β ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+  rw [τ.le_star_iff α β]
   constructor
   · intro ge
     rintro ⟨u, v⟩ uv_inv
@@ -1548,14 +1549,15 @@ theorem dprod_ge_iff_union : τ.ge_dprod α β ↔ inv_set τ ⊆ (τ.sr α) '' 
 
 def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
 
-theorem dprod_le_iff_isolated : τ.le_dprod α β
+theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
+  rw [τ.ge_star_iff α β]
   constructor
   · rintro le ⟨u, v⟩ I_mem ⟨u', v'⟩ J_mem h_prec
     have u'_le_u : u' ≤ u := h_prec.1
     have v_le_v' : v ≤ v' := h_prec.2
     contrapose! le with I_ne_J
-    dsimp [AspPerm.le_dprod, AspPerm.dprod_val_le]; push_neg
+    dsimp [AspPerm.ge_dprod, AspPerm.dprod_val_le]; push_neg
 
     by_cases u_eq_u' : u = u'
     · have v_lt_v' : v < v' := by
@@ -1630,7 +1632,8 @@ theorem dprod_eq_iff : τ.eq_dprod α β
     apply And.intro h_χ
     have h_R : α ≤R τ := Submodular.ler_of_dprod dprod
     have h_L : β ≤L τ := Submodular.lel_of_dprod dprod
-    have subset := (dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)).mp dprod.1
+    have : τ ≤ α ⋆ β := (τ.le_star_iff α β).mpr dprod.1
+    have subset := (dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)).mp this
     constructor
     · apply subset.antisymm
       rintro ⟨u, v⟩ uv_union
@@ -1638,6 +1641,7 @@ theorem dprod_eq_iff : τ.eq_dprod α β
       · exact (τ.sr_subset α) h_R h_sr
       · exact h_L h_β
     · rw [← dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ) ]
+      rw [τ.ge_star_iff]
       exact dprod.2
   · rintro ⟨h_χ, ⟨h_union, h_isol⟩⟩
     have h_L : β ≤L τ := by
@@ -1655,9 +1659,11 @@ theorem dprod_eq_iff : τ.eq_dprod α β
       rw [h_union]
       exact Or.inl hx
     constructor
-    · rw [dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)]
+    · rw [← τ.le_star_iff]
+      rw [dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)]
       rw [h_union]
-    · exact (dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ)).mpr h_isol
+    · rw [← τ.ge_star_iff]
+      exact (dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ)).mpr h_isol
 
 end factorization
 end fixed_321a_and_lel

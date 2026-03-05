@@ -170,7 +170,7 @@ lemma inv_iff_le {i j : ℤ} (i_lt_j : i < j) :
       rw [heq] at i_lt_j; exact lt_irrefl i i_lt_j
     exact ⟨i_lt_j, lt_of_le_of_ne τ_j_le_i this⟩
 
-@[simp] lemma eq_iff_eq_func {σ τ : AspPerm} : σ = τ ↔ σ.func = τ.func := by
+@[simp] lemma ext {σ τ : AspPerm} : σ = τ ↔ σ.func = τ.func := by
   constructor
   · intro h; rw [h]
   · intro h; cases σ; cases τ; congr
@@ -246,7 +246,7 @@ noncomputable instance : Group AspPerm where
   mul_one := by intro a; rfl
   inv_mul_cancel := by
     intro τ
-    apply (eq_iff_eq_func).2
+    apply (ext).2
     funext n
     change Function.invFun τ.func (τ.func n) = n
     exact Function.leftInverse_invFun τ.injective n
@@ -667,6 +667,50 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   unfold h at this
   linarith
 
+def inset (v : ℤ) : Set ℤ := {u | ⟨u, v⟩ ∈ inv_set τ}
+
+lemma inset_eq_nw (v : ℤ) : τ.inset v = northwest_set τ (τ v) v := by
+  ext u
+  constructor
+  · intro uv_inv
+    obtain ⟨u_lt_v, τv_lt_τu⟩ := uv_inv
+    exact ⟨u_lt_v, le_of_lt τv_lt_τu⟩
+  · intro uv_se
+    obtain ⟨u_lt_v, τv_le_τu⟩ := uv_se
+    exact (τ.inv_iff_le u_lt_v).mpr τv_le_τu
+
+lemma inset_finite (v : ℤ) : (τ.inset v).Finite := by
+  rw [τ.inset_eq_nw v]
+  apply τ.nw_finite
+
+def outset (u : ℤ) : Set ℤ := {v | ⟨u, v⟩ ∈ inv_set τ}
+
+lemma outset_eq_se (u : ℤ) : τ.outset u = southeast_set τ (τ u) u := by
+  ext v
+  constructor
+  · intro uv_inv
+    obtain ⟨u_lt_v, τv_lt_τu⟩ := uv_inv
+    exact ⟨le_of_lt u_lt_v, τv_lt_τu⟩
+  · intro uv_se
+    obtain ⟨u_le_v, τv_lt_τu⟩ := uv_se
+    exact (τ.inv_iff_lt u_le_v).mpr τv_lt_τu
+
+lemma outset_finite (u : ℤ) : (τ.outset u).Finite := by
+  rw [τ.outset_eq_se u]
+  apply τ.se_finite
+
+theorem reconstruction : ∀ n : ℤ,
+  τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
+  intro n
+  have : τ.s (τ n) n = (τ.outset n).ncard := by
+    rw [AspPerm.s, τ.outset_eq_se]
+  rw [← this]
+  have : τ⁻¹.s n (τ n) = (τ.inset n).ncard := by
+    rw [← τ.dual_inverse, AspPerm.s', τ.inset_eq_nw]
+  rw [← this]
+  have := τ.duality (τ n) n
+  omega
+
 lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
   have := duality τ a b
   omega
@@ -780,6 +824,18 @@ noncomputable def sf : SlipFace := {
       rwa [hB] at this
     · exact τ.s_nonneg a b
 }
+
+@[simp] lemma sf_func_eq_s : τ.sf.func = τ.s := rfl
+@[simp] lemma sf_χ_eq : τ.sf.χ = τ.χ := rfl
+
+lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
+  apply (SF_ext τ.sf.dual τ⁻¹.sf).mpr
+  intro a b
+  simp
+  rw [τ.s'_eq]
+  have := τ.sf.duality b a
+  simp at this
+  omega
 
 lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
   let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
@@ -1100,6 +1156,12 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
 
 end RampWings
 
+def le (σ τ : AspPerm) : Prop := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
+infix:50 " ≤ " => le
+
+def leχ (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
+infix:50 " ≤χ " => leχ
+
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 
@@ -1143,19 +1205,19 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
 def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∀ l : ℤ, α.s a l + β.s l b ≥ n
 
-def ge_dprod (τ α β : AspPerm) : Prop :=
+def le_dprod (τ α β : AspPerm) : Prop :=
   ∀ a b : ℤ, dprod_val_ge α β a b (τ.s a b)
 
 def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∃ l : ℤ, α.s a l + β.s l b ≤ n
 
-def le_dprod (τ α β : AspPerm) : Prop :=
+def ge_dprod (τ α β : AspPerm) : Prop :=
   ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
 
 def eq_dprod (τ α β : AspPerm) : Prop :=
-  τ.ge_dprod α β ∧ τ.le_dprod α β
+  τ.le_dprod α β ∧ τ.ge_dprod α β
 
-lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.ge_dprod α β) :
+lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
   α.χ + β.χ ≥ τ.χ := by
   rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
   rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
@@ -1163,7 +1225,7 @@ lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.ge_dprod α β) :
   rw [α.s_eq, β.s_eq] at eq
   linarith [τ.s_ge 0 c]
 
-lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.le_dprod α β) :
+lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
   α.χ + β.χ ≤ τ.χ := by
   rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
   rcases h_le 0 c with ⟨l, hl⟩
@@ -1172,7 +1234,7 @@ lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.le_dprod α β) :
 
 lemma chi_eq_of_drop_eq {τ α β : AspPerm} (h_eq : τ.eq_dprod α β) :
   α.χ + β.χ = τ.χ :=
-  le_antisymm (chi_le_of_drop_le h_eq.2) (chi_ge_of_drop_ge h_eq.1)
+  Int.le_antisymm (chi_le_of_drop_le h_eq.2) (chi_ge_of_drop_ge h_eq.1)
 
 lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
   τ⁻¹.eq_dprod (β⁻¹) (α⁻¹) := by

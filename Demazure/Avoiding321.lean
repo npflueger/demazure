@@ -1621,11 +1621,12 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     exact isolated I I_mem J J_mem prec
 
 omit h_L h_R h_χ in
-theorem dprod_eq_iff : τ.eq_dprod α β
+theorem dprod_eq_iff : τ = α ⋆ β
   ↔ (α.χ + β.χ = τ.χ)
     ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β
     ∧ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)
   := by
+  rw [τ.eq_star_iff]
   constructor
   · intro dprod
     have h_χ : α.χ + β.χ = τ.χ := AspPerm.chi_eq_of_drop_eq dprod

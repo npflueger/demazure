@@ -382,6 +382,8 @@ lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
 noncomputable def star (s t : SlipFace) : SlipFace :=
   Classical.choose (star_exists s t)
 
+noncomputable instance : Mul SlipFace := ⟨star⟩
+
 infixl:70 " ⋆ " => star
 
 lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
@@ -400,6 +402,180 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   rw [← this]
   intro a b
   rfl
+
+/-! ### Partial order on SlipFace, and interaction with ⋆  -/
+
+instance : PartialOrder SlipFace where
+  le (s t : SlipFace) := ∀ a b, s a b ≤ t a b
+  le_refl := by
+    intro s a b
+    exact le_refl <| s a b
+  le_trans := by
+    intro s t u hst htu a b
+    exact le_trans (hst a b) (htu a b)
+  le_antisymm := by
+    intro s t hst hts
+    apply (SF_ext s t).mpr
+    intro a b
+    have le1 : s a b ≤ t a b := hst a b
+    have le2 : t a b ≤ s a b := hts a b
+    exact le_antisymm le1 le2
+
+/-!  The following functions/lemmas form a wrapper around SlipValley
+  to make it easier to work with. -/
+
+lemma star_val_le (s t : SlipFace) (a b l : ℤ) : (s ⋆ t) a b ≤ s a l + t l b := by
+  let v := SlipValley s t a b
+  have hmin : (s ⋆ t) a b = v.min := by
+    rw [star_func_eq]
+    rfl
+  have hM : v.min ≤ s a l+ t l b  := by
+    exact v.min_spec l
+  rwa [← hmin] at hM
+
+noncomputable def star_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
+  (SlipValley s t a b).M
+
+lemma star_wit_spec (s t : SlipFace) (a b : ℤ) :
+  (s ⋆ t) a b = s a (star_wit s t a b) + t (star_wit s t a b) b := by
+  let v := SlipValley s t a b
+  rw [star_func_eq]
+  exact Eq.symm v.f_M
+
+lemma le_star_val_iff (r s t : SlipFace) (a b : ℤ) :
+  r a b ≤ (s ⋆ t) a b ↔ ∀ l, r a b ≤ s a l + t l b
+  := by
+  constructor
+  · intro h l
+    contrapose! h
+    exact lt_of_le_of_lt (star_val_le s t a b l) h
+  · intro h
+    let l := star_wit s t a b
+    have : (s ⋆ t) a b = s a l + t l b := by
+      exact star_wit_spec s t a b
+    rw [this]
+    exact h l
+
+lemma ge_star_val_iff (r s t : SlipFace) (a b : ℤ) :
+  r a b ≥ (s ⋆ t) a b ↔ ∃ l, r a b ≥ s a l + t l b
+  := by
+  constructor
+  · intro h
+    use star_wit s t a b
+    rw [← star_wit_spec s t a b]
+    exact h
+  · rintro ⟨l, hl⟩
+    exact le_trans (star_val_le s t a b l) hl
+
+/-! ### Monoid structure on SlipFace -/
+
+lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
+  apply (SF_ext _ _).mpr
+  intro a b
+  apply le_antisymm
+  · let l := star_wit r (s ⋆ t) a b
+    have : (r ⋆ (s ⋆ t)) a b = r a l + (s ⋆ t) l b := star_wit_spec r (s ⋆ t) a b
+    rw [this]
+    let m := star_wit s t l b
+    have : (s ⋆ t) l b = s l m + t m b := star_wit_spec s t l b
+    rw [this]
+    have h1 : (r ⋆ s ⋆ t) a b ≤ (r ⋆ s) a m + t m b := by apply star_val_le
+    have h2 : (r ⋆ s) a m ≤ r a l + s l m := by apply star_val_le
+
+    omega
+  · let l := star_wit (r ⋆ s) t a b
+    have : ((r ⋆ s) ⋆ t) a b = (r ⋆ s) a l + t l b := star_wit_spec (r ⋆ s) t a b
+    rw [this]
+    let m := star_wit r s a l
+    have : (r ⋆ s) a l = r a m + s m l := star_wit_spec r s a l
+    rw [this]
+    have h1 : (r ⋆ (s ⋆ t)) a b ≤ r a m + (s ⋆ t) m b := by apply star_val_le
+    have h2 : (s ⋆ t) m b ≤ s m l + t l b := by apply star_val_le
+    omega
+
+def id : SlipFace := {
+    func := fun a b => max (a - b) 0,
+    χ := 0,
+    a_step := by
+      intro a b
+      by_cases ha : a - b ≥ 0 <;> omega
+    b_step := by
+      intro a b
+      by_cases hb : a - (b + 1) ≥ 0 <;> omega
+    nonneg := by
+      intro a b
+      exact le_max_right (a - b) 0
+    ge_diff := by
+      intro a b
+      rw [add_zero]
+      exact le_max_left (a - b) 0
+    small_a := by
+      intro b
+      use b
+      omega
+    large_a := by
+      intro b
+      use b
+      omega
+    small_b := by
+      intro a
+      use a
+      omega
+    large_b := by
+      intro a
+      use a
+      omega
+  }
+
+lemma id_mul (s : SlipFace) : id ⋆ s = s := by
+  apply (SF_ext _ _).mpr
+  intro a b
+  apply le_antisymm
+  · apply (ge_star_val_iff s id s a b).mpr
+    use a
+    have : id a a = 0 := by
+      rw [id]
+      simp
+    simp [this]
+  · apply (le_star_val_iff s id s a b).mpr
+    intro l
+    by_cases hl : l ≤ a
+    · have : id a l = a - l := by
+        rw [id]
+        simp [hl]
+      rw [this]
+      rw [s.s_eq a b, s.s_eq l b]
+      have : s.dual b l ≥ s.dual b a := by
+        apply s.dual.nondec (le_refl b) hl
+      omega
+    · have : id a l = 0 := by
+        rw [id]; simp; omega
+      rw [this, zero_add]
+      apply s.nondec (by linarith) (le_refl b)
+
+lemma mul_id (s : SlipFace) : s ⋆ id = s := by
+  let t := s.dual
+  have : s = t.dual := by rw [SlipFace.dual_dual s]
+  rw [this]
+  have : id = id.dual := by
+    apply (SF_ext _ _).mpr
+    intro a b
+    dsimp [id, SlipFace.dual]
+    omega
+  suffices t.dual ⋆ id.dual = t.dual by
+    convert this
+  rw [← star_dual, id_mul]
+
+
+noncomputable instance : Monoid SlipFace where
+  mul := star
+  one := id
+  mul_assoc := star_assoc
+  one_mul := id_mul
+  mul_one := mul_id
+
+
+/-! ### $\Delta$ and its properties -/
 
 def Δ (a b : ℤ) : ℤ :=
   sf (a+1) b - sf a b - sf (a+1) (b+1) + sf a (b+1)

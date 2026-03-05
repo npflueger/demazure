@@ -592,7 +592,7 @@ lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
       have h2 : d2 ≤ 1 := by linarith [s.b_step a b]
       exact le_trans h2 h1
 
-/-- Theorem 4.4, part 1 -/
+/-- Theorem 4.4, part 1/5 -/
 theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.submodular) :
   (s.star t).submodular := by
   intro a b
@@ -647,7 +647,7 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   contrapose! this with neq
   simp [neq]
 
-/-- Theorem 4.4, part 2 -/
+/-- Theorem 4.4, part 2/5 -/
 lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
   intro α β
   have : (α.sf ⋆ β.sf).submodular := by
@@ -669,6 +669,12 @@ noncomputable def star (α β : AspPerm) : AspPerm :=
 
 infixl:70 " ⋆ " => star
 
+/-- Theorem 4.4, part 3/5 -/
+lemma star_assoc : ∀ α β γ : AspPerm, (α ⋆ β) ⋆ γ = α ⋆ (β ⋆ γ) := by
+  intro α β γ
+  apply AspPerm.eq_of_sf_eq
+  simp only [star_spec, SlipFace.star_assoc]
+
 lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   = (Submodular.AspValley α β a b).min := by
   let v := (Submodular.AspValley α β a b)
@@ -683,7 +689,7 @@ lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
-/-- Theorem 4.4, part 3 -/
+/-- Theorem 4.4, part 4/5 -/
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
   have ex := star_exists (β⁻¹) (α⁻¹)
   let τ := β⁻¹ ⋆ α⁻¹
@@ -694,7 +700,7 @@ lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ :=
   repeat rw [← AspPerm.sf_dual]
   simp
 
-/-- Theorem 4.4, part 4 -/
+/-- Theorem 4.4, part 5/5 -/
 lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have ex := star_exists α β
   let τ := α ⋆ β
@@ -702,15 +708,24 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_χ_eq]
   simp
 
-lemma le_refl (σ : AspPerm) : σ ≤ σ := by
-  intro a b
-  exact Int.le_refl (σ.s a b)
+-- The PartialOrder on AspPern is only now defined because we needed eq_of_sf_eq.
+instance : PartialOrder AspPerm where
+  le (σ τ : AspPerm) := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
+  le_refl := by
+    intro σ a b
+    exact Int.le_refl (σ.s a b)
+  le_trans := by
+    intro σ τ υ h₁ h₂ a b
+    exact Int.le_trans (h₁ a b) (h₂ a b)
+  le_antisymm := by
+    intro σ τ h₁ h₂
+    apply eq_of_sf_eq
+    rw [SF_ext]
+    intro a b
+    exact Int.le_antisymm (h₁ a b) (h₂ a b)
 
-lemma le_antisymm {σ τ : AspPerm} (h₁ : σ ≤ τ) (h₂ : τ ≤ σ) : σ = τ := by
-  apply eq_of_sf_eq
-  rw [SF_ext]
-  intro a b
-  exact Int.le_antisymm (h₁ a b) (h₂ a b)
+def leχ (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
+infix:50 " ≤χ " => leχ
 
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by
   constructor
@@ -754,10 +769,8 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
   · intro eq
     have le : τ ≤ α ⋆ β := by
       rw [eq]
-      apply le_refl
     have ge : α ⋆ β ≤ τ := by
       rw [eq]
-      apply le_refl
     constructor
     · rwa [← le_star_iff]
     · rwa [← ge_star_iff]

@@ -1156,12 +1156,6 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
 
 end RampWings
 
-def le (σ τ : AspPerm) : Prop := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
-infix:50 " ≤ " => le
-
-def leχ (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
-infix:50 " ≤χ " => leχ
-
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 

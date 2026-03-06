@@ -127,15 +127,15 @@ theorem inv_321a_char (I : Set (ℤ × ℤ)) :
   · intro Ip
     let I_asp : AspSet := ⟨I, Ip.asp⟩
     let I_321a : set_321a := ⟨I_asp, Ip⟩
-    let τ : AspPerm := I_321a.toAspPerm
+    let τ : AspPerm := I_321a.toAspPerm 0
     use τ.func
     constructor
     · rw [criterion_321a τ.func τ.bijective]
-      have : inv_set τ.func = I := I_321a.invSet_func
+      have : inv_set τ.func = I := I_321a.invSet_func 0
       rwa [this]
     constructor
     · exact τ.bijective
-    · exact I_321a.invSet_func
+    · exact I_321a.invSet_func 0
   · rintro ⟨τ, ⟨h_321a, h_bij, h_inv⟩⟩
     have := (criterion_321a τ h_bij).mp h_321a
     rwa [h_inv] at this
@@ -745,12 +745,12 @@ lemma inv_of_lel_iff
   exact u'v'_inv
 
 omit h_321a h_L in
-lemma set_321a_of_func (avset : set_321a) : set_321a_prop (inv_set avset.to_func) := by
+lemma set_321a_of_func (avset : set_321a) (χ : ℤ) : set_321a_prop (inv_set (avset.recon χ)) := by
   constructor
-  · show AspSet_prop (inv_set avset.to_func)
-    rw [avset.invSet_func]
+  · show AspSet_prop (inv_set (avset.recon χ))
+    rw [avset.invSet_func χ]
     refine avset.prop
-  · simp [avset.prop_321a.tfree, avset.invSet_func]
+  · simp [avset.prop_321a.tfree, avset.invSet_func χ]
 
 theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :

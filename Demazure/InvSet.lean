@@ -70,12 +70,12 @@ noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.fini
 @[simp] lemma mem_outset (asps : AspSet) (n x : ℤ) : x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
   simp [outset]
 
-noncomputable def to_func (asps : AspSet) : ℤ → ℤ :=
-  fun n => n + (asps.outset n).card - (asps.inset n).card
+noncomputable def recon (asps : AspSet) (χ : ℤ) : ℤ → ℤ :=
+  fun n => n + (asps.outset n).card - (asps.inset n).card - χ
 
 section σ_diff
-variable (asps : AspSet) (m n : ℤ)
-noncomputable abbrev σ := asps.to_func
+variable (asps : AspSet) (m n χ : ℤ)
+noncomputable abbrev σ := asps.recon χ
 
 noncomputable abbrev lf_pos : Finset ℤ := asps.inset m \ asps.inset n
 @[simp] lemma mem_lf_pos (x : ℤ) : x ∈ lf_pos asps m n
@@ -125,20 +125,21 @@ noncomputable abbrev rt_neg : Finset ℤ := (asps.outset m \ asps.outset n).filt
   simp [rt_neg]
   constructor <;> (intro h; simp [h])
 
-lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
+lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
   ((lf_pos asps m n).card + (md_pos asps m n).card + (rt_pos asps m n).card)
   - ((lf_neg asps m n).card + (md_neg asps m n).card + (rt_neg asps m n).card) := by
 
-  have : asps.σ n - asps.σ m =
+  have : asps.σ χ n - asps.σ χ m =
     (Finset.Ico m n).card
     + ( (asps.outset n) \ (asps.outset m)).card  - ( (asps.outset m) \ (asps.outset n)).card
     + ( (asps.inset m) \ (asps.inset n)).card - ( (asps.inset n) \ (asps.inset m)).card := by
-    unfold σ to_func
+    unfold σ recon
+
     have h1 := Utils.sub_card_eq_sub_card_diff (asps.outset n) (asps.outset m)
     have h2 := Utils.sub_card_eq_sub_card_diff (asps.inset m) (asps.inset n)
     have h3 : (Finset.Ico m n).card = n-m := by
       simp [m_le_n]
-    linarith [h1,h2,h2]
+    linarith [h1,h2,h3]
   rw [this]
 
   have rp : (asps.outset n \ asps.outset m) = rt_pos asps m n := rfl
@@ -250,9 +251,9 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ n - asps.σ m =
   linarith [h_diff, h_union]
 
 lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
-  asps.σ n - asps.σ m
+  asps.σ χ n - asps.σ χ m
   = ↑(asps.lf_pos m n).card + ↑(asps.md_pos m n).card + ↑(asps.rt_pos m n).card := by
-  have diff := σ_diff asps m n (le_of_lt m_lt_n)
+  have diff := σ_diff asps m n χ (le_of_lt m_lt_n)
   have h_lf : asps.lf_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro x hx; simp at hx
@@ -270,8 +271,8 @@ lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   simp at diff
   exact diff
 
-lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ m < asps.σ n := by
-  have diff := σ_diff_pos asps m n m_lt_n mn_nI
+lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ χ m < asps.σ χ n := by
+  have diff := σ_diff_pos asps m n χ m_lt_n mn_nI
   by_contra! h
   have h_empty : asps.md_pos m n = ∅ := by
     rw [← Finset.card_eq_zero]
@@ -283,8 +284,8 @@ lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ m < asps.�
     tauto
   linarith [asps.directed m m this]
 
-lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ m > asps.σ n := by
-  have diff := σ_diff asps m n (le_of_lt m_lt_n)
+lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ χ m > asps.σ χ n := by
+  have diff := σ_diff asps m n χ (le_of_lt m_lt_n)
   have h_lf : asps.lf_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro x hx; simp at hx
@@ -311,20 +312,20 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ m > asps.σ
     exact h_empty mn_I
   linarith [asps.directed n n this]
 
-lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ n < asps.σ m := by
+lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ χ n < asps.σ χ m := by
   constructor
   · intro h
     have m_lt_n : m < n := asps.directed m n h
-    exact σ_dec asps m n m_lt_n h
+    exact σ_dec asps m n χ m_lt_n h
   · intro h
     contrapose! h
     wlog m_lt_n : m < n
     · have h_eq : m = n := by omega
       rw [h_eq]
     apply le_of_lt
-    exact σ_inc asps m n m_lt_n h
+    exact σ_inc asps m n χ m_lt_n h
 
-theorem func_injective (asps : AspSet) : Function.Injective (asps.to_func) := by
+theorem func_injective (asps : AspSet) : Function.Injective (asps.recon χ) := by
   intro m n h
   wlog m_le_n : m ≤ n generalizing m n
   · specialize this (h.symm) (by omega)
@@ -332,17 +333,17 @@ theorem func_injective (asps : AspSet) : Function.Injective (asps.to_func) := by
   contrapose! h
   have m_lt_n : m < n := lt_of_le_of_ne m_le_n h
   by_cases mn_I : ⟨m, n⟩ ∈ asps
-  · have := σ_dec asps m n m_lt_n mn_I
+  · have := σ_dec asps m n χ m_lt_n mn_I
     linarith
-  · have := σ_inc asps m n m_lt_n mn_I
+  · have := σ_inc asps m n χ m_lt_n mn_I
     linarith
 
-lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
-  (asps.σ) ⁻¹' (Set.Ico (asps.σ m) (asps.σ n))
+lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
+  (asps.σ χ) ⁻¹' (Set.Ico (asps.σ χ m) (asps.σ χ n))
   = (lf_pos asps m n) ∪ (md_pos asps m n) ∪ (rt_pos asps m n) := by
   have mn_nI : ⟨m, n⟩ ∉ asps := by
     intro h
-    have := σ_dec asps m n m_lt_n h
+    have := σ_dec asps m n χ m_lt_n h
     linarith [σ_m_lt_n]
   ext k
   simp
@@ -357,23 +358,23 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
       intro h
       have := asps.directed n k h
       omega
-    have h3 : asps.σ m ≤ asps.σ k ↔ ⟨k,m⟩ ∈ asps := by
-      rw [mem_iff_lt asps k m (le_of_lt k_lt_m)]
+    have h3 : asps.σ χ m ≤ asps.σ χ k ↔ ⟨k,m⟩ ∈ asps := by
+      rw [mem_iff_lt asps k m χ (le_of_lt k_lt_m)]
       constructor
       · intro h
         by_contra! h'
-        have : m = k := func_injective asps (le_antisymm h h')
+        have : m = k := func_injective χ asps (le_antisymm h h')
         omega
       · intro h; exact le_of_lt h
-    have h4 : asps.σ k < asps.σ n ↔ ⟨k,n⟩ ∉ asps := by
-      rw [mem_iff_lt asps k n (le_of_lt (lt_trans k_lt_m m_lt_n))]
+    have h4 : asps.σ χ k < asps.σ χ n ↔ ⟨k,n⟩ ∉ asps := by
+      rw [mem_iff_lt asps k n χ (le_of_lt (lt_trans k_lt_m m_lt_n))]
       have : k ≠ n := by
         intro h_eq
         rw [h_eq] at k_lt_m
         omega
-      have : asps.σ k ≠ asps.σ n := by
+      have : asps.σ χ k ≠ asps.σ χ n := by
         contrapose! this
-        exact func_injective asps this
+        exact func_injective χ asps this
       constructor
       · intro h
         push_neg
@@ -387,17 +388,17 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
   clear k_lt_m
   by_cases k_lt_n : k < n
   · simp only [m_le_k, k_lt_n]
-    have h1 : asps.σ m ≤ asps.σ k ↔ ⟨m,k⟩ ∉ asps := by
-      rw [mem_iff_lt asps m k m_le_k]
+    have h1 : asps.σ χ m ≤ asps.σ χ k ↔ ⟨m,k⟩ ∉ asps := by
+      rw [mem_iff_lt asps m k χ m_le_k]
       push_neg; rfl
-    have h2 : asps.σ k < asps.σ n ↔ ⟨k,n⟩ ∉ asps := by
-      rw [mem_iff_lt asps k n (le_of_lt k_lt_n)]
+    have h2 : asps.σ χ k < asps.σ χ n ↔ ⟨k,n⟩ ∉ asps := by
+      rw [mem_iff_lt asps k n χ (le_of_lt k_lt_n)]
       push_neg; constructor
       · apply le_of_lt
       · intro h
         by_contra!
         have h_eq := le_antisymm h this
-        have h_eq : k = n := func_injective asps h_eq
+        have h_eq : k = n := func_injective χ asps h_eq
         omega
     rw [h1, h2]
     constructor
@@ -421,11 +422,11 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
   clear k_lt_n
   have : ¬(k < n) := not_lt_of_ge n_le_k
   simp [m_le_k, this]
-  have : asps.σ m ≤ asps.σ k ↔ ⟨m, k⟩ ∉ asps := by
-    simp [mem_iff_lt asps m k m_le_k]
+  have : asps.σ χ m ≤ asps.σ χ k ↔ ⟨m, k⟩ ∉ asps := by
+    simp [mem_iff_lt asps m k χ m_le_k]
   rw [this]
-  have : asps.σ k < asps.σ n ↔ ⟨n,k⟩ ∈ asps := by
-    simp [mem_iff_lt asps n k n_le_k]
+  have : asps.σ χ k < asps.σ χ n ↔ ⟨n,k⟩ ∈ asps := by
+    simp [mem_iff_lt asps n k χ n_le_k]
   rw [this]
   constructor
   · intro h
@@ -438,25 +439,25 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
       omega
     · tauto
 
-lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
-  ∀ k : ℤ, asps.to_func m ≤ k → k < asps.to_func n
-  → ∃ l : ℤ, k = asps.to_func l := by
-  let σ := asps.to_func
+lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
+  ∀ k : ℤ, asps.recon χ m ≤ k → k < asps.recon χ n
+  → ∃ l : ℤ, k = asps.recon χ l := by
+  let σ := asps.recon χ
   let I := Finset.Ico (σ m) (σ n)
   let J := asps.lf_pos m n ∪ asps.md_pos m n ∪ asps.rt_pos m n
   let K := Finset.image σ J
 
   have inv_image : σ ⁻¹' I = ↑J:= by
     unfold I σ
-    have := contiguity_helper asps m n m_lt_n σ_m_lt_n
+    have := contiguity_helper asps m n χ m_lt_n σ_m_lt_n
     rw [← this]
     simp
   have card_J : (J.card : ℤ) = (σ n - σ m) := by
     unfold J
     have : ⟨m, n⟩ ∉ asps := by
-      rw [mem_iff_lt asps m n (le_of_lt m_lt_n)]
+      rw [mem_iff_lt asps m n χ (le_of_lt m_lt_n)]
       omega
-    rw [σ_diff_pos asps m n m_lt_n this]
+    rw [σ_diff_pos asps m n χ m_lt_n this]
     simp
     let L := asps.lf_pos m n
     let M := asps.md_pos m n
@@ -494,7 +495,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
     rw [Finset.card_union_of_disjoint this]
   have card_K : (K.card : ℤ) = (σ n - σ m) := by
     rw [← card_J]
-    have : Function.Injective σ := func_injective asps
+    have : Function.Injective σ := func_injective χ asps
     have := Finset.card_image_of_injective J this
     rw [← this]
   have K_eq_I : K = I := by
@@ -531,12 +532,12 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ m < asps.σ n) :
 end σ_diff
 
 section OfAspSet
-variable (asps : AspSet)
+variable (asps : AspSet) (χ : ℤ)
 
-theorem invSet_func : inv_set (asps.to_func) = asps := by
+theorem invSet_func : inv_set (asps.recon χ) = asps := by
   ext ⟨u, v⟩
   wlog u_lt_v : u < v
-  · have h1 : ⟨u, v⟩ ∉ inv_set (asps.to_func) := by
+  · have h1 : ⟨u, v⟩ ∉ inv_set (asps.recon χ) := by
       intro huv
       exact u_lt_v huv.1
     have h2 : ⟨u, v⟩ ∉ asps := by
@@ -551,44 +552,44 @@ theorem invSet_func : inv_set (asps.to_func) = asps := by
   constructor
   · intro h
     contrapose! h
-    have : asps.to_func u < asps.to_func v := σ_inc asps u v u_lt_v h
+    have : asps.recon χ u < asps.recon χ v := σ_inc asps u v χ u_lt_v h
     intro huv
-    exact (lt_irrefl (asps.to_func u)) (lt_trans this huv.2)
+    exact (lt_irrefl (asps.recon χ u)) (lt_trans this huv.2)
   · intro h
-    exact ⟨u_lt_v, σ_dec asps u v u_lt_v h⟩
+    exact ⟨u_lt_v, σ_dec asps u v χ u_lt_v h⟩
 
 lemma inset_eq_nw (n : ℤ) : (asps.inset n).toSet
-   = northwest_set asps.σ ((asps.σ n) + 1) n := by
+   = northwest_set (asps.σ χ) ((asps.σ χ n) + 1) n := by
   ext x
   unfold northwest_set
-  have := Set.ext_iff.mp <| invSet_func asps
+  have := Set.ext_iff.mp <| invSet_func asps χ
   specialize this ⟨x, n⟩
   constructor
   · intro hx
     have hx' : ⟨x, n⟩ ∈ asps := by simpa using hx
-    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
+    have h_inv : ⟨x, n⟩ ∈ inv_set (asps.σ χ) := by simpa [this] using hx'
     rcases h_inv with ⟨hxn, hσ⟩
     exact ⟨hxn, by omega⟩
   · intro hx
     rcases hx with ⟨hxn, hσ⟩
-    have h_inv : ⟨x, n⟩ ∈ inv_set asps.σ := ⟨hxn, by omega⟩
+    have h_inv : ⟨x, n⟩ ∈ inv_set (asps.σ χ) := ⟨hxn, by omega⟩
     have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
 lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
-   = southeast_set asps.σ (asps.σ n) (n+1) := by
+   = southeast_set (asps.σ χ) (asps.σ χ n) (n+1) := by
   ext x
-  have := Set.ext_iff.mp <| invSet_func asps
+  have := Set.ext_iff.mp <| invSet_func asps χ
   specialize this ⟨n, x⟩
   constructor
   · intro hx
     have hx' : ⟨n, x⟩ ∈ asps := by simpa using hx
-    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := by simpa [this] using hx'
+    have h_inv : ⟨n, x⟩ ∈ inv_set (asps.σ χ) := by simpa [this] using hx'
     rcases h_inv with ⟨hnx, hσ⟩
     exact ⟨by omega, hσ⟩
   · intro hx
     rcases hx with ⟨hnx, hσ⟩
-    have h_inv : ⟨n, x⟩ ∈ inv_set asps.σ := ⟨by omega, hσ⟩
+    have h_inv : ⟨n, x⟩ ∈ inv_set (asps.σ χ) := ⟨by omega, hσ⟩
     have hx' : ⟨n, x⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
@@ -596,7 +597,7 @@ lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
 -- but it is stated in a strange way. This is just for convenience
 -- in the proof of surjectivity.
 lemma surj_helper_up (m : ℤ) (n : ℕ) :
-  ∃ x : ℤ, x ≥ m ∧ asps.to_func x ≥ asps.to_func m + n := by
+  ∃ x : ℤ, x ≥ m ∧ asps.recon χ x ≥ asps.recon χ m + n := by
   induction n with
   | zero =>
     use m
@@ -615,16 +616,16 @@ lemma surj_helper_up (m : ℤ) (n : ℕ) :
   constructor
   · omega
   · simp at y_not_outset_x
-    have h_ineq : asps.to_func x ≤ asps.to_func y := by
-      rw [← not_lt, ← mem_iff_lt asps x y (le_of_lt y_gt_x)]
+    have h_ineq : asps.recon χ x ≤ asps.recon χ y := by
+      rw [← not_lt, ← mem_iff_lt asps x y χ (le_of_lt y_gt_x)]
       exact y_not_outset_x
-    have h_ne : asps.to_func x ≠ asps.to_func y :=
-      fun h => absurd (func_injective asps h) (by omega)
+    have h_ne : asps.recon χ x ≠ asps.recon χ y :=
+      fun h => absurd (func_injective χ asps h) (by omega)
     have hlt := lt_of_le_of_ne h_ineq h_ne
     simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
 
 lemma surj_helper_down (m : ℤ) (n : ℕ) :
-  ∃ x : ℤ, x ≤ m ∧ asps.to_func x ≤ asps.to_func m - n := by
+  ∃ x : ℤ, x ≤ m ∧ asps.recon χ x ≤ asps.recon χ m - n := by
   induction n with
   | zero =>
     use m
@@ -643,22 +644,21 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
   constructor
   · omega
   · simp at y_not_inset_x
-    have h_ineq : asps.to_func y ≤ asps.to_func x := by
-      rw [← not_lt, ← mem_iff_lt asps y x (le_of_lt y_lt_x)]
+    have h_ineq : asps.recon χ y ≤ asps.recon χ x := by
+      rw [← not_lt, ← mem_iff_lt asps y x χ (le_of_lt y_lt_x)]
       exact y_not_inset_x
-    have h_ne : asps.to_func y ≠ asps.to_func x :=
-      fun h => absurd (func_injective asps h) (by omega)
+    have h_ne : asps.recon χ y ≠ asps.recon χ x :=
+      fun h => absurd (func_injective χ asps h) (by omega)
     have hlt := lt_of_le_of_ne h_ineq h_ne
     simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
 
-theorem func_surjective : Function.Surjective (asps.to_func) := by
+theorem func_surjective : Function.Surjective (asps.recon χ) := by
   intro y
-  have : ∃ m : ℤ, m ≤ 0 ∧ asps.to_func m ≤ y := by
-    by_cases h0 : asps.to_func 0 ≤ y
+  have : ∃ m : ℤ, m ≤ 0 ∧ asps.recon χ m ≤ y := by
+    by_cases h0 : asps.recon χ 0 ≤ y
     · use 0
-    push_neg at h0
-    rcases surj_helper_down asps 0 (asps.to_func 0 - y).toNat with
+    rcases surj_helper_down asps χ 0 (asps.recon χ 0 - y).toNat with
       ⟨m, m_le_0, fm_le⟩
     use m
     simp at fm_le
@@ -667,11 +667,10 @@ theorem func_surjective : Function.Surjective (asps.to_func) := by
     rw [max_eq_left (by omega)]
     simp
   rcases this with ⟨m, m_le_0, fm_le_y⟩
-  have : ∃ n : ℤ, n ≥ 1 ∧ asps.to_func n ≥ y + 1 := by
-    by_cases h1 : asps.to_func 1 ≥ y + 1
+  have : ∃ n : ℤ, n ≥ 1 ∧ asps.recon χ n ≥ y + 1 := by
+    by_cases h1 : asps.recon χ 1 ≥ y + 1
     · use 1
-    push_neg at h1
-    rcases surj_helper_up asps 1 (y + 1 - asps.to_func 1).toNat with
+    rcases surj_helper_up asps χ 1 (y + 1 - asps.recon χ 1).toNat with
       ⟨n, n_ge_1, fn_ge⟩
     use n
     simp at fn_ge
@@ -680,49 +679,87 @@ theorem func_surjective : Function.Surjective (asps.to_func) := by
     omega
   rcases this with ⟨n, n_ge_1, fn_ge_y1⟩
   have m_le_n : m ≤ n := by omega
-  have contig := func_contiguous asps m n (by omega) (lt_of_le_of_lt fm_le_y fn_ge_y1)
+  have contig := func_contiguous asps m n χ (by omega) (lt_of_le_of_lt fm_le_y fn_ge_y1)
   specialize contig y fm_le_y fn_ge_y1
   rcases contig with ⟨l, hl⟩
   use l
   rw [hl]
 
-theorem func_bijective : Function.Bijective (asps.to_func) :=
-  ⟨func_injective asps, func_surjective asps⟩
+theorem func_bijective : Function.Bijective (asps.recon χ) :=
+  ⟨func_injective χ asps, func_surjective asps χ⟩
 
-theorem func_asp : is_asp (asps.to_func) := by
-  let τ := asps.to_func
+theorem func_asp : is_asp (asps.recon χ) := by
+  let τ := asps.recon χ
   let se := southeast_set τ (τ 0) 1
   have se_fin : se.Finite := by
     suffices se = outset asps 0 by
       rw [this]
       simp [asps.finite_outdegree 0]
-    rw [outset_eq_se asps 0]
+    rw [outset_eq_se asps χ 0]
     congr
   let nw := northwest_set τ ((τ 0) + 1) 0
   have nw_fin : nw.Finite := by
     suffices nw = inset asps 0 by
       rw [this]
       simp [asps.finite_indegree 0]
-    rw [inset_eq_nw asps 0]
-  apply asp_of_finite_quadrants (func_injective asps) se_fin nw_fin
+    rw [inset_eq_nw asps χ 0]
+  apply asp_of_finite_quadrants (func_injective χ asps) se_fin nw_fin
 
 noncomputable def toAspPerm : AspPerm :=
-  ⟨asps.to_func, func_bijective asps, func_asp asps⟩
+  ⟨asps.recon χ, func_bijective asps χ, func_asp asps χ⟩
 
-lemma invSet_of_toAspPerm : inv_set (toAspPerm asps)= asps := invSet_func asps
+lemma invSet_of_toAspPerm : inv_set (toAspPerm asps χ)= asps := invSet_func asps χ
+
+lemma inset_of_toAspPerm (n : ℤ) : (toAspPerm asps χ).inset n = asps.inset n := by
+  ext x
+  have h1 : x ∈ (toAspPerm asps χ).inset n ↔ ⟨x, n⟩ ∈ inv_set (toAspPerm asps χ) := by
+    apply AspPerm.invset_iff_inset
+  have h2 : x ∈ ↑(asps.inset n) ↔ ⟨x, n⟩ ∈ inv_set (toAspPerm asps χ) := by
+    have := asps.inset_eq_nw χ n
+    rw [invSet_of_toAspPerm asps χ]
+    simp
+  simp only [h1, ← h2]
+  rfl
+
+lemma outset_of_toAspPerm (n : ℤ) : (toAspPerm asps χ).outset n = asps.outset n := by
+  ext x
+  have h1 : x ∈ (toAspPerm asps χ).outset n ↔ ⟨n, x⟩ ∈ inv_set (toAspPerm asps χ) := by
+    apply AspPerm.invset_iff_outset
+  have h2 : x ∈ ↑(asps.outset n) ↔ ⟨n, x⟩ ∈ inv_set (toAspPerm asps χ) := by
+    have := asps.outset_eq_se χ n
+    rw [invSet_of_toAspPerm asps χ]
+    simp
+  simp only [h1, ← h2]
+  rfl
+
+lemma chi_of_toAspPerm : (toAspPerm asps χ).χ = χ := by
+  let σ := toAspPerm asps χ
+  have h1 : σ 0 = (asps.outset 0).card - (asps.inset 0).card - χ := by
+    unfold σ toAspPerm recon
+    simp
+  have h2 : σ 0 = (σ.outset 0).ncard - (σ.inset 0).ncard - σ.χ := by
+    rw [σ.reconstruction 0]
+    omega
+  have hout : σ.outset 0 = asps.outset 0 := outset_of_toAspPerm asps χ 0
+  have hin : σ.inset 0 = asps.inset 0 := inset_of_toAspPerm asps χ 0
+  rw [hout, hin] at h2
+  repeat rw [Set.ncard_coe_finset] at h2
+  rw [h1] at h2
+  linarith [h2]
 
 end OfAspSet
 
-theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) :
-  (∃ τ : AspPerm, inv_set τ = I) ↔  (AspSet_prop I) := by
+theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) (χ : ℤ) :
+  (∃ τ : AspPerm, inv_set τ = I ∧ τ.χ = χ) ↔  (AspSet_prop I) := by
   constructor
   · intro h
-    rcases h with ⟨τ, τ_inv_eq⟩
+    rcases h with ⟨τ, τ_inv_eq, τ_chi_eq⟩
+
     rw [← τ_inv_eq]
     exact AspSet_InvSet_of_AspPerm τ
   · intro asp
     let asps : AspSet := ⟨I, asp⟩
-    use asps.toAspPerm
-    exact invSet_of_toAspPerm asps
+    use asps.toAspPerm χ
+    exact ⟨invSet_of_toAspPerm asps χ, chi_of_toAspPerm asps χ⟩
 
 end AspSet

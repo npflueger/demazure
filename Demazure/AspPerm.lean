@@ -679,6 +679,14 @@ lemma inset_eq_nw (v : ℤ) : τ.inset v = northwest_set τ (τ v) v := by
     obtain ⟨u_lt_v, τv_le_τu⟩ := uv_se
     exact (τ.inv_iff_le u_lt_v).mpr τv_le_τu
 
+lemma invset_iff_inset (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ u ∈ τ.inset v := by
+  simp only [inset_eq_nw, northwest_set, Set.mem_setOf_eq]
+  constructor
+  · intro ⟨u_lt, τ_le⟩
+    exact ⟨u_lt, le_of_lt τ_le⟩
+  · intro ⟨x_lt_n, σx_le_σn⟩
+    exact (inv_iff_le τ x_lt_n).mpr σx_le_σn
+
 lemma inset_finite (v : ℤ) : (τ.inset v).Finite := by
   rw [τ.inset_eq_nw v]
   apply τ.nw_finite
@@ -695,6 +703,14 @@ lemma outset_eq_se (u : ℤ) : τ.outset u = southeast_set τ (τ u) u := by
     obtain ⟨u_le_v, τv_lt_τu⟩ := uv_se
     exact (τ.inv_iff_lt u_le_v).mpr τv_lt_τu
 
+lemma invset_iff_outset (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ v ∈ τ.outset u := by
+  simp only [outset_eq_se, southeast_set, Set.mem_setOf_eq]
+  constructor
+  · intro ⟨u_lt, τ_le⟩
+    exact ⟨le_of_lt u_lt, τ_le⟩
+  · intro ⟨x_le_n, σx_lt_σn⟩
+    exact (inv_iff_lt τ x_le_n).mpr σx_lt_σn
+
 lemma outset_finite (u : ℤ) : (τ.outset u).Finite := by
   rw [τ.outset_eq_se u]
   apply τ.se_finite
@@ -710,6 +726,22 @@ theorem reconstruction : ∀ n : ℤ,
   rw [← this]
   have := τ.duality (τ n) n
   omega
+
+/-- If two ASP permutations have the same shift and inversion set, then they are equal. -/
+theorem unique_from_inv_and_χ (σ τ : AspPerm) (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) :
+  σ = τ := by
+  apply AspPerm.ext.mpr
+  ext n
+  rw [reconstruction σ n, reconstruction τ n, h_χ]
+  suffices σ.outset n = τ.outset n ∧ σ.inset n = τ.inset n by
+    simp [this]
+  constructor
+  · ext v
+    simp only [← invset_iff_outset]
+    rw [h_inv]
+  · ext v
+    simp only [← invset_iff_inset]
+    rw [h_inv]
 
 lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
   have := duality τ a b

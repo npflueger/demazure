@@ -708,6 +708,45 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_χ_eq]
   simp
 
+lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
+  rw [AspPerm.s_eq_se_card]
+  have hset : AspPerm.id.se_finset a b = Finset.Ico b a := by
+    ext k
+    constructor
+    · intro hk
+      have hk' : b ≤ k ∧ AspPerm.id k < a := (AspPerm.id.mem_se a b k).1 hk
+      simpa [AspPerm.id] using hk'
+    · intro hk
+      have hk' : b ≤ k ∧ AspPerm.id k < a := by
+        simpa [AspPerm.id] using hk
+      exact (AspPerm.id.mem_se a b k).2 hk'
+  rw [hset]
+  have hcard : (Finset.Ico b a).card = (a - b).toNat := by
+    simp [Int.card_Ico b a]
+  rw [hcard]
+  by_cases h : a - b ≥ 0
+  · rw [max_eq_left h, Int.toNat_of_nonneg h]
+  · have h' : a - b < 0 := lt_of_not_ge h
+    rw [max_eq_right (le_of_lt h')]
+    have : (a - b).toNat = 0 := Int.toNat_of_nonpos (le_of_lt h')
+    simp [this]
+
+lemma id_sf : AspPerm.id.sf = SlipFace.id := by
+  apply (SF_ext _ _).mpr
+  intro a b
+  change AspPerm.id.s a b = max (a - b) 0
+  exact id_s_eq a b
+
+lemma id_star (α : AspPerm) : AspPerm.id ⋆ α = α := by
+  apply AspPerm.eq_of_sf_eq
+  rw [AspPerm.star_spec, id_sf]
+  simpa using SlipFace.id_mul α.sf
+
+lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
+  apply AspPerm.eq_of_sf_eq
+  rw [AspPerm.star_spec, id_sf]
+  simpa using SlipFace.mul_id α.sf
+
 -- The PartialOrder on AspPern is only now defined because we needed eq_of_sf_eq.
 instance : PartialOrder AspPerm where
   le (σ τ : AspPerm) := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
@@ -783,14 +822,15 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
       exact eq.2
     apply le_antisymm le ge
 
--- [TODO] prove assocaitivity of ⋆, first in the case of SlipFaces.
-
 end AspPerm
 
 namespace Submodular
 
 /-- Lemma 4.9, part 1 -/
-theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L τ := by
+theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
+  let τ := α ⋆ β
+  have dprod : τ.eq_dprod α β := by
+    rw [← AspPerm.eq_star_iff]
   rintro ⟨u, v⟩ ⟨u_lt_v, βv_lt_βu⟩
   apply And.intro u_lt_v
   contrapose! βv_lt_βu with τu_le_τv
@@ -825,10 +865,16 @@ theorem lel_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : β ≤L 
   omega
 
 /-- Lemma 4.9, part 2 -/
-theorem ler_of_dprod {τ α β : AspPerm} (dprod : τ.eq_dprod α β) : α ≤R τ := by
+theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
+  let τ := α ⋆ β
+  have dprod : τ.eq_dprod α β := by
+    rw [← AspPerm.eq_star_iff]
   suffices α⁻¹ ≤L τ⁻¹ by
     simpa using AspPerm.le_weak_R_of_L this
-  apply lel_of_dprod (α := β⁻¹) (β := α⁻¹) (τ := τ⁻¹)
-  exact AspPerm.dprod_inv_eq_inv_dprod τ α β dprod
+  -- apply lel_of_dprod β⁻¹ α⁻¹
+  have := AspPerm.dprod_inv_eq_inv_dprod τ α β dprod
+  rw [← AspPerm.eq_star_iff] at this
+  rw [this]
+  exact lel_of_dprod β⁻¹ α⁻¹
 
 end Submodular

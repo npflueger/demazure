@@ -744,6 +744,34 @@ lemma inv_of_lel_iff
 
   exact u'v'_inv
 
+omit h_L in
+lemma sr_inv_of_ler_iff {α : AspPerm} (h_R : α ≤R τ)
+  {u v u' v' : ℤ} (uv_inv : ⟨u, v⟩ ∈ (τ.sr α) '' inv_set α)
+  (nested : ⟨u, v⟩ ≼ ⟨u', v'⟩) :
+  ⟨u', v'⟩ ∈ (τ.sr α) '' inv_set α ↔ ⟨u', v'⟩ ∈ inv_set τ := by
+  let I : ℤ × ℤ := ⟨τ v, τ u⟩
+  let J : ℤ × ℤ := ⟨τ v', τ u'⟩
+  have invI : I ∈ inv_set α⁻¹.func := by
+    simpa [I] using (τ.sr_crit α u v).mp uv_inv
+  have uv_inv_τ : ⟨u, v⟩ ∈ inv_set τ := AspPerm.sr_subset τ α h_R uv_inv
+  have hJI : J ≼ I := by
+    constructor
+    · have v_snk : is_snk τ v := snk_of_inv uv_inv_τ
+      simpa [I, J] using snk_le h_321a v_snk nested.2
+    · have u_src : is_src τ u := src_of_inv uv_inv_τ
+      simpa [I, J] using src_ge h_321a u_src nested.1
+  have lel : α⁻¹ ≤L τ⁻¹ := AspPerm.le_weak_L_of_R h_R
+  constructor
+  · intro h
+    exact AspPerm.sr_subset τ α h_R h
+  · intro h
+    have invJτ : J ∈ inv_set τ⁻¹.func := by
+      simpa [J] using (τ.inv_set_inverse u' v').mp h
+    have invJ : J ∈ inv_set α⁻¹.func := by
+      exact (inv_of_lel_iff (τ := τ⁻¹) (β := α⁻¹)
+        (inv_is_321a h_321a) lel invI hJI).mpr invJτ
+    simpa [J] using (τ.sr_crit α u' v').mpr invJ
+
 omit h_321a h_L in
 lemma set_321a_of_func (avset : set_321a) (χ : ℤ) : set_321a_prop (inv_set (avset.recon χ)) := by
   constructor
@@ -881,51 +909,6 @@ theorem lel_lamp {α : AspPerm} (h_R : α ≤R τ)
   rw [this]
   simp [α⁻¹.ramp_lamp_dual a]
 
--- lemma s_inc_on_snks {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
---   (m_snk : is_snk τ m) (b_le_m : b ≤ m) (n_snk : is_snk τ n) (b_le_n : b ≤ n) :
---     m ≤ n ↔ τ.s (τ m) b ≤ τ.s (τ n) b
---   := by
---   constructor
---   · intro m_le_n
---     refine (τ.s_nondec ?_ b).1
---     wlog m_lt_n : m < n
---     · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
---       rw [this]
---     exact le_of_lt <| snk_lt h_321a m_snk m_lt_n
---   · intro h
---     contrapose! h with n_lt_m
---     have τ_n_lt_m : τ n < τ m := snk_lt h_321a n_snk n_lt_m
---     have h := (τ.s_nondec (le_of_lt τ_n_lt_m) b)
---     suffices τ.s (τ n) b ≠ τ.s (τ m) b by
---       exact lt_of_le_of_ne h.1 this
---     intro heq
---     have n_lt_b : n < b := h.2.mp heq n (le_refl _) τ_n_lt_m
---     exact lt_iff_not_ge.mp n_lt_b b_le_n
-
--- lemma s'_dec_on_srcs {τ : AspPerm} (h_321a : is_321a τ) {b m n : ℤ}
---   (m_src : is_src τ m) (m_lt_b : m < b) (n_src : is_src τ n) (n_lt_b : n < b) :
---     m ≤ n ↔ τ.s' b (τ m) ≥ τ.s' b (τ n)
---   := by
---   rw [τ.dual_inverse]
---   constructor
---   · intro m_le_n
---     refine (τ⁻¹.s_noninc b ?_).1
---     wlog m_lt_n : m < n
---     · have : m = n := eq_of_le_of_not_lt m_le_n m_lt_n
---       rw [this]
---     exact le_of_lt <| src_gt h_321a n_src m_lt_n
---   · intro h
---     contrapose! h with n_lt_m
---     have τ_m_lt_n : τ n < τ m := src_gt h_321a m_src n_lt_m
---     have h := (τ⁻¹.s_noninc b (le_of_lt τ_m_lt_n))
---     suffices τ⁻¹.s b (τ m) ≠ τ⁻¹.s b (τ n) by
---       exact lt_of_le_of_ne h.1 this
---     intro heq
---     have n_ge_b : n ≥ b := by
---       have := h.2.mp (Eq.symm heq) (τ n) (le_refl _) τ_m_lt_n
---       rwa [τ.inv_mul_cancel_eval n] at this
---     exact lt_iff_not_ge.mp n_lt_b n_ge_b
-
 theorem inv_of_lel_iff_ramp
   {u b v : ℤ} (u_lt_b : u < b) (b_le_v : b ≤ v) :
   let m := τ.s (τ v) b + 1
@@ -944,78 +927,6 @@ theorem inv_of_lel_iff_ramp
     rw [τ.v_crit b m_pos v]
     exact ⟨by linarith, b_le_v⟩
   rw [u_eq, v_eq]
-
-
--- theorem inv_of_lel_iff_ramp_old {β : AspPerm} (h_321a : is_321a τ) (h_L : β ≤L τ)
---   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) (u_lt_b : u < b) (b_le_v : b ≤ v) :
---     ⟨u, v⟩ ∈ inv_set β
---     ↔ ⟨τ.s (τ v) b + 1, τ.s' b (τ u)⟩ ∈ β.ramp b
---   := by
---   have h_321a_β := is_321a_of_lel (τ := τ) h_321a h_L
---   constructor
---   · intro uv_inv_β
---     let l₁ := β u
---     let l₂ := β v + 1
---     have l₂_le_l₁ : l₂ ≤ l₁ := uv_inv_β.2
---     use l₁
---     constructor
---     · suffices β.s l₂ b ≥ τ.s (τ.func v) b + 1 by
---         apply le_trans this
---         exact (β.s_nondec l₂_le_l₁ b).1
---       simp only [l₂]
---       have : β.s (β.func v + 1) b = β.s (β.func v) b + 1 := by
---         rw [β.a_step (β v) b, β.inv_mul_cancel_eval]
---         simp [b_le_v]
---       rw [this]
---       rw [eq_s_of_lel (τ := τ) h_321a h_L uv_inv_β u_lt_b]
---     · rw [eq_s'_of_lel (τ := τ) h_321a h_L uv_inv_β b_le_v]
---   · intro mem_ramp
---     rcases mem_ramp with ⟨l, ⟨hm,hn⟩⟩
-
---     have : β.s' b l ≥ 1 := by
---       suffices τ.s' b (τ u) > 0 by linarith
---       suffices (τ.nw (τ u) b).Nonempty by
---         unfold AspPerm.s'
---         simp [this]
---       use u; simp [u_lt_b]
---     have nw_wit : s'_witness β l b := find_s'_witness this
---     let u' := nw_wit.u
-
---     have : β.s l b ≥ 1 := by
---       have : τ.s (τ.func v) b ≥ 0 := τ.s_nonneg (τ.func v) b
---       linarith [hm, this]
---     have se_wit : s_witness β l b := find_s_witness this
---     let v' := se_wit.v
-
---     have u'v'_inv : ⟨u', v'⟩ ∈ inv_set β := inv_of_quadrants nw_wit.mem_nw se_wit.mem_se
-
---     have : τ.s (τ v) b ≤ τ.s (τ v') b := by
---       suffices τ.s (τ v) b + 1 ≤ τ.s (τ v') b + 1 by linarith
---       calc
---         τ.s (τ v) b + 1 ≤ β.s l b := hm
---         _ = β.s (β v') b + 1 := by
---           exact se_wit.s_val
---         _ = τ.s (τ v') b + 1 := by
---           have := eq_s_of_lel (τ := τ) h_321a h_L u'v'_inv nw_wit.mem_nw.1
---           linarith
-
---     have v_le_v' : v ≤ v' := by exact (s_inc_on_snks h_321a
---       (snk_of_inv uv_inv) b_le_v (snk_of_inv <| h_L u'v'_inv) se_wit.mem_se.1).mpr this
-
---     have : τ.s' b (τ u) ≤ τ.s' b (τ u') := by
---       calc
---         τ.s' b (τ u) ≤ β.s' b l := hn
---         _ = β.s' b (β u') := by exact nw_wit.s'_val
---         _ = τ.s' b (τ u') := by
---           exact eq_s'_of_lel (τ := τ) h_321a h_L u'v'_inv se_wit.mem_se.1
-
---     have u'_le_u : u' ≤ u := by exact (s'_dec_on_srcs h_321a
---       (src_of_inv <| h_L u'v'_inv) nw_wit.mem_nw.1 (src_of_inv uv_inv) u_lt_b).mpr this
---     have nest : ⟨u, v⟩ ≼ ⟨u', v'⟩ := by
---       constructor <;> assumption
---     exact (inv_of_lel_iff (τ := τ) h_321a h_L u'v'_inv nest).mpr uv_inv
-
-
 
 section factorization
 variable {α : AspPerm} (h_R : α ≤R τ) (h_χ : τ.χ = α.χ + β.χ)
@@ -1626,14 +1537,21 @@ theorem dprod_eq_iff : τ = α ⋆ β
     ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β
     ∧ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)
   := by
-  rw [τ.eq_star_iff]
+  -- rw [τ.eq_star_iff]
   constructor
   · intro dprod
-    have h_χ : α.χ + β.χ = τ.χ := AspPerm.chi_eq_of_drop_eq dprod
+    have h_χ : α.χ + β.χ = τ.χ := by
+      rw [dprod]
+      exact Eq.symm <| AspPerm.chi_star α β
     apply And.intro h_χ
-    have h_R : α ≤R τ := Submodular.ler_of_dprod dprod
-    have h_L : β ≤L τ := Submodular.lel_of_dprod dprod
-    have : τ ≤ α ⋆ β := (τ.le_star_iff α β).mpr dprod.1
+    have h_R : α ≤R τ := by
+      rw [dprod]
+      exact Submodular.ler_of_dprod α β
+    have h_L : β ≤L τ := by
+      rw [dprod]
+      exact Submodular.lel_of_dprod α β
+    have : τ ≤ α ⋆ β := by
+      rw [dprod]
     have subset := (dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)).mp this
     constructor
     · apply subset.antisymm
@@ -1642,8 +1560,7 @@ theorem dprod_eq_iff : τ = α ⋆ β
       · exact (τ.sr_subset α) h_R h_sr
       · exact h_L h_β
     · rw [← dprod_le_iff_isolated h_321a h_L h_R (Eq.symm h_χ) ]
-      rw [τ.ge_star_iff]
-      exact dprod.2
+      rw [dprod]
   · rintro ⟨h_χ, ⟨h_union, h_isol⟩⟩
     have h_L : β ≤L τ := by
       intro x hx
@@ -1659,6 +1576,7 @@ theorem dprod_eq_iff : τ = α ⋆ β
       rw [← this]
       rw [h_union]
       exact Or.inl hx
+    rw [AspPerm.eq_star_iff]
     constructor
     · rw [← τ.le_star_iff]
       rw [dprod_ge_iff_union h_321a h_L h_R (Eq.symm h_χ)]
@@ -1669,4 +1587,231 @@ theorem dprod_eq_iff : τ = α ⋆ β
 end factorization
 end fixed_321a_and_lel
 end fixed_321a
+
+section Tableaux
+
+noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
+  List.foldr AspPerm.star AspPerm.id L
+
+def HeckeFactorization (τ : AspPerm) : Type :=
+  {P : List AspPerm //
+    DProd P = τ}
+
+def listUnion {α : Type} : List (Set α) → Set α
+  | [] => ∅
+  | head :: tail => head ∪ listUnion tail
+
+def IsLayering : List (Set (ℤ × ℤ)) → Prop
+  | [] => True
+  | head :: tail =>
+      IsLayering tail ∧
+      ∀ p ∈ head, ∀ q ∈ listUnion tail, p ≼ q → p = q
+
+def Layering : Type :=
+  {A : List (Set (ℤ × ℤ)) // IsLayering A}
+
+def SVT_Layering (τ : AspPerm) : Type :=
+  {L : List (Set (ℤ × ℤ)) // IsLayering L ∧ listUnion L = inv_set τ}
+
+lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
+  DProd (α :: Q) = α ⋆ DProd Q := by
+  unfold DProd
+  rw [List.foldr_cons]
+
+def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ))
+  | [] => []
+  | α :: L =>
+    (DProd (α :: L)).sr α '' (inv_set α) :: LSet_of_LPerm L
+
+lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
+  (A : HeckeFactorization τ) :
+  IsLayering (LSet_of_LPerm A.val)
+  ∧ listUnion (LSet_of_LPerm A.val) = inv_set τ
+  := by
+  rcases A with ⟨AL, dprodA⟩
+  induction AL generalizing τ with
+  | nil =>
+    constructor
+    · constructor
+    · have : τ = AspPerm.id := by
+        rw [← dprodA]
+        simp
+      dsimp [LSet_of_LPerm, listUnion]
+      apply Eq.symm
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      rintro ⟨u,v⟩ huv
+      rw [this] at huv
+      obtain ⟨u_lt_v, iduv⟩ := huv
+      dsimp [AspPerm.id] at iduv
+      omega
+  | cons α L ih =>
+    let β := DProd L
+    have hab : α ⋆ β = τ := by
+      rw [DProd_cons] at dprodA
+      convert dprodA
+    have h_L : β ≤L τ := by
+      rw [← hab]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    specialize ih h_321a_β (by rfl)
+    obtain ⟨ih_layering, ih_union⟩ := ih
+    have τ_eq : α ⋆ β = τ := by
+      rw [← dprodA, ← DProd_cons]
+    have hboxes := ((dprod_eq_iff h_321a).mp (Eq.symm τ_eq)).2
+    obtain ⟨box_union, box_isol⟩ := hboxes
+    constructor
+    · constructor
+      · exact ih_layering
+      · intro p hp q hq hpq
+        rw [ih_union] at hq
+        rw [dprodA] at hp
+        have hp' : p ∈ inv_set β := by
+          apply (inv_of_lel_iff h_321a h_L hq hpq).mpr
+          rw [box_union]
+          exact Or.inl hp
+        have hq' : q ∈ τ.sr α '' (inv_set α) := by
+          have h_R : α ≤R τ := by
+            rw [← τ_eq]
+            exact Submodular.ler_of_dprod α β
+          exact (sr_inv_of_ler_iff h_321a h_R hp hpq).mpr (h_L hq)
+        exact box_isol p ⟨hp, hp'⟩ q ⟨hq', hq⟩ hpq
+    · rw [ box_union ]
+      dsimp [listUnion, LSet_of_LPerm]
+      congr
+
+def SVTL_of_HF {τ : AspPerm} (h_321a : is_321a τ)
+  (A : HeckeFactorization τ) : SVT_Layering τ :=
+  ⟨LSet_of_LPerm A.val, LSet_helper h_321a A⟩
+
+-- noncomputable def heckeFactorization_to_SVT_aux
+--     (τ : AspPerm) (h_321a : is_321a τ) (P : List AspPerm)
+--     (hP : List.foldl AspPerm.star AspPerm.id P = τ) : SVT_Layering τ := by
+--   induction P generalizing τ with
+--   | nil =>
+--       refine ⟨[inv_set τ], ?_⟩
+--       constructor
+--       · constructor
+--         · trivial
+--         · intro p hp q hq
+--           simp [listUnion] at hq
+--       · simp [listUnion]
+--   | cons α Q ih =>
+--       let β : AspPerm := List.foldl AspPerm.star AspPerm.id Q
+--       have hτ : τ = α ⋆ β := by
+--         calc
+--           τ = List.foldl AspPerm.star AspPerm.id (α :: Q) := hP.symm
+--           _ = α ⋆ β := by simpa [β] using foldl_star_eq_head_star_foldl α Q
+--       have dprod : τ.eq_dprod α β := (τ.eq_star_iff).mp hτ
+--       have h_L : β ≤L τ := Submodular.lel_of_dprod dprod
+--       have h_R : α ≤R τ := Submodular.ler_of_dprod dprod
+--       have hβ_321a : is_321a β := is_321a_of_lel (τ := τ) (β := β) h_321a h_L
+--       have hQ : List.foldl AspPerm.star AspPerm.id Q = β := rfl
+--       let Lβ : SVT_Layering β := ih β hβ_321a hQ
+--       let A : Set (ℤ × ℤ) := (τ.sr α) '' (inv_set α) \ inv_set β
+--       refine ⟨A :: Lβ.1, ?_⟩
+--       constructor
+--       · constructor
+--         · exact Lβ.2.1
+--         · intro p hp q hq hpq
+--           have p_sr : p ∈ (τ.sr α) '' (inv_set α) := hp.1
+--           have p_not_beta : p ∉ inv_set β := hp.2
+--           have q_beta : q ∈ inv_set β := by simpa [Lβ.2.2] using hq
+--           have p_tau : p ∈ inv_set τ := (τ.sr_subset α) h_R p_sr
+--           rcases p with ⟨u', v'⟩
+--           rcases q with ⟨u, v⟩
+--           have p_beta : ⟨u', v'⟩ ∈ inv_set β :=
+--             (inv_of_lel_iff (τ := τ) (β := β) (h_321a := h_321a) (h_L := h_L)
+--               (uv_inv := q_beta) (nested := hpq)).mpr p_tau
+--           exact (p_not_beta p_beta).elim
+--       · ext x
+--         constructor
+--         · intro hx
+--           rcases hx with (hxA | hxL)
+--           · exact (τ.sr_subset α) h_R hxA.1
+--           · exact h_L (by simpa [Lβ.2.2] using hxL)
+--         · intro hxτ
+--           by_cases hxβ : x ∈ inv_set β
+--           · right
+--             simpa [Lβ.2.2] using hxβ
+--           · left
+--             have h_union :
+--                 inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β :=
+--               (dprod_eq_iff (τ := τ) (α := α) (β := β) h_321a).mp hτ |>.2.1
+--             have hxU : x ∈ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+--               simpa [h_union] using hxτ
+--             rcases hxU with (hxsr | hxβ')
+--             · exact ⟨hxsr, hxβ⟩
+--             · exact (hxβ hxβ').elim
+
+-- noncomputable def HeckeFactorization.toSVT_Layering
+--     {τ : AspPerm} (h_321a : is_321a τ) (hfac : HeckeFactorization τ) : SVT_Layering τ :=
+--   heckeFactorization_to_SVT_aux τ h_321a hfac.1 hfac.2
+
+-- def ShiftedHeckeFactorization (τ : AspPerm) (shifts : List ℤ) : Type :=
+--   {P : List AspPerm //
+--     List.foldl AspPerm.star AspPerm.id P = τ ∧ List.map AspPerm.χ P = shifts}
+
+-- noncomputable def permOfInvSet (I : Set (ℤ × ℤ)) (hI : AspSet_prop I) (χ : ℤ) : AspPerm :=
+--   (⟨I, hI⟩ : AspSet).toAspPerm χ
+
+-- @[simp] lemma inv_set_permOfInvSet (I : Set (ℤ × ℤ)) (hI : AspSet_prop I) (χ : ℤ) :
+--     inv_set (permOfInvSet I hI χ) = I := by
+--   simpa [permOfInvSet] using (AspSet.invSet_of_toAspPerm (asps := ⟨I, hI⟩) χ)
+
+-- @[simp] lemma chi_permOfInvSet (I : Set (ℤ × ℤ)) (hI : AspSet_prop I) (χ : ℤ) :
+--     (permOfInvSet I hI χ).χ = χ := by
+--   simpa [permOfInvSet] using (AspSet.chi_of_toAspPerm (asps := ⟨I, hI⟩) χ)
+
+-- noncomputable def factorsOfLayering :
+--     (layers : List (Set (ℤ × ℤ))) →
+--     (shifts : List ℤ) →
+--     (hAsp : ∀ A ∈ layers, AspSet_prop A) →
+--     List AspPerm
+--   | [], _, _ => []
+--   | _ :: _, [], _ => []
+--   | A :: L, c :: cs, hAsp =>
+--       permOfInvSet A (hAsp A (by simp)) c ::
+--       factorsOfLayering L cs (by
+--         intro B hB
+--         exact hAsp B (by simp [hB]))
+
+-- lemma map_chi_factorsOfLayering :
+--     ∀ (layers : List (Set (ℤ × ℤ))) (shifts : List ℤ)
+--       (hAsp : ∀ A ∈ layers, AspSet_prop A),
+--       shifts.length = layers.length →
+--       List.map AspPerm.χ (factorsOfLayering layers shifts hAsp) = shifts
+--   | [], shifts, hAsp, hlen => by
+--       cases shifts with
+--       | nil => simp [factorsOfLayering]
+--       | cons c cs => cases hlen
+--   | A :: L, shifts, hAsp, hlen => by
+--       cases shifts with
+--       | nil => cases hlen
+--       | cons c cs =>
+--           simp [factorsOfLayering, map_chi_factorsOfLayering L cs
+--             (by intro B hB; exact hAsp B (by simp [hB])) (Nat.succ.inj hlen)]
+
+-- noncomputable def SVT_Layering.toShiftedHeckeFactorization
+--     {τ : AspPerm} (L : SVT_Layering τ) (shifts : List ℤ)
+--     (hAsp : ∀ A ∈ L.1, AspSet_prop A)
+--     (hlen : shifts.length = L.1.length)
+--     (hfold : List.foldl AspPerm.star AspPerm.id (factorsOfLayering L.1 shifts hAsp) = τ) :
+--     ShiftedHeckeFactorization τ shifts := by
+--   refine ⟨factorsOfLayering L.1 shifts hAsp, ?_⟩
+--   constructor
+--   · exact hfold
+--   · exact map_chi_factorsOfLayering L.1 shifts hAsp hlen
+
+-- noncomputable def SVT_Layering.toHeckeFactorization
+--     {τ : AspPerm} (L : SVT_Layering τ) (shifts : List ℤ)
+--     (hAsp : ∀ A ∈ L.1, AspSet_prop A)
+--     (hlen : shifts.length = L.1.length)
+--     (hfold : List.foldl AspPerm.star AspPerm.id (factorsOfLayering L.1 shifts hAsp) = τ) :
+--     HeckeFactorization τ :=
+--   ⟨(SVT_Layering.toShiftedHeckeFactorization L shifts hAsp hlen hfold).1,
+--     (SVT_Layering.toShiftedHeckeFactorization L shifts hAsp hlen hfold).2.1⟩
+
+
+
+end Tableaux
 end ASP321a

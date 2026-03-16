@@ -227,11 +227,11 @@ noncomputable def inv (τ : AspPerm) : AspPerm where
     have := Function.leftInverse_invFun τ.injective n
     simp [this, mul_comm]
 
-def one : AspPerm where
-  func := id
+def id : AspPerm where
+  func := _root_.id
   bijective := ⟨Function.injective_id, Function.surjective_id⟩
   asp := by
-    have : {n:ℤ | n * id n < 0} = ∅ := by
+    have : {n:ℤ | n * _root_.id n < 0} = ∅ := by
       ext n; simp
       exact mul_self_nonneg n
     unfold is_asp; rw [this]
@@ -240,7 +240,7 @@ def one : AspPerm where
 noncomputable instance : Group AspPerm where
   mul := mul
   inv := inv
-  one := one
+  one := id
   mul_assoc := by intros a b c; rfl
   one_mul := by intro a; rfl
   mul_one := by intro a; rfl
@@ -1243,7 +1243,7 @@ def ge_dprod (τ α β : AspPerm) : Prop :=
 def eq_dprod (τ α β : AspPerm) : Prop :=
   τ.le_dprod α β ∧ τ.ge_dprod α β
 
-lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
+lemma chi_ge_of_dprod_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
   α.χ + β.χ ≥ τ.χ := by
   rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
   rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
@@ -1251,7 +1251,7 @@ lemma chi_ge_of_drop_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
   rw [α.s_eq, β.s_eq] at eq
   linarith [τ.s_ge 0 c]
 
-lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
+lemma chi_le_of_dprod_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
   α.χ + β.χ ≤ τ.χ := by
   rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
   rcases h_le 0 c with ⟨l, hl⟩
@@ -1260,7 +1260,7 @@ lemma chi_le_of_drop_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
 
 lemma chi_eq_of_drop_eq {τ α β : AspPerm} (h_eq : τ.eq_dprod α β) :
   α.χ + β.χ = τ.χ :=
-  Int.le_antisymm (chi_le_of_drop_le h_eq.2) (chi_ge_of_drop_ge h_eq.1)
+  Int.le_antisymm (chi_le_of_dprod_le h_eq.2) (chi_ge_of_dprod_ge h_eq.1)
 
 lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
   τ⁻¹.eq_dprod (β⁻¹) (α⁻¹) := by

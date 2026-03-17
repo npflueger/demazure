@@ -1841,16 +1841,16 @@ property := by
     rw [← hLA] at hp
     exact L.sep p q hp.1 hq.2 hpq
 
-def link_to_dprod (χa χb : ℤ) :
+def dprod_to_link (χa χb : ℤ) :
   { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} → Link τ :=
   fun x => Link_of_dprod h_321a x.property.1
 
-noncomputable def dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
+noncomputable def link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
   Link τ → { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} :=
   fun L => dprod_of_link h_321a L hχ
 
-theorem link_to_dprod_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.LeftInverse (link_to_dprod h_321a χa χb) (dprod_to_link h_321a hχ) := by
+theorem dprod_to_link_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
+  Function.LeftInverse (dprod_to_link h_321a χa χb) (link_to_dprod h_321a hχ) := by
   intro L
   let α := ((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹
   let β := (B_AspSet_of_link h_321a L).toAspPerm χb
@@ -1859,14 +1859,14 @@ theorem link_to_dprod_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
   have hLA : L.A = τ.sr α '' inv_set α.func := by
     simpa [α] using A_eq_sr_of_A_AspSet_of_link h_321a L χa
   refine Link.ext ?_ ?_
-  · unfold link_to_dprod dprod_to_link
+  · unfold dprod_to_link link_to_dprod
     simpa [dprod_of_link, α, β] using hLA.symm
-  · unfold link_to_dprod dprod_to_link
+  · unfold dprod_to_link link_to_dprod
     change inv_set ((B_AspSet_of_link h_321a L).toAspPerm χb).func = L.B
     exact hLB.symm
 
-theorem dprod_to_link_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.RightInverse (link_to_dprod h_321a χa χb) (dprod_to_link h_321a hχ) := by
+theorem link_to_dprod_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
+  Function.RightInverse (dprod_to_link h_321a χa χb) (link_to_dprod h_321a hχ) := by
   intro x
   rcases x with ⟨⟨α, β⟩, ⟨h_dprod, h_χa, h_χb⟩⟩
   apply Subtype.ext
@@ -1898,25 +1898,25 @@ theorem dprod_to_link_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
         (B_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).chi_of_toAspPerm χb, h_χb]
     exact AspPerm.unique_from_inv_and_χ _ _ hβinv hβchi
 
-theorem bijective_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.Bijective (link_to_dprod h_321a χa χb) := by
-  constructor
-  · intro x y hxy
-    have := congrArg (dprod_to_link h_321a hχ) hxy
-    simpa [dprod_to_link_link_to_dprod h_321a hχ x,
-      dprod_to_link_link_to_dprod h_321a hχ y] using this
-  · intro L
-    exact ⟨dprod_to_link h_321a hχ L, link_to_dprod_dprod_to_link h_321a hχ L⟩
-
 theorem bijective_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.Bijective (dprod_to_link h_321a hχ) := by
+  Function.Bijective (dprod_to_link h_321a χa χb) := by
   constructor
   · intro x y hxy
-    have := congrArg (link_to_dprod h_321a χa χb) hxy
+    have := congrArg (link_to_dprod h_321a hχ) hxy
     simpa [link_to_dprod_dprod_to_link h_321a hχ x,
       link_to_dprod_dprod_to_link h_321a hχ y] using this
+  · intro L
+    exact ⟨link_to_dprod h_321a hχ L, dprod_to_link_link_to_dprod h_321a hχ L⟩
+
+theorem bijective_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
+  Function.Bijective (link_to_dprod h_321a hχ) := by
+  constructor
+  · intro x y hxy
+    have := congrArg (dprod_to_link h_321a χa χb) hxy
+    simpa [dprod_to_link_link_to_dprod h_321a hχ x,
+      dprod_to_link_link_to_dprod h_321a hχ y] using this
   · intro x
-    exact ⟨link_to_dprod h_321a χa χb x, dprod_to_link_link_to_dprod h_321a hχ x⟩
+    exact ⟨dprod_to_link h_321a χa χb x, link_to_dprod_dprod_to_link h_321a hχ x⟩
 
 
 end Link

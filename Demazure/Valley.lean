@@ -16,21 +16,19 @@ variable (v : Valley)
 
 noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m)
 
+@[simp] lemma mem_floor (m n : ℤ) : n ∈ v.floor m ↔ v.f n ≤ m := by
+  simp [Valley.floor]
+
 lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Nonempty := by
-  use v.f n; unfold Valley.floor;
-  simp only [Finset.mem_image, Set.Finite.mem_toFinset]
-  use n
-  constructor
-  · exact le_refl (v.f n)
-  · rfl
+  refine ⟨v.f n, ?_⟩
+  exact Finset.mem_image.mpr ⟨n, by simp, rfl⟩
 
 noncomputable def min : ℤ := Finset.min' (Finset.image v.f (v.floor (v.f 0)))
   (v.floor_image_nonempty 0)
 
 lemma min_mem : ∃ a ∈ {n | v.f n ≤ v.f 0}, v.f a = v.min := by
-    have := Finset.min'_mem (Finset.image v.f (v.floor (v.f 0))) (v.floor_image_nonempty 0)
-    unfold Valley.floor at this
-    simpa only [Finset.mem_image, Set.Finite.mem_toFinset] using this
+  simpa [Finset.mem_image] using
+    Finset.min'_mem (Finset.image v.f (v.floor (v.f 0))) (v.floor_image_nonempty 0)
 
 lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
   intro n
@@ -39,20 +37,14 @@ lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
     have := le_trans (hm.1) (le_of_lt h)
     rwa [hm.2] at this
   have mem_floor : n ∈ v.floor (v.f 0) := by
-    unfold Valley.floor
-    simp only [Set.Finite.mem_toFinset]
-    exact le_of_not_gt h
+    simpa using le_of_not_gt h
   have mem_image_floor : v.f n ∈ Finset.image v.f (v.floor (v.f 0)) := by
-    simp only [Finset.mem_image]
-    use n
+    exact Finset.mem_image.mpr ⟨n, mem_floor, rfl⟩
   exact Finset.min'_le (Finset.image v.f (v.floor (v.f 0))) (v.f n) mem_image_floor
 
 lemma argmin_set_nonempty : (v.floor v.min).Nonempty := by
-  rcases v.min_mem with ⟨m, hm⟩
-  use m
-  unfold Valley.floor
-  simp only [Set.Finite.mem_toFinset]
-  exact le_of_eq hm.2
+  rcases v.min_mem with ⟨m, -, hm⟩
+  exact ⟨m, by simp [hm]⟩
 
 /-- The *maximum* preimage of the minimum value of f. -/
 noncomputable def M : ℤ := Finset.max' (v.floor v.min) v.argmin_set_nonempty
@@ -61,8 +53,7 @@ lemma f_M : v.f v.M = v.min := by
   have ge : v.f v.M ≥ v.min := v.min_spec v.M
   have le : v.f v.M ≤ v.min := by
     have : v.M ∈ v.floor v.min := Finset.max'_mem (v.floor v.min) v.argmin_set_nonempty
-    unfold Valley.floor at this
-    simpa [Set.Finite.mem_toFinset] using this
+    simpa using this
   exact le_antisymm le ge
 
 lemma M_spec : ∀ n : ℤ, v.f n ≥ v.f v.M ∧ (n > v.M → v.f n > v.f v.M) := by
@@ -73,9 +64,7 @@ lemma M_spec : ∀ n : ℤ, v.f n ≥ v.f v.M ∧ (n > v.M → v.f n > v.f v.M) 
   · intro n_gt_vM
     contrapose! n_gt_vM with fn_le_fM
     have : n ∈ v.floor v.min := by
-      unfold Valley.floor
-      simp only [Set.Finite.mem_toFinset]
-      rwa [v.f_M] at fn_le_fM
+      simpa [v.f_M] using fn_le_fM
     simpa using Finset.le_max' (v.floor v.min) n this
 
 def shift_down (k : ℤ) : Valley where
@@ -93,7 +82,6 @@ def shift_down (k : ℤ) : Valley where
 
 lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
   let v' := v.shift_down k
-  -- let M' := (v.shift_down k).M
   suffices v.M = v'.M by rw [this]
   have ge : v.f v'.M ≥ v.f v.M := (v.M_spec v'.M).1
   have le : v'.f v'.M ≤ v'.f v.M := by

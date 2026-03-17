@@ -17,10 +17,8 @@ lemma sub_card_eq_sub_card_diff (S T : Finset ℤ) :
 
 lemma card_filter_helper (S : Finset ℤ) (f : ℤ → ℤ) (c : ℤ) :
   (S.filter (f · ≥ c)).card + (S.filter (f · < c)).card = S.card := by
-  have h : (S.filter (f · ≥ c)).card + (S.filter (fun x => ¬ f x ≥ c)).card = S.card :=
-    Finset.filter_card_add_filter_neg_card_eq_card _
-  simp only [not_le] at h
-  omega
+  simpa [not_le] using
+    (Finset.filter_card_add_filter_neg_card_eq_card (s := S) (p := fun x => f x ≥ c))
 
 def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
     {S : Set (ℤ × ℤ)} (mem : ⟨m, n⟩ ∈ S) (nmem : ⟨1, 1⟩ ∉ S) :

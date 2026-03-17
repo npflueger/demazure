@@ -1594,8 +1594,11 @@ variable {τ : AspPerm}
 structure Link (τ : AspPerm) where
   A : Set (ℤ × ℤ)
   B : Set (ℤ × ℤ)
+  χa : ℤ
+  χb : ℤ
   union_eq : A ∪ B = inv_set τ
   sep : ∀ p ∈ A, ∀ q ∈ B, p ≼ q → p = q
+  shift : τ.χ = χa + χb
 
 lemma Link.B_subset (L : Link τ) : L.B ⊆ inv_set τ := by
   rw [← L.union_eq]
@@ -1613,20 +1616,26 @@ lemma Link.mem_A_of_mem_inv_not_mem_B (L : Link τ) {p : ℤ × ℤ}
   · exact (hpB hpB').elim
 
 theorem Link.ext {L₁ L₂ : Link τ}
-  (hA : L₁.A = L₂.A) (hB : L₁.B = L₂.B) : L₁ = L₂ := by
+  (hA : L₁.A = L₂.A) (hB : L₁.B = L₂.B) (hχ : L₁.χa = L₂.χa) : L₁ = L₂ := by
+  -- Note: I only include a χa hypothesis here, for convenience,
+  -- but this is asymmetrical as a result.
   cases L₁
   cases L₂
   cases hA
   cases hB
+  cases hχ
   simp
+  omega
 
 variable (h_321a : is_321a τ)
 include h_321a
 
-def Link_of_dprod {α β : AspPerm}
+noncomputable def Link_of_dprod {α β : AspPerm}
   (dprod : α ⋆ β = τ) : Link τ where
   A := (τ.sr α) '' inv_set α
   B := inv_set β
+  χa := α.χ
+  χb := β.χ
   union_eq := by
     have hboxes := ((dprod_eq_iff (τ := τ) (α := α) (β := β) h_321a).mp dprod.symm).2
     exact hboxes.1.symm
@@ -1645,6 +1654,9 @@ def Link_of_dprod {α β : AspPerm}
       exact (sr_inv_of_ler_iff (τ := τ) h_321a h_R hp hpq).mpr (h_L hq)
     have hboxes := ((dprod_eq_iff (τ := τ) (α := α) (β := β) h_321a).mp dprod.symm).2
     exact hboxes.2 p ⟨hp, hp'⟩ q ⟨hq', hq⟩ hpq
+  shift := by
+    rw [← dprod]
+    exact AspPerm.chi_star α β
 
 lemma B_AspSet_prop_of_Link (L : Link τ) :
   AspSet_prop L.B where
@@ -1702,6 +1714,8 @@ lemma B_AspSet_prop_of_Link (L : Link τ) :
 def reverse_link (L : Link τ) : Link τ⁻¹ where
   A := τ.rev_map '' L.B
   B := τ.rev_map '' L.A
+  χa := - L.χb
+  χb := - L.χa
   union_eq := by
     ext ⟨u, v⟩
     constructor
@@ -1748,6 +1762,9 @@ def reverse_link (L : Link τ) : Link τ⁻¹ where
       exact ⟨hqup, hvpv⟩
     have hEq : (u', v') = (u, v) := L.sep (u', v') hu'v' (u, v) huv hqp
     simpa [AspPerm.rev_map] using congrArg τ.rev_map hEq.symm
+  shift := by
+    rw [τ.χ_dual, L.shift]
+    omega
 
 
 lemma A_AspSet_prop_of_Link (L : Link τ) :
@@ -1764,16 +1781,16 @@ def B_AspSet_of_link (L : Link τ) : AspSet where
   I := L.B
   prop := B_AspSet_prop_of_Link h_321a L
 
-@[simp] lemma invSet_B_AspSet_of_link (L : Link τ) (χb : ℤ) :
-  inv_set ((B_AspSet_of_link h_321a L).toAspPerm χb).func = L.B :=
-  (B_AspSet_of_link h_321a L).invSet_of_toAspPerm χb
+@[simp] lemma invSet_B_AspSet_of_link (L : Link τ) :
+  inv_set ((B_AspSet_of_link h_321a L).toAspPerm L.χb).func = L.B :=
+  (B_AspSet_of_link h_321a L).invSet_of_toAspPerm L.χb
 
-lemma A_eq_sr_of_A_AspSet_of_link (L : Link τ) (χa : ℤ) :
-  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹
+lemma A_eq_sr_of_A_AspSet_of_link (L : Link τ) :
+  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-L.χa))⁻¹
   L.A = τ.sr α '' inv_set α.func := by
-  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹
+  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-L.χa))⁻¹
   have hAinv : inv_set α⁻¹.func = τ.rev_map '' L.A := by
-    simpa [α] using (A_AspSet_of_link h_321a L).invSet_of_toAspPerm (-χa)
+    simpa [α] using (A_AspSet_of_link h_321a L).invSet_of_toAspPerm (-L.χa)
   ext ⟨u, v⟩
   constructor
   · intro huv
@@ -1809,30 +1826,35 @@ lemma rev_A_eq_inv_inv_of_Link_of_dprod {α β : AspPerm} (dprod : α ⋆ β = �
     refine ⟨⟨τ⁻¹ v, τ⁻¹ u⟩, hsr, ?_⟩
     simp [AspPerm.rev_map]
 
-noncomputable def dprod_of_link (L : Link τ) {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} where
-val := ⟨((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹,
-  (B_AspSet_of_link h_321a L).toAspPerm χb⟩
-property := by
-  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹
-  let β := (B_AspSet_of_link h_321a L).toAspPerm χb
-  have h_χa : α.χ = χa := by
-    have := (A_AspSet_of_link h_321a L).chi_of_toAspPerm (-χa)
-    dsimp [α]
-    rw [AspPerm.χ_dual, this]
+noncomputable def dprod_of_link (L : Link τ) : AspPerm × AspPerm :=
+   ⟨((A_AspSet_of_link h_321a L).toAspPerm (-L.χa))⁻¹,
+  (B_AspSet_of_link h_321a L).toAspPerm L.χb⟩
+
+
+lemma dprod_of_link_spec (L : Link τ) :
+  let α := (dprod_of_link h_321a L).1
+  let β := (dprod_of_link h_321a L).2
+  α ⋆ β = τ ∧ α.χ = L.χa ∧ β.χ = L.χb
+  := by
+  intro α β
+
+  have h_χa : α.χ = L.χa := by
+    have := (A_AspSet_of_link h_321a L).chi_of_toAspPerm (-L.χa)
+    subst α
+    unfold dprod_of_link
+    rw [AspPerm.χ_dual]
     omega
-  have h_χb : β.χ = χb := (B_AspSet_of_link h_321a L).chi_of_toAspPerm χb
+  have h_χb : β.χ = L.χb := (B_AspSet_of_link h_321a L).chi_of_toAspPerm L.χb
   apply And.intro _ ⟨h_χa, h_χb⟩
   change α ⋆ β = τ
   apply Eq.symm
   apply (dprod_eq_iff (τ := τ) (α := α) (β := β) h_321a).mpr
   constructor
-  · rw [← hχ]
-    congr
+  · rw [h_χa, h_χb, ← L.shift]
   have hLB : L.B = inv_set β.func := by
-    simp [β]
+    simp [β, dprod_of_link]
   have hLA : L.A = τ.sr α '' inv_set α.func := by
-    simpa [α] using A_eq_sr_of_A_AspSet_of_link h_321a L χa
+    simpa [α] using A_eq_sr_of_A_AspSet_of_link h_321a L
   constructor
   · rw [← L.union_eq]
     congr
@@ -1841,82 +1863,96 @@ property := by
     rw [← hLA] at hp
     exact L.sep p hp.1 q hq.2 hpq
 
-def dprod_to_link (χa χb : ℤ) :
-  { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} → Link τ :=
-  fun x => Link_of_dprod h_321a x.property.1
+noncomputable def dprod_to_link :
+  {⟨α, β⟩ : AspPerm × AspPerm | α ⋆ β = τ } → Link τ :=
+  fun x => Link_of_dprod h_321a x.property
 
-noncomputable def link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Link τ → { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} :=
-  fun L => dprod_of_link h_321a L hχ
+noncomputable def link_to_dprod :
+  Link τ → { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ } :=
+  fun L => ⟨dprod_of_link h_321a L, (dprod_of_link_spec h_321a L).1⟩
 
-theorem dprod_to_link_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.LeftInverse (dprod_to_link h_321a χa χb) (link_to_dprod h_321a hχ) := by
+
+theorem dprod_to_link_link_to_dprod :
+  Function.LeftInverse (dprod_to_link h_321a) (link_to_dprod h_321a) := by
   intro L
-  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-χa))⁻¹
-  let β := (B_AspSet_of_link h_321a L).toAspPerm χb
+  let α := ((A_AspSet_of_link h_321a L).toAspPerm (-L.χa))⁻¹
+  let β := (B_AspSet_of_link h_321a L).toAspPerm L.χb
   have hLB : L.B = inv_set β.func := by
     simp [β]
   have hLA : L.A = τ.sr α '' inv_set α.func := by
-    simpa [α] using A_eq_sr_of_A_AspSet_of_link h_321a L χa
-  refine Link.ext ?_ ?_
+    simpa [α] using A_eq_sr_of_A_AspSet_of_link h_321a L
+  refine Link.ext ?_ ?_ ?_
   · unfold dprod_to_link link_to_dprod
     simpa [dprod_of_link, α, β] using hLA.symm
   · unfold dprod_to_link link_to_dprod
-    change inv_set ((B_AspSet_of_link h_321a L).toAspPerm χb).func = L.B
+    change inv_set ((B_AspSet_of_link h_321a L).toAspPerm L.χb).func = L.B
     exact hLB.symm
+  · dsimp [dprod_to_link, Link_of_dprod, link_to_dprod]
+    exact (dprod_of_link_spec h_321a L).2.1
 
-theorem link_to_dprod_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.RightInverse (dprod_to_link h_321a χa χb) (link_to_dprod h_321a hχ) := by
+theorem link_to_dprod_dprod_to_link :
+  Function.RightInverse (dprod_to_link h_321a) (link_to_dprod h_321a) := by
   intro x
-  rcases x with ⟨⟨α, β⟩, ⟨h_dprod, h_χa, h_χb⟩⟩
+  let α := x.1.1
+  let β := x.1.2
+  have h_dprod : α ⋆ β = τ := x.2
+  let L := dprod_to_link h_321a ⟨⟨α, β⟩, h_dprod⟩
   apply Subtype.ext
+  suffices (link_to_dprod h_321a L).1 = ⟨α, β⟩ by
+    simpa using this
+  dsimp [link_to_dprod]
   apply Prod.ext
-  · let α' := (((A_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).toAspPerm (-χa)))⁻¹
-    have hA : τ.rev_map '' (Link_of_dprod h_321a h_dprod).A = inv_set α⁻¹.func :=
-      rev_A_eq_inv_inv_of_Link_of_dprod h_321a h_dprod
-    have hαinv : inv_set α'⁻¹.func = inv_set α⁻¹.func := by
-      calc
-        inv_set α'⁻¹.func = τ.rev_map '' (Link_of_dprod h_321a h_dprod).A := by
-          simpa [α'] using
-            (A_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).invSet_of_toAspPerm (-χa)
-        _ = inv_set α⁻¹.func := hA
-    have hαchi : α'⁻¹.χ = α⁻¹.χ := by
-      have h1 : α'⁻¹.χ = -χa := by
-        simpa [α'] using
-          (A_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).chi_of_toAspPerm (-χa)
-      rw [h1, AspPerm.χ_dual, h_χa]
-    have : α'⁻¹ = α⁻¹ := AspPerm.unique_from_inv_and_χ _ _ hαinv hαchi
-    simpa [α'] using congrArg Inv.inv this
-  · let β' := (B_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).toAspPerm χb
-    have hβinv : inv_set β'.func = inv_set β.func := by
-      calc
-        inv_set β'.func = (Link_of_dprod h_321a h_dprod).B := by
-          simp [β']
-        _ = inv_set β.func := rfl
-    have hβchi : β'.χ = β.χ := by
-      rw [show β'.χ = χb by simpa [β'] using
-        (B_AspSet_of_link h_321a (Link_of_dprod h_321a h_dprod)).chi_of_toAspPerm χb, h_χb]
-    exact AspPerm.unique_from_inv_and_χ _ _ hβinv hβchi
+  · dsimp [dprod_of_link]
+    let asps := (A_AspSet_of_link h_321a L)
+    suffices asps.toAspPerm (-L.χa) = α⁻¹ by
+      rw [this]
+      simp
+    apply AspPerm.unique_from_inv_and_χ
+    · rw [AspSet.invSet_of_toAspPerm]
+      subst asps
+      dsimp [A_AspSet_of_link]
+      subst L
+      simpa [dprod_to_link] using
+        rev_A_eq_inv_inv_of_Link_of_dprod (τ := τ) h_321a h_dprod
+    · rw [AspSet.chi_of_toAspPerm]
+      subst asps L
+      dsimp [dprod_to_link, Link_of_dprod]
+      rw [α.χ_dual]
+  · dsimp [dprod_of_link]
+    let asps := (B_AspSet_of_link h_321a L)
+    suffices asps.toAspPerm L.χb = β by
+      rw [this]
+    apply AspPerm.unique_from_inv_and_χ
+    · rw [AspSet.invSet_of_toAspPerm]
+      subst asps
+      dsimp [B_AspSet_of_link]
+      suffices L.B = inv_set β.func by
+        simpa using this
+      subst L
+      dsimp [dprod_to_link, Link_of_dprod]
+    · rw [AspSet.chi_of_toAspPerm]
+      subst asps L
+      dsimp [dprod_to_link, Link_of_dprod]
 
-theorem bijective_dprod_to_link {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.Bijective (dprod_to_link h_321a χa χb) := by
+theorem bijective_dprod_to_link :
+  Function.Bijective (dprod_to_link h_321a) := by
   constructor
   · intro x y hxy
-    have := congrArg (link_to_dprod h_321a hχ) hxy
-    simpa [link_to_dprod_dprod_to_link h_321a hχ x,
-      link_to_dprod_dprod_to_link h_321a hχ y] using this
+    have := congrArg (link_to_dprod h_321a ) hxy
+    simpa [link_to_dprod_dprod_to_link h_321a x,
+      link_to_dprod_dprod_to_link h_321a y] using this
   · intro L
-    exact ⟨link_to_dprod h_321a hχ L, dprod_to_link_link_to_dprod h_321a hχ L⟩
+    exact ⟨link_to_dprod h_321a L, dprod_to_link_link_to_dprod h_321a L⟩
 
-theorem bijective_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
-  Function.Bijective (link_to_dprod h_321a hχ) := by
+theorem bijective_link_to_dprod :
+  Function.Bijective (link_to_dprod h_321a) := by
   constructor
   · intro x y hxy
-    have := congrArg (dprod_to_link h_321a χa χb) hxy
-    simpa [dprod_to_link_link_to_dprod h_321a hχ x,
-      dprod_to_link_link_to_dprod h_321a hχ y] using this
+    have := congrArg (dprod_to_link h_321a) hxy
+    simpa [dprod_to_link_link_to_dprod h_321a x,
+      dprod_to_link_link_to_dprod h_321a y] using this
   · intro x
-    exact ⟨dprod_to_link h_321a χa χb x, link_to_dprod_dprod_to_link h_321a hχ x⟩
+    exact ⟨dprod_to_link h_321a x, link_to_dprod_dprod_to_link h_321a x⟩
 
 
 end Link
@@ -2021,6 +2057,8 @@ noncomputable def Link_of_SVTL {L : SVT_Layering τ} (hL : L.val ≠ []) :
   Link τ where
   A := (L.val.head hL).1
   B := boxUnion L.val.tail
+  χa := (L.val.head hL).2
+  χb := chiSum L.val.tail
   union_eq := by
     rcases L with ⟨l, hprop⟩
     cases l with
@@ -2037,6 +2075,14 @@ noncomputable def Link_of_SVTL {L : SVT_Layering τ} (hL : L.val ≠ []) :
         exact hL rfl
     | cons head tail =>
         simpa [IsLayering] using hprop.1.2
+  shift := by
+    rcases L with ⟨l, hprop⟩
+    cases l with
+    | nil =>
+        exfalso
+        exact hL rfl
+    | cons head tail =>
+        simpa [chiSum] using hprop.2.2.symm
 
 
 omit h_321a in
@@ -2061,15 +2107,18 @@ noncomputable def HF_of_SVTL_old {τ : AspPerm} (h_321a : is_321a τ) :
     obtain ⟨h_layering', h_sep⟩ := this
     have hAB : A ∪ B = inv_set τ := by
       simpa using h_union
-    let Lnk : Link τ := Link.mk A B hAB h_sep
-    have hLnk : dprod_to_link h_321a χa (chiSum L') (link_to_dprod h_321a h_chi Lnk) = Lnk :=
-      (dprod_to_link_link_to_dprod (τ := τ) h_321a h_chi) Lnk
-    let fac := link_to_dprod h_321a h_chi Lnk
+    let Lnk : Link τ := Link.mk A B χa (chiSum L') hAB h_sep h_chi.symm
+    have hLnk : dprod_to_link h_321a (link_to_dprod h_321a Lnk) = Lnk :=
+      (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+    let fac := link_to_dprod h_321a Lnk
     let α : AspPerm := fac.1.1
     let β : AspPerm := fac.1.2
-    have h_dprod : α ⋆ β = τ := fac.2.1
-    have h_χa : α.χ = χa := fac.2.2.1
-    have h_χb : β.χ = chiSum L' := fac.2.2.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
+    have h_dprod : α ⋆ β = τ := fac.2
+    have h_χa : α.χ = χa := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.1
+    have h_χb : β.χ = chiSum L' := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2
     have h_L : β ≤L τ := by
       rw [← h_dprod]
       exact Submodular.lel_of_dprod α β
@@ -2098,28 +2147,60 @@ noncomputable def HFList_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
       simp [S]
     have hs : IsLayering L' ∧ ∀ p ∈ AT.1, ∀ q ∈ boxUnion L', p ≼ q → p = q := by
       simpa [IsLayering] using h_layering
-    have hχ : AT.2 + chiSum L' = τ.χ := by
-      simpa [chiSum] using h_chi
     let Lnk : Link τ := Link_of_SVTL (τ := τ) (L := S) hS
-    let fac := link_to_dprod h_321a hχ Lnk
+    let fac := link_to_dprod h_321a Lnk
     let α : AspPerm := fac.1.1
     let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
     have h_L : β ≤L τ := by
-      rw [← fac.2.1]
+      rw [← fac.2]
       exact Submodular.lel_of_dprod α β
     have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
-    have hLnk : dprod_to_link h_321a AT.2 (chiSum L') fac = Lnk := by
-      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a hχ) Lnk
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
     have h_layering' : IsLayering L' := hs.1
     have h_unionβ : boxUnion L' = inv_set β := by
       have := congrArg Link.B hLnk
       simpa [S, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
     have h_χβ : chiSum L' = β.χ := by
-      simpa [fac, β] using fac.2.2.2.symm
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
     exact α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ
 termination_by L => L.length
 decreasing_by
   simp_wf
+
+omit h_321a in
+lemma HFList_of_SVTL_cons_unfold {τ : AspPerm} (h_321a : is_321a τ)
+    (AT : Set (ℤ × ℤ) × ℤ) (L' : List (Set (ℤ × ℤ) × ℤ))
+    (h_layering : IsLayering (AT :: L'))
+    (h_union : boxUnion (AT :: L') = inv_set τ)
+    (h_chi : chiSum (AT :: L') = τ.χ) :
+    let S : SVT_Layering τ := ⟨AT :: L', ⟨h_layering, h_union, h_chi⟩⟩
+    let hS : S.val ≠ [] := by
+      simp [S]
+    let hs : IsLayering L' ∧ ∀ p ∈ AT.1, ∀ q ∈ boxUnion L', p ≼ q → p = q := by
+      simpa [IsLayering] using h_layering
+    let Lnk : Link τ := Link_of_SVTL (τ := τ) (L := S) hS
+    let fac := link_to_dprod h_321a Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
+    have h_L : β ≤L τ := by
+      rw [← fac.2]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+    have h_layering' : IsLayering L' := hs.1
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [S, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
+    HFList_of_SVTL h_321a (AT :: L') h_layering h_union h_chi =
+      α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ := by
+  set_option maxRecDepth 4096 in
+    simp [HFList_of_SVTL]
 
 omit h_321a in
 lemma HFList_of_SVTL_spec {τ : AspPerm} (h_321a : is_321a τ) :
@@ -2137,31 +2218,30 @@ lemma HFList_of_SVTL_spec {τ : AspPerm} (h_321a : is_321a τ) :
       simp [S]
     have hs : IsLayering L' ∧ ∀ p ∈ AT.1, ∀ q ∈ boxUnion L', p ≼ q → p = q := by
       simpa [IsLayering] using h_layering
-    have hχ : AT.2 + chiSum L' = τ.χ := by
-      simpa [chiSum] using h_chi
     let Lnk : Link τ := Link_of_SVTL (τ := τ) (L := S) hS
-    let fac := link_to_dprod h_321a hχ Lnk
+    let fac := link_to_dprod h_321a Lnk
     let α : AspPerm := fac.1.1
     let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
     have h_L : β ≤L τ := by
-      rw [← fac.2.1]
+      rw [← fac.2]
       exact Submodular.lel_of_dprod α β
     have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
-    have hLnk : dprod_to_link h_321a AT.2 (chiSum L') fac = Lnk := by
-      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a hχ) Lnk
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
     have h_layering' : IsLayering L' := hs.1
     have h_unionβ : boxUnion L' = inv_set β := by
       have := congrArg Link.B hLnk
       simpa [S, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
     have h_χβ : chiSum L' = β.χ := by
-      simpa [fac, β] using fac.2.2.2.symm
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
     have ih := HFList_of_SVTL_spec h_321a_β L' h_layering' h_unionβ h_χβ
     have hstep :
         HFList_of_SVTL h_321a (AT :: L') h_layering h_union h_chi =
-          α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ := by
-      set_option maxRecDepth 4096 in
-        simp [HFList_of_SVTL, S, Lnk, fac, α, β]
-    rw [hstep, DProd_cons, ih, fac.2.1]
+          α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ :=
+      HFList_of_SVTL_cons_unfold h_321a AT L' h_layering h_union h_chi
+    rw [hstep, DProd_cons, ih]
+    simpa [fac, α, β, link_to_dprod] using h_spec.1
 
 omit h_321a in
 noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
@@ -2170,6 +2250,36 @@ noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
       ⟨HFList_of_SVTL h_321a L h_layering h_union h_chi,
         HFList_of_SVTL_spec h_321a L h_layering h_union h_chi⟩
 
-
+omit h_321a in
+lemma Link_of_SVTL_of_SVTL_of_HF_cons {τ α : AspPerm} {L : List AspPerm}
+    (h_321a : is_321a τ) (hP : DProd (α :: L) = τ) :
+    let S : SVT_Layering τ := SVTL_of_HF h_321a ⟨α :: L, hP⟩
+    let hS : S.val ≠ [] := by
+      simp [S, SVTL_of_HF, LSet_of_LPerm]
+    Link_of_SVTL (τ := τ) (L := S) hS = Link_of_dprod h_321a (by
+      let β := DProd L
+      have : α ⋆ β = τ := by
+        rw [← hP, DProd_cons]
+      exact this) := by
+  let β := DProd L
+  have h_L : β ≤L τ := by
+    rw [← hP, DProd_cons]
+    exact Submodular.lel_of_dprod α β
+  have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+  have τ_eq : α ⋆ β = τ := by
+    rw [← hP, DProd_cons]
+  let S : SVT_Layering τ := SVTL_of_HF h_321a ⟨α :: L, hP⟩
+  have hS : S.val ≠ [] := by
+    simp [S, SVTL_of_HF, LSet_of_LPerm]
+  apply Link.ext
+  · have hA : (Link_of_SVTL (τ := τ) (L := S) hS).A = τ.sr α '' inv_set α := by
+      ext p
+      simp [S, Link_of_SVTL, SVTL_of_HF, LSet_of_LPerm, τ_eq, β]
+    rw [hA]
+    rfl
+  · change boxUnion (LSet_of_LPerm L) = inv_set β
+    exact (LSet_helper h_321a_β ⟨L, rfl⟩).2.1
+  · change α.χ = α.χ
+    rfl
 end Tableaux
 end ASP321a

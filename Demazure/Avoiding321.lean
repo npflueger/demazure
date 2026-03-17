@@ -1922,6 +1922,7 @@ theorem bijective_link_to_dprod {χa χb : ℤ} (hχ : χa + χb = τ.χ) :
 end Link
 
 section Tableaux
+variable {τ : AspPerm} (h_321a : is_321a τ)
 
 noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
   List.foldr AspPerm.star AspPerm.id L
@@ -1960,7 +1961,8 @@ noncomputable def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ) × ℤ
   | α :: L =>
     ((DProd (α :: L)).sr α '' (inv_set α), α.χ) :: LSet_of_LPerm L
 
-lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
+include h_321a
+lemma LSet_helper
   (A : HeckeFactorization τ) :
   IsLayering (LSet_of_LPerm A.val)
   ∧ boxUnion (LSet_of_LPerm A.val) = inv_set τ
@@ -2011,12 +2013,35 @@ lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
         rw [← τ_eq]
         exact (AspPerm.chi_star α β).symm
 
-noncomputable def SVTL_of_HF {τ : AspPerm} (h_321a : is_321a τ)
+noncomputable def SVTL_of_HF
   (A : HeckeFactorization τ) : SVT_Layering τ :=
   ⟨LSet_of_LPerm A.val, LSet_helper h_321a A⟩
 
-noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ)
-  : SVT_Layering τ →  HeckeFactorization τ
+noncomputable def Link_of_SVTL {L : SVT_Layering τ} (hL : L.val ≠ []) :
+  Link τ where
+  A := (L.val.head hL).1
+  B := boxUnion L.val.tail
+  union_eq := by
+    rcases L with ⟨l, hprop⟩
+    cases l with
+    | nil =>
+        exfalso
+        exact hL rfl
+    | cons head tail =>
+        simpa [boxUnion] using hprop.2.1
+  sep := by
+    rcases L with ⟨l, hprop⟩
+    cases l with
+    | nil =>
+        exfalso
+        exact hL rfl
+    | cons head tail =>
+        simpa [IsLayering] using hprop.1.2
+
+
+omit h_321a in
+noncomputable def HF_of_SVTL_old {τ : AspPerm} (h_321a : is_321a τ) :
+  SVT_Layering τ →  HeckeFactorization τ
   | ⟨[], hL⟩ => by
     use []
     dsimp [DProd]
@@ -2052,7 +2077,7 @@ noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ)
     have h_unionβ : boxUnion L' = inv_set β := by
       have := congrArg Link.B hLnk
       simpa [Lnk, fac, α, β, link_to_dprod, dprod_to_link, Link_of_dprod, B] using this.symm
-    let Lβ : HeckeFactorization β := HF_of_SVTL h_321a_β
+    let Lβ : HeckeFactorization β := HF_of_SVTL_old h_321a_β
       ⟨L', ⟨h_layering', ⟨h_unionβ, h_χb.symm⟩⟩⟩
     use α :: Lβ.val
     rw [DProd_cons, ← h_dprod]
@@ -2061,6 +2086,89 @@ noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ)
 termination_by L => L.1.length
 decreasing_by
   simp_wf
+
+omit h_321a in
+noncomputable def HFList_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
+  (L : List (Set (ℤ × ℤ) × ℤ)) →
+  IsLayering L → boxUnion L = inv_set τ → chiSum L = τ.χ → List AspPerm
+  | [], _, _, _ => []
+  | AT :: L', h_layering, h_union, h_chi => by
+    let S : SVT_Layering τ := ⟨AT :: L', ⟨h_layering, h_union, h_chi⟩⟩
+    have hS : S.val ≠ [] := by
+      simp [S]
+    have hs : IsLayering L' ∧ ∀ p ∈ AT.1, ∀ q ∈ boxUnion L', p ≼ q → p = q := by
+      simpa [IsLayering] using h_layering
+    have hχ : AT.2 + chiSum L' = τ.χ := by
+      simpa [chiSum] using h_chi
+    let Lnk : Link τ := Link_of_SVTL (τ := τ) (L := S) hS
+    let fac := link_to_dprod h_321a hχ Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_L : β ≤L τ := by
+      rw [← fac.2.1]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a AT.2 (chiSum L') fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a hχ) Lnk
+    have h_layering' : IsLayering L' := hs.1
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [S, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, β] using fac.2.2.2.symm
+    exact α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ
+termination_by L => L.length
+decreasing_by
+  simp_wf
+
+omit h_321a in
+lemma HFList_of_SVTL_spec {τ : AspPerm} (h_321a : is_321a τ) :
+  ∀ (L : List (Set (ℤ × ℤ) × ℤ)) (h_layering : IsLayering L)
+    (h_union : boxUnion L = inv_set τ) (h_chi : chiSum L = τ.χ),
+    DProd (HFList_of_SVTL h_321a L h_layering h_union h_chi) = τ
+  | [], _, h_union, h_chi => by
+    have h_inv : inv_set τ = ∅ := by
+      simpa [boxUnion] using h_union.symm
+    have hτ : τ = AspPerm.id := AspPerm.eq_id τ h_inv h_chi.symm
+    simp [HFList_of_SVTL, DProd, hτ]
+  | AT :: L', h_layering, h_union, h_chi => by
+    let S : SVT_Layering τ := ⟨AT :: L', ⟨h_layering, h_union, h_chi⟩⟩
+    have hS : S.val ≠ [] := by
+      simp [S]
+    have hs : IsLayering L' ∧ ∀ p ∈ AT.1, ∀ q ∈ boxUnion L', p ≼ q → p = q := by
+      simpa [IsLayering] using h_layering
+    have hχ : AT.2 + chiSum L' = τ.χ := by
+      simpa [chiSum] using h_chi
+    let Lnk : Link τ := Link_of_SVTL (τ := τ) (L := S) hS
+    let fac := link_to_dprod h_321a hχ Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_L : β ≤L τ := by
+      rw [← fac.2.1]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a AT.2 (chiSum L') fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a hχ) Lnk
+    have h_layering' : IsLayering L' := hs.1
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [S, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, β] using fac.2.2.2.symm
+    have ih := HFList_of_SVTL_spec h_321a_β L' h_layering' h_unionβ h_χβ
+    have hstep :
+        HFList_of_SVTL h_321a (AT :: L') h_layering h_union h_chi =
+          α :: HFList_of_SVTL h_321a_β L' h_layering' h_unionβ h_χβ := by
+      set_option maxRecDepth 4096 in
+        simp [HFList_of_SVTL, S, Lnk, fac, α, β]
+    rw [hstep, DProd_cons, ih, fac.2.1]
+
+omit h_321a in
+noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
+  SVT_Layering τ → HeckeFactorization τ
+  | ⟨L, ⟨h_layering, h_union, h_chi⟩⟩ =>
+      ⟨HFList_of_SVTL h_321a L h_layering h_union h_chi,
+        HFList_of_SVTL_spec h_321a L h_layering h_union h_chi⟩
 
 
 end Tableaux

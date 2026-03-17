@@ -774,6 +774,13 @@ theorem eq_id (τ : AspPerm)
     simp [AspPerm.inset, h_inv]
   simp [h_out, h_in, AspPerm.id]
 
+@[simp]
+lemma inv_set_id : inv_set AspPerm.id = ∅ := by
+  ext ⟨u, v⟩
+  simp [AspPerm.id, inv_set, Set.mem_setOf_eq]
+  intro u_lt_v
+  exact le_of_lt u_lt_v
+
 lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
   have := duality τ a b
   omega

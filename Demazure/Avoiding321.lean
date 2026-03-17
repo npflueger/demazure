@@ -1963,6 +1963,11 @@ variable {τ : AspPerm} (h_321a : is_321a τ)
 noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
   List.foldr AspPerm.star AspPerm.id L
 
+lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
+  DProd (α :: Q) = α ⋆ DProd Q := by
+  unfold DProd
+  rw [List.foldr_cons]
+
 def HeckeFactorization (τ : AspPerm) : Type :=
   {P : List AspPerm //
     DProd P = τ}
@@ -1974,6 +1979,17 @@ def boxUnion : List (Set (ℤ × ℤ) × ℤ) → Set (ℤ × ℤ)
 def chiSum : List (Set (ℤ × ℤ) × ℤ) → ℤ
   | [] => 0
   | head :: tail => head.2 + chiSum tail
+
+def isChain : List (Set (ℤ × ℤ) × ℤ) → Prop
+  | [] => True
+  | ⟨A,χa⟩ :: Q =>
+    ∃ τ : AspPerm, ∃ L : Link τ,
+      L.A = A ∧ L.χa = χa
+      ∧ L.B = boxUnion Q ∧ L.χb = chiSum Q
+      ∧ isChain Q
+
+def Chain (τ : AspPerm) : Type :=
+  {C : List (Set (ℤ × ℤ) × ℤ) // isChain C ∧ boxUnion C = inv_set τ ∧ chiSum C = τ.χ}
 
 def IsLayering : List (Set (ℤ × ℤ) × ℤ) → Prop
   | [] => True
@@ -1987,17 +2003,13 @@ def Layering : Type :=
 def SVT_Layering (τ : AspPerm) : Type :=
   {L : List (Set (ℤ × ℤ) × ℤ) // IsLayering L ∧ boxUnion L = inv_set τ ∧ chiSum L = τ.χ}
 
-lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
-  DProd (α :: Q) = α ⋆ DProd Q := by
-  unfold DProd
-  rw [List.foldr_cons]
-
 noncomputable def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ) × ℤ)
   | [] => []
   | α :: L =>
     ((DProd (α :: L)).sr α '' (inv_set α), α.χ) :: LSet_of_LPerm L
 
 include h_321a
+
 lemma LSet_helper
   (A : HeckeFactorization τ) :
   IsLayering (LSet_of_LPerm A.val)
@@ -2049,10 +2061,89 @@ lemma LSet_helper
         rw [← τ_eq]
         exact (AspPerm.chi_star α β).symm
 
+/-- `LSet_of_LPerm` applied to a Hecke factorization satisfies `isChain`.
+This is the chain analogue of `LSet_helper`. Contributed by Codex -/
+lemma chain_of_HF_helper (A : HeckeFactorization τ) :
+  isChain (LSet_of_LPerm A.val) := by
+  rcases A with ⟨AL, dprodA⟩
+  induction AL generalizing τ with
+  | nil =>
+      simp [LSet_of_LPerm, isChain]
+  | cons α L ih =>
+      let β := DProd L
+      have h_L : β ≤L τ := by
+        rw [← dprodA, DProd_cons]
+        exact Submodular.lel_of_dprod α β
+      have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+      have ih' := ih h_321a_β (by rfl)
+      have τ_eq : α ⋆ β = τ := by
+        rw [← dprodA, ← DProd_cons]
+      have h_tail_union : boxUnion (LSet_of_LPerm L) = inv_set β :=
+        (LSet_helper h_321a_β ⟨L, rfl⟩).2.1
+      have h_tail_chi : chiSum (LSet_of_LPerm L) = β.χ :=
+        (LSet_helper h_321a_β ⟨L, rfl⟩).2.2
+      -- The chain witness for the head layer is exactly the `Link` extracted
+      -- from the Demazure product decomposition `α ⋆ β = τ`.
+      refine ⟨τ, Link_of_dprod h_321a τ_eq, ?_, rfl, ?_, ?_, ih'⟩
+      · have hτ : τ = α ⋆ DProd L := by
+          rw [← dprodA, DProd_cons]
+        simpa [β] using congrArg (fun σ => σ.sr α '' inv_set α) hτ
+      · simpa [β] using h_tail_union.symm
+      · simpa [β] using h_tail_chi.symm
+
+/-- Convert a Hecke factorization to a chain by applying `LSet_of_LPerm` and
+packaging the chain/union/shift facts. Contributed by Codex -/
+noncomputable def Chain_of_HF (A : HeckeFactorization τ) : Chain τ :=
+  ⟨LSet_of_LPerm A.val, ⟨chain_of_HF_helper h_321a A,
+    (LSet_helper h_321a A).2.1, (LSet_helper h_321a A).2.2⟩⟩
+
+/-- Extract the head `Link τ` encoded by a nonempty chain. The ambient
+equalities in `Chain τ` retarget the witness in `isChain` from its local
+permutation to the ambient `τ`. Contributed by Codex -/
+noncomputable def Link_of_Chain {C : Chain τ} (hC : C.val ≠ []) :
+  Link τ where
+  A := (C.val.head hC).1
+  B := boxUnion C.val.tail
+  χa := (C.val.head hC).2
+  χb := chiSum C.val.tail
+  union_eq := by
+    rcases C with ⟨c, ⟨h_chain, h_union, h_chi⟩⟩
+    cases c with
+    | nil =>
+        exfalso
+        exact hC rfl
+    | cons AT Q =>
+        rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+        -- `isChain` only tells us that the witness link unions to `inv_set σ`;
+        -- the outer `Chain τ` hypothesis upgrades that to `inv_set τ`.
+        simpa [boxUnion, hA, hB] using h_union
+  sep := by
+    rcases C with ⟨c, ⟨h_chain, h_union, h_chi⟩⟩
+    cases c with
+    | nil =>
+        exfalso
+        exact hC rfl
+    | cons AT Q =>
+        rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+        intro p hp q hq hpq
+        apply L.sep p ?_ q ?_ hpq
+        · simpa [hA] using hp
+        · simpa [hB] using hq
+  shift := by
+    rcases C with ⟨c, ⟨h_chain, h_union, h_chi⟩⟩
+    cases c with
+    | nil =>
+        exfalso
+        exact hC rfl
+    | cons AT Q =>
+        rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+        simpa [chiSum, hχa, hχb] using h_chi.symm
+
 noncomputable def SVTL_of_HF
   (A : HeckeFactorization τ) : SVT_Layering τ :=
   ⟨LSet_of_LPerm A.val, LSet_helper h_321a A⟩
 
+/-- Extract the head `Link τ` from a nonempty `SVT_Layering τ`. Contributed by Codex -/
 noncomputable def Link_of_SVTL {L : SVT_Layering τ} (hL : L.val ≠ []) :
   Link τ where
   A := (L.val.head hL).1
@@ -2086,6 +2177,8 @@ noncomputable def Link_of_SVTL {L : SVT_Layering τ} (hL : L.val ≠ []) :
 
 
 omit h_321a in
+/-- Legacy inverse from `SVT_Layering` to Hecke factorizations. It is kept for
+comparison with the cleaner list-based helper below. Contributed by Codex -/
 noncomputable def HF_of_SVTL_old {τ : AspPerm} (h_321a : is_321a τ) :
   SVT_Layering τ →  HeckeFactorization τ
   | ⟨[], hL⟩ => by
@@ -2137,6 +2230,324 @@ decreasing_by
   simp_wf
 
 omit h_321a in
+/-- Recursively recover the factor list encoded by a chain. The head factor is
+obtained from `Link_of_Chain`, and the tail recursion runs on the second factor
+of the associated Demazure-product decomposition. Contributed by Codex -/
+noncomputable def HFList_of_Chain {τ : AspPerm} (h_321a : is_321a τ) :
+  (L : List (Set (ℤ × ℤ) × ℤ)) →
+  isChain L → boxUnion L = inv_set τ → chiSum L = τ.χ → List AspPerm
+  | [], _, _, _ => []
+  | AT :: L', h_chain, h_union, h_chi => by
+    let C : Chain τ := ⟨AT :: L', ⟨h_chain, h_union, h_chi⟩⟩
+    have hC : C.val ≠ [] := by
+      simp [C]
+    have h_chain' : isChain L' := by
+      rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+      exact h_chain'
+    let Lnk : Link τ := Link_of_Chain (τ := τ) (C := C) hC
+    let fac := link_to_dprod h_321a Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
+    -- The recursive call moves from `τ` to the tail factor `β`, whose
+    -- inversion set and shift are read off from the same link.
+    have h_L : β ≤L τ := by
+      rw [← fac.2]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
+    exact α :: HFList_of_Chain h_321a_β L' h_chain' h_unionβ h_χβ
+termination_by L => L.length
+decreasing_by
+  simp_wf
+
+omit h_321a in
+/-- One-step unfold rule for the nonempty branch of `HFList_of_Chain`.
+This is the stable computation lemma used in later proofs. Contributed by Codex -/
+lemma HFList_of_Chain_cons_unfold {τ : AspPerm} (h_321a : is_321a τ)
+    (AT : Set (ℤ × ℤ) × ℤ) (L' : List (Set (ℤ × ℤ) × ℤ))
+    (h_chain : isChain (AT :: L'))
+    (h_union : boxUnion (AT :: L') = inv_set τ)
+    (h_chi : chiSum (AT :: L') = τ.χ) :
+    let C : Chain τ := ⟨AT :: L', ⟨h_chain, h_union, h_chi⟩⟩
+    let hC : C.val ≠ [] := by
+      simp [C]
+    have h_chain' : isChain L' := by
+      rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+      exact h_chain'
+    let Lnk : Link τ := Link_of_Chain (τ := τ) (C := C) hC
+    let fac := link_to_dprod h_321a Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
+    have h_L : β ≤L τ := by
+      rw [← fac.2]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
+    HFList_of_Chain h_321a (AT :: L') h_chain h_union h_chi =
+      α :: HFList_of_Chain h_321a_β L' h_chain' h_unionβ h_χβ := by
+  set_option maxRecDepth 4096 in
+    simp [HFList_of_Chain]
+
+omit h_321a in
+/-- The list produced by `HFList_of_Chain` has Demazure product `τ`.
+Contributed by Codex -/
+lemma HFList_of_Chain_spec {τ : AspPerm} (h_321a : is_321a τ) :
+  ∀ (L : List (Set (ℤ × ℤ) × ℤ)) (h_chain : isChain L)
+    (h_union : boxUnion L = inv_set τ) (h_chi : chiSum L = τ.χ),
+    DProd (HFList_of_Chain h_321a L h_chain h_union h_chi) = τ
+  | [], _, h_union, h_chi => by
+    have h_inv : inv_set τ = ∅ := by
+      simpa [boxUnion] using h_union.symm
+    have hτ : τ = AspPerm.id := AspPerm.eq_id τ h_inv h_chi.symm
+    simp [HFList_of_Chain, DProd, hτ]
+  | AT :: L', h_chain, h_union, h_chi => by
+    let C : Chain τ := ⟨AT :: L', ⟨h_chain, h_union, h_chi⟩⟩
+    have hC : C.val ≠ [] := by
+      simp [C]
+    have h_chain' : isChain L' := by
+      rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+      exact h_chain'
+    let Lnk : Link τ := Link_of_Chain (τ := τ) (C := C) hC
+    let fac := link_to_dprod h_321a Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_spec := dprod_of_link_spec h_321a Lnk
+    have h_L : β ≤L τ := by
+      rw [← fac.2]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have hLnk : dprod_to_link h_321a fac = Lnk := by
+      exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod] using this.symm
+    have h_χβ : chiSum L' = β.χ := by
+      simpa [fac, α, β, link_to_dprod] using h_spec.2.2.symm
+    have ih := HFList_of_Chain_spec h_321a_β L' h_chain' h_unionβ h_χβ
+    have hstep :
+        HFList_of_Chain h_321a (AT :: L') h_chain h_union h_chi =
+          α :: HFList_of_Chain h_321a_β L' h_chain' h_unionβ h_χβ :=
+      HFList_of_Chain_cons_unfold h_321a AT L' h_chain h_union h_chi
+    rw [hstep, DProd_cons, ih]
+    simpa [fac, α, β, link_to_dprod] using h_spec.1
+
+omit h_321a in
+/-- Package `HFList_of_Chain` as a `HeckeFactorization`. This is the recursive
+inverse candidate to `Chain_of_HF`. Contributed by Codex -/
+noncomputable def HF_of_Chain {τ : AspPerm} (h_321a : is_321a τ) :
+  Chain τ → HeckeFactorization τ
+  | ⟨L, ⟨h_chain, h_union, h_chi⟩⟩ =>
+      ⟨HFList_of_Chain h_321a L h_chain h_union h_chi,
+        HFList_of_Chain_spec h_321a L h_chain h_union h_chi⟩
+
+omit h_321a in
+/-- For a nonempty factorization `α :: L`, the head link extracted from
+`Chain_of_HF` is exactly the `Link_of_dprod` from the Link section. This is the
+chain analogue of `Link_of_SVTL_of_SVTL_of_HF_cons`. Contributed by Codex -/
+lemma Link_of_Chain_of_Chain_of_HF_cons {τ α : AspPerm} {L : List AspPerm}
+    (h_321a : is_321a τ) (hP : DProd (α :: L) = τ) :
+    let C : Chain τ := Chain_of_HF h_321a ⟨α :: L, hP⟩
+    let hC : C.val ≠ [] := by
+      simp [C, Chain_of_HF, LSet_of_LPerm]
+    Link_of_Chain (τ := τ) (C := C) hC = Link_of_dprod h_321a (by
+      let β := DProd L
+      have : α ⋆ β = τ := by
+        rw [← hP, DProd_cons]
+      exact this) := by
+  let β := DProd L
+  have h_L : β ≤L τ := by
+    rw [← hP, DProd_cons]
+    exact Submodular.lel_of_dprod α β
+  have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+  have τ_eq : α ⋆ β = τ := by
+    rw [← hP, DProd_cons]
+  let C : Chain τ := Chain_of_HF h_321a ⟨α :: L, hP⟩
+  have hC : C.val ≠ [] := by
+    simp [C, Chain_of_HF, LSet_of_LPerm]
+  apply Link.ext
+  · have hA : (Link_of_Chain (τ := τ) (C := C) hC).A = τ.sr α '' inv_set α := by
+      ext p
+      simp [C, Link_of_Chain, Chain_of_HF, LSet_of_LPerm, τ_eq, β]
+    rw [hA]
+    rfl
+  · change boxUnion (LSet_of_LPerm L) = inv_set β
+    exact (LSet_helper h_321a_β ⟨L, rfl⟩).2.1
+  · change α.χ = α.χ
+    rfl
+
+omit h_321a in
+/-- Applying `LSet_of_LPerm` to the factorization recovered from a chain returns
+the original chain list. This is the core right-inverse statement on raw lists.
+Contributed by Codex -/
+lemma LSet_of_HFList_of_Chain {τ : AspPerm} (h_321a : is_321a τ) :
+  ∀ (L : List (Set (ℤ × ℤ) × ℤ)) (h_chain : isChain L)
+    (h_union : boxUnion L = inv_set τ) (h_chi : chiSum L = τ.χ),
+    LSet_of_LPerm (HFList_of_Chain h_321a L h_chain h_union h_chi) = L
+  | [], _, h_union, h_chi => by
+      have h_inv : inv_set τ = ∅ := by
+        simpa [boxUnion] using h_union.symm
+      have hτ : τ = AspPerm.id := AspPerm.eq_id τ h_inv h_chi.symm
+      simp [HFList_of_Chain, LSet_of_LPerm, hτ]
+  | AT :: L', h_chain, h_union, h_chi => by
+      let C : Chain τ := ⟨AT :: L', ⟨h_chain, h_union, h_chi⟩⟩
+      have hC : C.val ≠ [] := by
+        simp [C]
+      have h_chain' : isChain L' := by
+        rcases h_chain with ⟨σ, L, hA, hχa, hB, hχb, h_chain'⟩
+        exact h_chain'
+      let Lnk : Link τ := Link_of_Chain (τ := τ) (C := C) hC
+      let fac := link_to_dprod h_321a Lnk
+      let α : AspPerm := fac.1.1
+      let β : AspPerm := fac.1.2
+      have h_spec := dprod_of_link_spec h_321a Lnk
+      have h_dprod : α ⋆ β = τ := by
+        simpa [fac, α, β, link_to_dprod] using h_spec.1
+      have h_L : β ≤L τ := by
+        rw [← h_dprod]
+        exact Submodular.lel_of_dprod α β
+      have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+      have hLnk : dprod_to_link h_321a fac = Lnk := by
+        exact (dprod_to_link_link_to_dprod (τ := τ) h_321a) Lnk
+      have h_unionβ : boxUnion L' = inv_set β := by
+        have := congrArg Link.B hLnk
+        simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod, Link_of_Chain] using this.symm
+      have h_χβ : chiSum L' = β.χ := by
+        simpa [C, Lnk, fac, α, β, link_to_dprod, Link_of_Chain] using (congrArg Link.χb hLnk).symm
+      have ih := LSet_of_HFList_of_Chain (τ := β) h_321a_β L' h_chain' h_unionβ h_χβ
+      have hstep :
+          HFList_of_Chain h_321a (AT :: L') h_chain h_union h_chi =
+            α :: HFList_of_Chain h_321a_β L' h_chain' h_unionβ h_χβ := by
+        simpa [C, Lnk, fac, α, β] using
+          (HFList_of_Chain_cons_unfold h_321a AT L' h_chain h_union h_chi)
+      -- The link round-trip identifies the recovered head layer with the
+      -- original tableau layer `AT`.
+      have hA1 : τ.sr α '' inv_set α = AT.1 := by
+        have := congrArg Link.A hLnk
+        simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod, Link_of_Chain] using this
+      have hA2 : α.χ = AT.2 := by
+        have := congrArg Link.χa hLnk
+        simpa [C, Lnk, fac, α, β, dprod_to_link, Link_of_dprod, Link_of_Chain] using this
+      rw [hstep]
+      simp [LSet_of_LPerm, HFList_of_Chain_spec, ih, hA1, hA2, h_dprod]
+
+omit h_321a in
+/-- `Chain_of_HF` after `HF_of_Chain` is the identity on `Chain τ`.
+Contributed by Codex -/
+lemma Chain_of_HF_HF_of_Chain {τ : AspPerm} (h_321a : is_321a τ) (C : Chain τ) :
+  Chain_of_HF h_321a (HF_of_Chain h_321a C) = C := by
+  rcases C with ⟨L, ⟨h_chain, h_union, h_chi⟩⟩
+  apply Subtype.ext
+  simpa [Chain_of_HF, HF_of_Chain] using
+    (LSet_of_HFList_of_Chain h_321a L h_chain h_union h_chi)
+
+omit h_321a in
+/-- Injectivity of `LSet_of_LPerm` on Hecke factorizations of a fixed `τ`.
+The head step uses the bijection between Demazure-product decompositions and
+links from the Link section; the tail then follows by induction. Contributed by Codex -/
+lemma LSet_of_LPerm_injective {τ : AspPerm} (h_321a : is_321a τ) :
+    ∀ {L₁ : List AspPerm} (_h₁ : DProd L₁ = τ) {L₂ : List AspPerm} (_h₂ : DProd L₂ = τ),
+      LSet_of_LPerm L₁ = LSet_of_LPerm L₂ -> L₁ = L₂
+  | [], _, [], _, _ => rfl
+  | [], _, _ :: _, _, hEq => by
+      simp [LSet_of_LPerm] at hEq
+  | _ :: _, _, [], _, hEq => by
+      simp [LSet_of_LPerm] at hEq
+  | α₁ :: T₁, h₁, α₂ :: T₂, h₂, hEq => by
+      have hHeadTail :
+          ((DProd (α₁ :: T₁)).sr α₁ '' inv_set α₁, α₁.χ) =
+            ((DProd (α₂ :: T₂)).sr α₂ '' inv_set α₂, α₂.χ)
+          ∧ LSet_of_LPerm T₁ = LSet_of_LPerm T₂ := by
+        simpa [LSet_of_LPerm] using hEq
+      rcases hHeadTail with ⟨hHead, hTail⟩
+      let β₁ := DProd T₁
+      let β₂ := DProd T₂
+      have h_L₁ : β₁ ≤L τ := by
+        rw [← h₁, DProd_cons]
+        exact Submodular.lel_of_dprod α₁ β₁
+      have h_L₂ : β₂ ≤L τ := by
+        rw [← h₂, DProd_cons]
+        exact Submodular.lel_of_dprod α₂ β₂
+      have h_321a_β₁ : is_321a β₁ := is_321a_of_lel h_321a h_L₁
+      have h_321a_β₂ : is_321a β₂ := is_321a_of_lel h_321a h_L₂
+      have τ_eq₁ : α₁ ⋆ β₁ = τ := by rw [← h₁, DProd_cons]
+      have τ_eq₂ : α₂ ⋆ β₂ = τ := by rw [← h₂, DProd_cons]
+      -- Equal head layers determine equal links, and the Link-section
+      -- bijection then recovers equal head/tail factors.
+      have hLink : Link_of_dprod h_321a τ_eq₁ = Link_of_dprod h_321a τ_eq₂ := by
+        apply Link.ext
+        · simpa [h₁, h₂] using congrArg Prod.fst hHead
+        · calc
+            (Link_of_dprod h_321a τ_eq₁).B = inv_set β₁ := rfl
+            _ = boxUnion (LSet_of_LPerm T₁) := (LSet_helper h_321a_β₁ ⟨T₁, rfl⟩).2.1.symm
+            _ = boxUnion (LSet_of_LPerm T₂) := by simp [hTail]
+            _ = inv_set β₂ := (LSet_helper h_321a_β₂ ⟨T₂, rfl⟩).2.1
+            _ = (Link_of_dprod h_321a τ_eq₂).B := rfl
+        · exact congrArg Prod.snd hHead
+      have hx := congrArg (link_to_dprod h_321a) hLink
+      have hx₁ : link_to_dprod h_321a (Link_of_dprod h_321a τ_eq₁) = ⟨⟨α₁, β₁⟩, τ_eq₁⟩ := by
+        simpa [dprod_to_link] using
+          (link_to_dprod_dprod_to_link (τ := τ) h_321a ⟨⟨α₁, β₁⟩, τ_eq₁⟩)
+      have hx₂ : link_to_dprod h_321a (Link_of_dprod h_321a τ_eq₂) = ⟨⟨α₂, β₂⟩, τ_eq₂⟩ := by
+        simpa [dprod_to_link] using
+          (link_to_dprod_dprod_to_link (τ := τ) h_321a ⟨⟨α₂, β₂⟩, τ_eq₂⟩)
+      have hpair : (α₁, β₁) = (α₂, β₂) := by
+        calc
+          (α₁, β₁) = (link_to_dprod h_321a (Link_of_dprod h_321a τ_eq₁)).1 := by
+            simpa using congrArg Subtype.val hx₁.symm
+          _ = (link_to_dprod h_321a (Link_of_dprod h_321a τ_eq₂)).1 := by
+            exact congrArg Subtype.val hx
+          _ = (α₂, β₂) := by
+            simpa using congrArg Subtype.val hx₂
+      rcases Prod.ext_iff.mp hpair with ⟨hα, hβ⟩
+      have h₂' : DProd T₂ = β₁ := by simpa [β₂] using hβ.symm
+      have hT : T₁ = T₂ := LSet_of_LPerm_injective (τ := β₁) h_321a_β₁ rfl h₂' hTail
+      cases hα
+      simp [hT]
+
+omit h_321a in
+/-- `Chain_of_HF` is injective. Contributed by Codex -/
+theorem Chain_of_HF_injective {τ : AspPerm} (h_321a : is_321a τ) :
+  Function.Injective (Chain_of_HF h_321a) := by
+  intro A₁ A₂ hEq
+  apply Subtype.ext
+  exact LSet_of_LPerm_injective h_321a A₁.property A₂.property (congrArg Subtype.val hEq)
+
+omit h_321a in
+/-- `HF_of_Chain` after `Chain_of_HF` is the identity on
+`HeckeFactorization τ`, obtained from injectivity of `Chain_of_HF` and the
+already-proved right inverse. Contributed by Codex -/
+lemma HF_of_Chain_Chain_of_HF {τ : AspPerm} (h_321a : is_321a τ) (A : HeckeFactorization τ) :
+  HF_of_Chain h_321a (Chain_of_HF h_321a A) = A := by
+  apply Chain_of_HF_injective h_321a
+  exact Chain_of_HF_HF_of_Chain h_321a (Chain_of_HF h_321a A)
+
+omit h_321a in
+/-- The conversion from Hecke factorizations to chains is a bijection, with
+inverse `HF_of_Chain`. Contributed by Codex -/
+theorem bijective_Chain_of_HF {τ : AspPerm} (h_321a : is_321a τ) :
+  Function.Bijective (Chain_of_HF h_321a) := by
+  constructor
+  · exact Chain_of_HF_injective h_321a
+  · intro C
+    exact ⟨HF_of_Chain h_321a C, Chain_of_HF_HF_of_Chain h_321a C⟩
+
+omit h_321a in
+/-- Recursively recover the factor list encoded by an `SVT_Layering`.
+Contributed by Codex -/
 noncomputable def HFList_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
   (L : List (Set (ℤ × ℤ) × ℤ)) →
   IsLayering L → boxUnion L = inv_set τ → chiSum L = τ.χ → List AspPerm
@@ -2170,6 +2581,8 @@ decreasing_by
   simp_wf
 
 omit h_321a in
+/-- One-step unfold rule for the nonempty branch of `HFList_of_SVTL`.
+Contributed by Codex -/
 lemma HFList_of_SVTL_cons_unfold {τ : AspPerm} (h_321a : is_321a τ)
     (AT : Set (ℤ × ℤ) × ℤ) (L' : List (Set (ℤ × ℤ) × ℤ))
     (h_layering : IsLayering (AT :: L'))
@@ -2203,6 +2616,8 @@ lemma HFList_of_SVTL_cons_unfold {τ : AspPerm} (h_321a : is_321a τ)
     simp [HFList_of_SVTL]
 
 omit h_321a in
+/-- The factor list recovered from an `SVT_Layering` has Demazure product `τ`.
+Contributed by Codex -/
 lemma HFList_of_SVTL_spec {τ : AspPerm} (h_321a : is_321a τ) :
   ∀ (L : List (Set (ℤ × ℤ) × ℤ)) (h_layering : IsLayering L)
     (h_union : boxUnion L = inv_set τ) (h_chi : chiSum L = τ.χ),
@@ -2244,6 +2659,7 @@ lemma HFList_of_SVTL_spec {τ : AspPerm} (h_321a : is_321a τ) :
     simpa [fac, α, β, link_to_dprod] using h_spec.1
 
 omit h_321a in
+/-- Package `HFList_of_SVTL` as a `HeckeFactorization`. Contributed by Codex -/
 noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
   SVT_Layering τ → HeckeFactorization τ
   | ⟨L, ⟨h_layering, h_union, h_chi⟩⟩ =>
@@ -2251,6 +2667,8 @@ noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ) :
         HFList_of_SVTL_spec h_321a L h_layering h_union h_chi⟩
 
 omit h_321a in
+/-- Compare the head link extracted from `SVTL_of_HF` with the corresponding
+`Link_of_dprod`. Contributed by Codex -/
 lemma Link_of_SVTL_of_SVTL_of_HF_cons {τ α : AspPerm} {L : List AspPerm}
     (h_321a : is_321a τ) (hP : DProd (α :: L) = τ) :
     let S : SVT_Layering τ := SVTL_of_HF h_321a ⟨α :: L, hP⟩

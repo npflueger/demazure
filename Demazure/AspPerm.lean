@@ -292,6 +292,21 @@ noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
+@[simp] lemma id_χ : AspPerm.id.χ = 0 := by
+  have h_se : southeast_set AspPerm.id 0 0 = ∅ := by
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    intro k hk
+    dsimp [southeast_set, AspPerm.id] at hk
+    omega
+  have h_nw : northwest_set AspPerm.id 0 0 = ∅ := by
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    intro k hk
+    dsimp [northwest_set, AspPerm.id] at hk
+    omega
+  dsimp [AspPerm.χ, AspPerm.s, AspPerm.s']
+  rw [h_se, h_nw]
+  simp
+
 lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := by
   unfold AspPerm.s se_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
@@ -744,6 +759,20 @@ theorem unique_from_inv_and_χ (σ τ : AspPerm) (h_inv : inv_set σ = inv_set �
   · ext v
     simp only [← invset_iff_inset]
     rw [h_inv]
+
+/-- An ASP permutation with empty inversion set and zero shift is the identity. -/
+theorem eq_id (τ : AspPerm)
+    (h_inv : inv_set τ = ∅) (h_χ : τ.χ = 0) : τ = AspPerm.id := by
+  apply AspPerm.ext.mpr
+  ext n
+  rw [reconstruction τ n, h_χ]
+  have h_out : τ.outset n = ∅ := by
+    ext v
+    simp [AspPerm.outset, h_inv]
+  have h_in : τ.inset n = ∅ := by
+    ext v
+    simp [AspPerm.inset, h_inv]
+  simp [h_out, h_in, AspPerm.id]
 
 lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
   have := duality τ a b

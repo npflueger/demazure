@@ -1595,7 +1595,7 @@ structure Link (τ : AspPerm) where
   A : Set (ℤ × ℤ)
   B : Set (ℤ × ℤ)
   union_eq : A ∪ B = inv_set τ
-  sep : ∀ (p q : ℤ × ℤ), p ∈ A → q ∈ B → p ≼ q → p = q
+  sep : ∀ p ∈ A, ∀ q ∈ B, p ≼ q → p = q
 
 lemma Link.B_subset (L : Link τ) : L.B ⊆ inv_set τ := by
   rw [← L.union_eq]
@@ -1631,7 +1631,7 @@ def Link_of_dprod {α β : AspPerm}
     have hboxes := ((dprod_eq_iff (τ := τ) (α := α) (β := β) h_321a).mp dprod.symm).2
     exact hboxes.1.symm
   sep := by
-    intro p q hp hq hpq
+    intro p hp q hq hpq
     have h_L : β ≤L τ := by
       rw [← dprod]
       exact Submodular.lel_of_dprod α β
@@ -1673,7 +1673,7 @@ lemma B_AspSet_prop_of_Link (L : Link τ) :
         constructor
         · exact le_refl u
         · exact le_of_lt v_lt_w
-      have := L.sep ⟨u, v⟩ ⟨u, w⟩ huv' huw this
+      have := L.sep ⟨u, v⟩ huv' ⟨u, w⟩ huw this
       have : v = w := by
         simpa
       rw [this] at v_lt_w
@@ -1683,7 +1683,7 @@ lemma B_AspSet_prop_of_Link (L : Link τ) :
         constructor
         · exact le_of_lt u_lt_v
         · exact le_refl w
-      have := L.sep ⟨v, w⟩ ⟨u, w⟩ hvw' huw this
+      have := L.sep ⟨v, w⟩ hvw' ⟨u, w⟩ huw this
       have : v = u := by
         simpa
       rw [this] at u_lt_v
@@ -1730,7 +1730,7 @@ def reverse_link (L : Link τ) : Link τ⁻¹ where
         refine ⟨⟨τ⁻¹ v, τ⁻¹ u⟩, hB, ?_⟩
         simp [AspPerm.rev_map]
   sep := by
-    intro p q hp hq hpq
+    intro p hp q hq hpq
     rcases hp with ⟨⟨u, v⟩, huv, rfl⟩
     rcases hq with ⟨⟨u', v'⟩, hu'v', rfl⟩
     simp [AspPerm.rev_map] at hpq
@@ -1746,7 +1746,7 @@ def reverse_link (L : Link τ) : Link τ⁻¹ where
       simpa using src_ge (inv_is_321a h_321a) hv_src hpq.1
     have hqp : ⟨u', v'⟩ ≼ ⟨u, v⟩ := by
       exact ⟨hqup, hvpv⟩
-    have hEq : (u', v') = (u, v) := L.sep (u', v') (u, v) hu'v' huv hqp
+    have hEq : (u', v') = (u, v) := L.sep (u', v') hu'v' (u, v) huv hqp
     simpa [AspPerm.rev_map] using congrArg τ.rev_map hEq.symm
 
 
@@ -1839,7 +1839,7 @@ property := by
   · intro p hp q hq hpq
     rw [← hLB] at hq
     rw [← hLA] at hp
-    exact L.sep p q hp.1 hq.2 hpq
+    exact L.sep p hp.1 q hq.2 hpq
 
 def dprod_to_link (χa χb : ℤ) :
   { ⟨α, β⟩ : AspPerm × AspPerm |  α ⋆ β = τ ∧ α.χ = χa ∧ β.χ = χb} → Link τ :=
@@ -1930,36 +1930,41 @@ def HeckeFactorization (τ : AspPerm) : Type :=
   {P : List AspPerm //
     DProd P = τ}
 
-def listUnion {α : Type} : List (Set α) → Set α
+def boxUnion : List (Set (ℤ × ℤ) × ℤ) → Set (ℤ × ℤ)
   | [] => ∅
-  | head :: tail => head ∪ listUnion tail
+  | head :: tail => head.1 ∪ boxUnion tail
 
-def IsLayering : List (Set (ℤ × ℤ)) → Prop
+def chiSum : List (Set (ℤ × ℤ) × ℤ) → ℤ
+  | [] => 0
+  | head :: tail => head.2 + chiSum tail
+
+def IsLayering : List (Set (ℤ × ℤ) × ℤ) → Prop
   | [] => True
   | head :: tail =>
       IsLayering tail ∧
-      ∀ p ∈ head, ∀ q ∈ listUnion tail, p ≼ q → p = q
+      ∀ p ∈ head.1, ∀ q ∈ boxUnion tail, p ≼ q → p = q
 
 def Layering : Type :=
-  {A : List (Set (ℤ × ℤ)) // IsLayering A}
+  {A : List (Set (ℤ × ℤ) × ℤ) // IsLayering A}
 
 def SVT_Layering (τ : AspPerm) : Type :=
-  {L : List (Set (ℤ × ℤ)) // IsLayering L ∧ listUnion L = inv_set τ}
+  {L : List (Set (ℤ × ℤ) × ℤ) // IsLayering L ∧ boxUnion L = inv_set τ ∧ chiSum L = τ.χ}
 
 lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
   DProd (α :: Q) = α ⋆ DProd Q := by
   unfold DProd
   rw [List.foldr_cons]
 
-def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ))
+noncomputable def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ) × ℤ)
   | [] => []
   | α :: L =>
-    (DProd (α :: L)).sr α '' (inv_set α) :: LSet_of_LPerm L
+    ((DProd (α :: L)).sr α '' (inv_set α), α.χ) :: LSet_of_LPerm L
 
 lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
   (A : HeckeFactorization τ) :
   IsLayering (LSet_of_LPerm A.val)
-  ∧ listUnion (LSet_of_LPerm A.val) = inv_set τ
+  ∧ boxUnion (LSet_of_LPerm A.val) = inv_set τ
+  ∧ chiSum (LSet_of_LPerm A.val) = τ.χ
   := by
   rcases A with ⟨AL, dprodA⟩
   induction AL generalizing τ with
@@ -1969,14 +1974,17 @@ lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
     · have : τ = AspPerm.id := by
         rw [← dprodA]
         simp
-      dsimp [LSet_of_LPerm, listUnion]
-      apply Eq.symm
-      apply Set.eq_empty_iff_forall_notMem.mpr
-      rintro ⟨u,v⟩ huv
-      rw [this] at huv
-      obtain ⟨u_lt_v, iduv⟩ := huv
-      dsimp [AspPerm.id] at iduv
-      omega
+      dsimp [LSet_of_LPerm, boxUnion, chiSum]
+      constructor
+      · apply Eq.symm
+        apply Set.eq_empty_iff_forall_notMem.mpr
+        rintro ⟨u,v⟩ huv
+        rw [this] at huv
+        obtain ⟨u_lt_v, iduv⟩ := huv
+        dsimp [AspPerm.id] at iduv
+        omega
+      · rw [this]
+        simp
   | cons α L ih =>
     let β := DProd L
     have h_L : β ≤L τ := by
@@ -1991,17 +1999,68 @@ lemma LSet_helper {τ : AspPerm} (h_321a : is_321a τ)
     · constructor
       · exact ih_layering
       · intro p hp q hq hpq
-        rw [ih_union] at hq
+        rw [ih_union.1] at hq
         rw [dprodA] at hp
-        exact (Link_of_dprod h_321a τ_eq).sep p q hp hq hpq
-    · dsimp [listUnion, LSet_of_LPerm]
-      rw [ih_union, τ_eq]
-      simpa [β] using (Link_of_dprod h_321a τ_eq).union_eq
+        exact (Link_of_dprod h_321a τ_eq).sep p hp q hq hpq
+    · dsimp [boxUnion, LSet_of_LPerm]
+      constructor
+      · rw [ih_union.1, τ_eq]
+        simpa [β] using (Link_of_dprod h_321a τ_eq).union_eq
+      · dsimp [chiSum]
+        rw [ih_union.2]
+        rw [← τ_eq]
+        exact (AspPerm.chi_star α β).symm
 
-def SVTL_of_HF {τ : AspPerm} (h_321a : is_321a τ)
+noncomputable def SVTL_of_HF {τ : AspPerm} (h_321a : is_321a τ)
   (A : HeckeFactorization τ) : SVT_Layering τ :=
   ⟨LSet_of_LPerm A.val, LSet_helper h_321a A⟩
 
+noncomputable def HF_of_SVTL {τ : AspPerm} (h_321a : is_321a τ)
+  : SVT_Layering τ →  HeckeFactorization τ
+  | ⟨[], hL⟩ => by
+    use []
+    dsimp [DProd]
+    dsimp [chiSum] at hL
+    rcases hL with ⟨_, ⟨h_union,h_chi⟩⟩
+    have h_inv : inv_set τ = ∅ := by
+      dsimp [boxUnion] at h_union
+      exact h_union.symm
+    exact (AspPerm.eq_id τ h_inv h_chi.symm).symm
+  | ⟨AT :: L', hL⟩ => by
+    obtain ⟨A, χa⟩ := AT
+    dsimp [boxUnion, chiSum] at hL
+    rcases hL with ⟨h_layering, h_union, h_chi⟩
+    let B := boxUnion L'
+    have : IsLayering L' ∧ ∀ p ∈ A, ∀ q ∈ B, p ≼ q → p = q := by
+      simpa [IsLayering] using h_layering
+    obtain ⟨h_layering', h_sep⟩ := this
+    have hAB : A ∪ B = inv_set τ := by
+      simpa using h_union
+    let Lnk : Link τ := Link.mk A B hAB h_sep
+    have hLnk : dprod_to_link h_321a χa (chiSum L') (link_to_dprod h_321a h_chi Lnk) = Lnk :=
+      (dprod_to_link_link_to_dprod (τ := τ) h_321a h_chi) Lnk
+    let fac := link_to_dprod h_321a h_chi Lnk
+    let α : AspPerm := fac.1.1
+    let β : AspPerm := fac.1.2
+    have h_dprod : α ⋆ β = τ := fac.2.1
+    have h_χa : α.χ = χa := fac.2.2.1
+    have h_χb : β.χ = chiSum L' := fac.2.2.2
+    have h_L : β ≤L τ := by
+      rw [← h_dprod]
+      exact Submodular.lel_of_dprod α β
+    have h_321a_β : is_321a β := is_321a_of_lel h_321a h_L
+    have h_unionβ : boxUnion L' = inv_set β := by
+      have := congrArg Link.B hLnk
+      simpa [Lnk, fac, α, β, link_to_dprod, dprod_to_link, Link_of_dprod, B] using this.symm
+    let Lβ : HeckeFactorization β := HF_of_SVTL h_321a_β
+      ⟨L', ⟨h_layering', ⟨h_unionβ, h_χb.symm⟩⟩⟩
+    use α :: Lβ.val
+    rw [DProd_cons, ← h_dprod]
+    congr
+    exact Lβ.property
+termination_by L => L.1.length
+decreasing_by
+  simp_wf
 
 
 -- noncomputable def heckeFactorization_to_SVT_aux

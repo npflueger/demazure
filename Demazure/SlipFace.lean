@@ -1,5 +1,6 @@
 import Demazure.Valley
-import Mathlib.Algebra.CharP.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Data.Int.Interval
 
 /-- Definition 3.1 -/
 structure SlipFace where

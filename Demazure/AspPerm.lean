@@ -1,7 +1,8 @@
 import Demazure.Utils
 import Demazure.SlipFace
-import Mathlib.Algebra.CharP.Defs
+import Mathlib.Data.Int.LeastGreatest
 import Mathlib.Data.Set.Card
+import Mathlib.Tactic.Ring
 
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
@@ -798,7 +799,7 @@ lemma s'_ge (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
   have := (τ⁻¹).s_ge a b
   rwa [χ_dual] at this
 
-def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
+lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
   by_cases h : τ.s 0 b = 0
   · use 0
   · let S := Finset.image τ (τ.se_finset 0 b)
@@ -834,7 +835,7 @@ def tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
     have : a ≤ τ n := Finset.min'_le S (τ n) this
     exact lt_irrefl (τ n) <| lt_of_lt_of_le τn_lt_min this
 
-def tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
+lemma tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
   have := tend_zero_a (τ := τ⁻¹.flip) (-a)
   obtain ⟨b, hb⟩ := this
   use -b

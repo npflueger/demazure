@@ -1,6 +1,7 @@
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Analysis.Normed.Ring.Lemmas
-import Mathlib.Data.Int.Star
+import Mathlib.Data.Finset.Max
+import Mathlib.Data.Int.Basic
+import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Tactic.Linarith
 
 /-- Function f satisfying the hypotheses of Lemma 4.6. -/
 structure Valley where

@@ -1,5 +1,6 @@
 import Demazure.AspPerm
 import Demazure.Valley
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 namespace Submodular
 

@@ -1,6 +1,5 @@
 import Demazure.InvSet
 import Demazure.Submodular
-import Mathlib.Order.CompletePartialOrder
 
 def is_321a (τ : ℤ → ℤ) : Prop :=
   ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k
@@ -143,28 +142,18 @@ theorem inv_321a_char (I : Set (ℤ × ℤ)) :
 def is_src (τ : AspPerm) (u : ℤ) : Prop :=
   ∃ v : ℤ, ⟨u, v⟩ ∈ inv_set τ
 
-def src_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
+lemma src_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
   is_src τ u := by use v
 
 def is_snk (τ : AspPerm) (v : ℤ) : Prop :=
   ∃ u : ℤ, (u, v) ∈ inv_set τ
 
-def snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
+lemma snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
   is_snk τ v := by use u
 
 section fixed_321a
 variable {τ : AspPerm} (h_321a : is_321a τ)
 include h_321a
-
-omit h_321a in
-private lemma s_eq_se_card (τ : AspPerm) (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := by
-  unfold AspPerm.s AspPerm.se_finset
-  rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
-
-omit h_321a in
-private lemma s'_eq_nw_card (τ : AspPerm) (b a : ℤ) : τ.s' b a = (τ.nw_finset a b).card := by
-  unfold AspPerm.s' AspPerm.nw_finset
-  rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
 
 lemma inv_is_321a : is_321a τ⁻¹.func := by
   intro i j k i_lt_j j_lt_k
@@ -477,17 +466,17 @@ lemma uv_duality_ge {a b : ℤ}
       rw [← Nat.cast_add] at this
       exact Nat.cast_inj.mp this
     have : A.card = m - 1 := by
-      rw [← s_eq_se_card τ (τ v) b]
+      rw [← τ.s_eq_se_card (τ v) b]
       simpa [A] using τ.s_τv_b b m_pos
     rw [this]
     have : B.card = m' := by
       have hB : τ.s a (τ⁻¹ w) = m' := by
         simpa [w, AspPerm.dual_inverse] using (τ⁻¹.s'_b_τu a m'_pos)
-      rw [s_eq_se_card τ a (τ⁻¹ w)] at hB
+      rw [τ.s_eq_se_card a (τ⁻¹ w)] at hB
       simpa [B] using hB
     rw [this]
     have : S.card + 1 = τ.s a b + 1 := by
-      rw [s_eq_se_card τ a b]
+      rw [τ.s_eq_se_card a b]
     linarith
   have union_sub : A ∪ B ⊆ S := by
     intro x
@@ -579,15 +568,15 @@ lemma uv_duality_lt (a b : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
     have : A.card = m' := by
       have hA : τ.s a (τ⁻¹ w) = m' := by
         simpa [w, AspPerm.dual_inverse] using (τ⁻¹.s'_b_τu a m'_pos)
-      rw [s_eq_se_card τ a (τ⁻¹ w)] at hA
+      rw [τ.s_eq_se_card a (τ⁻¹ w)] at hA
       simpa [A] using hA
     rw [this]
     have : B.card = m - 1 := by
-      rw [← s_eq_se_card τ (τ v) b]
+      rw [← τ.s_eq_se_card (τ v) b]
       simpa [B] using τ.s_τv_b b m_pos
     rw [this]
     have : S.card = τ.s a b := by
-      rw [s_eq_se_card τ a b]
+      rw [τ.s_eq_se_card a b]
     rw [this]
     linarith [h_sum]
 
@@ -783,7 +772,7 @@ lemma set_321a_of_func (avset : set_321a) (χ : ℤ) : set_321a_prop (inv_set (a
 theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
   β.s (β v) b = τ.s (τ v) b := by
-  rw [s_eq_se_card β (β v) b, s_eq_se_card τ (τ v) b]
+  rw [β.s_eq_se_card (β v) b, τ.s_eq_se_card (τ v) b]
   suffices hse : β.se_finset (β v) b = τ.se_finset (τ v) b by rw [hse]
   ext x
   suffices x ≥ b → (β x < β v ↔ τ x < τ v) by
@@ -813,7 +802,7 @@ theorem eq_s_of_lel
 lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
   β.s' b (β u) = τ.s' b (τ u) := by
-  rw [s'_eq_nw_card β b (β u), s'_eq_nw_card τ b (τ u)]
+  rw [β.s'_eq_nw_card b (β u), τ.s'_eq_nw_card b (τ u)]
   suffices hnw : β.nw_finset (β u) b = τ.nw_finset (τ u) b by rw [hnw]
   ext x
   suffices x < b → (β x ≥ β u ↔ τ x ≥ τ u) by
@@ -1251,36 +1240,6 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
     · subst xJ; exact ⟨Jα, Jβ⟩
   exact ⟨I_prec_J, I_ne_J⟩
 
-def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
-    {S : Set (ℤ × ℤ)} (mem : ⟨m, n⟩ ∈ S) (nmem : ⟨1, 1⟩ ∉ S) :
-  ∃ m' n', m' ≥ 1 ∧ n' ≥ 1 ∧ ⟨m', n'⟩ ∈ S
-  ∧ ( ⟨m'-1,n'⟩ ∉ S ∧ m' ≥ 2 ∨ ⟨m', n'-1⟩ ∉ S ∧ n' ≥ 2)
-  := by
-  by_cases h : ⟨m-1, n⟩ ∉ S ∧ m ≥ 2 ∨ ⟨m, n-1⟩ ∉ S ∧ n ≥ 2
-  · use m, n
-  push_neg at h
-  by_cases m_ge_2 : m ≥ 2
-  · have mem_m_dec : ⟨m-1, n⟩ ∈ S := by
-      by_contra! h1
-      linarith [h.1 h1]
-    exact min_helper (m := m-1) (m_pos := by linarith) n_pos mem_m_dec nmem
-  have m_one : m = 1 := le_antisymm (by linarith) m_pos
-  subst m_one
-  let h := h.2
-  by_cases n_ge_2 : n ≥ 2
-  · have mem_n_dec : ⟨1, n-1⟩ ∈ S:= by
-      by_contra! h1
-      linarith [h h1]
-    exact min_helper m_pos (n := n-1) (n_pos := by linarith) mem_n_dec nmem
-  have n_one : n = 1 := le_antisymm (by linarith) n_pos
-  subst n_one
-  exfalso; exact nmem mem
-termination_by (m+n).toNat
-decreasing_by
-  all_goals
-    simp_wf
-    omega
-
 lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b + 1)) :
   ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
   := by
@@ -1353,7 +1312,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       ⟨⟨M_pos, le_refl M⟩, ⟨N_pos, le_refl N⟩, by simpa using corner_lamp⟩
     have h11_nS : ⟨(1 : ℤ), 1⟩ ∉ S := fun h => corner_nlamp (by simpa [S] using h.2.2)
     obtain ⟨m, n, _, _, hmn_S, hmin⟩ :=
-      min_helper (m_pos := M_pos) (n_pos := N_pos) hMN_S h11_nS
+      Utils.min_helper (m_pos := M_pos) (n_pos := N_pos) hMN_S h11_nS
     obtain ⟨m_Icc, n_Icc, hLamp⟩ :
         m ∈ Set.Icc 1 M ∧ n ∈ Set.Icc 1 N ∧ ⟨M+1-m, N+1-n⟩ ∈ α.lamp a :=
       by simpa [S] using hmn_S

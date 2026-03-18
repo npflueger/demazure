@@ -761,7 +761,7 @@ noncomputable def AspPerm_equiv_AspSet :
   invFun := fun ⟨asps, χ⟩ => asps.toAspPerm χ
   left_inv := by
     intro τ
-    refine AspPerm.unique_from_inv_and_χ _ _ ?_ ?_
+    refine AspPerm.unique_from_inv_and_chi _ _ ?_ ?_
     · have h_inv := invSet_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
       simpa using h_inv
     · have h_chi := chi_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ

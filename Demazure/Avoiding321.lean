@@ -156,7 +156,7 @@ noncomputable def Perm321a_equiv_Tfas :
   left_inv := by
     intro τ
     apply Subtype.ext
-    refine AspPerm.unique_from_inv_and_χ _ _ ?_ ?_
+    refine AspPerm.unique_from_inv_and_chi _ _ ?_ ?_
     · change inv_set ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ) = inv_set τ
       simpa using (AspSet.of_AspPerm τ).invSet_of_toAspPerm τ.val.χ
     · change ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ).χ = τ.val.χ
@@ -1253,7 +1253,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       exact (τ⁻¹.inv_ramp_correspondence a N_pos M_pos).mpr uv_inv_τi
     have : τ⁻¹.s b a ≥ N := by
       have hba : a + N - M - τ⁻¹.χ = b := by
-        rw [τ.χ_dual]
+        rw [τ.chi_dual]
         linarith [hMN, h_χ]
       simpa [hba] using (τ⁻¹.mem_ramp_iff_s_geq a N M).mp mem_ramp_τi
     have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp [N, this]
@@ -1301,7 +1301,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
   · -- Switch to τ⁻¹ to apply the domino helper lemma
     have leR : β⁻¹ ≤R τ⁻¹ := AspPerm.le_weak_R_of_L h_L
     have h_χ' : τ⁻¹.χ = β⁻¹.χ + α⁻¹.χ := by
-      rw [τ.χ_dual, α.χ_dual, β.χ_dual]
+      rw [τ.chi_dual, α.chi_dual, β.chi_dual]
       linarith [h_χ]
     have hβi : ⟨n, m-1⟩ ∈ β⁻¹.lamp b := (β.ramp_lamp_dual b (m-1) n).mp hβ
     have hαi : ⟨N+1-n, M+1-m⟩ ∈ α⁻¹.ramp a := by
@@ -1423,7 +1423,7 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
       suffices ⟨u', v⟩ ∈ inv_set β by simpa
       exact ⟨u'_lt_v, βu'_gt_βv⟩
     have dualχ : τ⁻¹.χ = β⁻¹.χ + α⁻¹.χ := by
-      repeat rw [AspPerm.χ_dual]
+      repeat rw [AspPerm.chi_dual]
       linarith [h_χ]
 
     have τu'_lt_τu : τ u' < τ u := by
@@ -1534,7 +1534,7 @@ def link_of_sets {A B : Set (ℤ × ℤ)} (sep : linked A B) (tf : set_321a_prop
   ⟨A, B, ⟨⟨A ∪ B, tf.asp⟩, tf⟩, χa, χb, rfl, sep⟩
 
 namespace Link
-def χ (L : Link) : ℤ :=
+def chi (L : Link) : ℤ :=
   L.χa + L.χb
 
 lemma B_subset (L : Link) : L.B ⊆ L.S.I := by
@@ -1642,19 +1642,19 @@ def B_AspSet (L : Link) : AspSet :=
   ⟨L.B, L.B_AspSet_prop⟩
 
 noncomputable def τ (L : Link) : AspPerm :=
-  L.S.toAspPerm L.χ
+  L.S.toAspPerm L.chi
 
 @[simp]
 lemma inv_set_τ (L : Link) : inv_set L.τ = L.S.I := by
-  simpa [Link.τ] using (L.S.toAspSet.invSet_of_toAspPerm L.χ)
+  simpa [Link.τ] using (L.S.toAspSet.invSet_of_toAspPerm L.chi)
 
 lemma is_321a_τ (L : Link) : is_321a L.τ := by
   rw [criterion_321a L.τ L.τ.bijective]
-  simpa [Link.τ] using tfas_of_func L.S L.χ
+  simpa [Link.τ] using tfas_of_func L.S L.chi
 
 @[simp]
-lemma shift_τ (L : Link) : L.τ.χ = L.χ := by
-  simpa [Link.τ] using (L.S.toAspSet.chi_of_toAspPerm L.χ)
+lemma chi_tau (L : Link) : L.τ.χ = L.chi := by
+  simpa [Link.τ] using (L.S.toAspSet.chi_of_toAspPerm L.chi)
 
 noncomputable def β (L : Link) : AspPerm :=
   L.B_AspSet.toAspPerm L.χb
@@ -1664,7 +1664,7 @@ lemma inv_set_β (L : Link) : inv_set L.β = L.B := by
   simpa [Link.β, Link.B_AspSet] using (L.B_AspSet.invSet_of_toAspPerm L.χb)
 
 @[simp]
-lemma shift_β (L : Link) : L.β.χ = L.χb := by
+lemma chi_beta (L : Link) : L.β.χ = L.χb := by
   simpa [Link.β] using (L.B_AspSet.chi_of_toAspPerm L.χb)
 
 lemma A_AspSet_prop (L : Link) :
@@ -1765,8 +1765,8 @@ lemma inv_set_α (L : Link) : L.A = L.τ.sr L.α '' inv_set L.α := by
     simpa [hu, hv] using hu'v'
 
 @[simp]
-lemma shift_α (L : Link) : L.α.χ = L.χa := by
-  rw [Link.α, AspPerm.χ_dual]
+lemma chi_alpha (L : Link) : L.α.χ = L.χa := by
+  rw [Link.α, AspPerm.chi_dual]
   have hχ := L.A_AspSet.chi_of_toAspPerm (-L.χa)
   linarith
 
@@ -1774,7 +1774,7 @@ lemma dprod (L : Link) : L.α ⋆ L.β = L.τ := by
   have hτ : L.τ = L.α ⋆ L.β := by
     apply (dprod_eq_iff (τ := L.τ) (α := L.α) (β := L.β) (L.is_321a_τ)).mpr
     constructor
-    · rw [L.shift_α, L.shift_β, L.shift_τ, Link.χ]
+    · rw [L.chi_alpha, L.chi_beta, L.chi_tau, Link.chi]
     constructor
     · simpa [L.inv_set_τ, L.inv_set_α, L.inv_set_β] using L.union_eq.symm
     · intro p hp q hq hpq
@@ -1840,9 +1840,9 @@ noncomputable def link_equiv_dprod :
   invFun x := ⟨Link_of_dprod h_321a x.property, by
     rcases x with ⟨⟨α, β⟩, h_dprod⟩
     change α ⋆ β = τ at h_dprod
-    apply AspPerm.unique_from_inv_and_χ
+    apply AspPerm.unique_from_inv_and_chi
     · change inv_set ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)) = inv_set τ
-      simpa [Link.τ, Link.χ, Link_of_dprod] using
+      simpa [Link.τ, Link.chi, Link_of_dprod] using
         (AspSet.of_AspPerm τ).invSet_of_toAspPerm (α.χ + β.χ)
     · change ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)).χ = τ.χ
       have hχ' : ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)).χ = α.χ + β.χ := by
@@ -1862,16 +1862,16 @@ noncomputable def link_equiv_dprod :
     · change inv_set L.val.β = L.val.B
       exact L.val.inv_set_β
     · change L.val.α.χ = L.val.χa
-      exact L.val.shift_α
+      exact L.val.chi_alpha
     · change L.val.β.χ = L.val.χb
-      exact L.val.shift_β
+      exact L.val.chi_beta
   right_inv x := by
     rcases x with ⟨⟨α, β⟩, h_dprod⟩
     change α ⋆ β = τ at h_dprod
     have hτL : (Link_of_dprod h_321a h_dprod).τ = τ := by
-      apply AspPerm.unique_from_inv_and_χ
+      apply AspPerm.unique_from_inv_and_chi
       · change inv_set ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)) = inv_set τ
-        simpa [Link.τ, Link.χ, Link_of_dprod] using
+        simpa [Link.τ, Link.chi, Link_of_dprod] using
           (AspSet.of_AspPerm τ).invSet_of_toAspPerm (α.χ + β.χ)
       · change ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)).χ = τ.χ
         have hχ' : ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)).χ = α.χ + β.χ := by
@@ -1890,13 +1890,13 @@ noncomputable def link_equiv_dprod :
                   rfl
           _ = (α⁻¹)⁻¹ := by rw [this]
           _ = α := by simp
-      apply AspPerm.unique_from_inv_and_χ
+      apply AspPerm.unique_from_inv_and_chi
       · rw [AspSet.invSet_of_toAspPerm]
         subst asps
         simpa [Link.A_AspSet, hτL] using
           rev_A_eq_inv_inv_of_Link_of_dprod (τ := τ) h_321a h_dprod
       · rw [AspSet.chi_of_toAspPerm]
-        simp [Link_of_dprod, AspPerm.χ_dual]
+        simp [Link_of_dprod, AspPerm.chi_dual]
     · dsimp
       let asps := (Link_of_dprod h_321a h_dprod).B_AspSet
       suffices asps.toAspPerm (Link_of_dprod h_321a h_dprod).χb = β by
@@ -1905,7 +1905,7 @@ noncomputable def link_equiv_dprod :
               = asps.toAspPerm (Link_of_dprod h_321a h_dprod).χb := by
                   rfl
           _ = β := this
-      apply AspPerm.unique_from_inv_and_χ
+      apply AspPerm.unique_from_inv_and_chi
       · rw [AspSet.invSet_of_toAspPerm]
         subst asps
         change inv_set β.func = inv_set β.func
@@ -2060,7 +2060,7 @@ theorem DProd_LPerm_of_Chain :
     DProd (LPerm_of_Chain C hC htfas) = ((⟨boxUnion C, htfas.asp⟩ : AspSet).toAspPerm (chiSum C))
   | [], _, htfas => by
       let asps : AspSet := ⟨∅, htfas.asp⟩
-      apply AspPerm.unique_from_inv_and_χ
+      apply AspPerm.unique_from_inv_and_chi
       · simpa [asps, LPerm_of_Chain, DProd, boxUnion] using (asps.invSet_of_toAspPerm 0).symm
       · simpa [asps, LPerm_of_Chain, DProd, chiSum] using (asps.chi_of_toAspPerm 0).symm
   | ⟨A, χ⟩ :: Q, hC, htfas => by
@@ -2078,7 +2078,7 @@ noncomputable def HF_of_PChain (C : PChain τ) : HeckeFactorization τ := by
   refine ⟨LPerm_of_Chain C.val C.prop.1 tfas, ?_⟩
   let asps : AspSet := ⟨boxUnion C.val, tfas.asp⟩
   have h_asps : asps.toAspPerm (chiSum C.val) = τ := by
-    apply AspPerm.unique_from_inv_and_χ
+    apply AspPerm.unique_from_inv_and_chi
     · simpa [asps, C.prop.2.1] using (asps.invSet_of_toAspPerm (chiSum C.val))
     · simpa [asps, C.prop.2.2] using (asps.chi_of_toAspPerm (chiSum C.val))
   exact (DProd_LPerm_of_Chain C.val C.prop.1 tfas).trans h_asps

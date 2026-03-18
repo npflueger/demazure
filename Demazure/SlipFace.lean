@@ -391,7 +391,7 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.1
 
-@[simp] lemma star_chi (s t : SlipFace) : (s ⋆ t).χ = s.χ + t.χ := by
+@[simp] lemma chi_star (s t : SlipFace) : (s ⋆ t).χ = s.χ + t.χ := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.2
 

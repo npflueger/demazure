@@ -706,8 +706,8 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have ex := star_exists α β
   let τ := α ⋆ β
   have τ_eq : τ.sf = α.sf ⋆ β.sf  := (ex.choose_spec).1
-  repeat rw [← AspPerm.sf_χ_eq]
-  simp
+  repeat rw [← AspPerm.sf_chi_eq]
+  simp [SlipFace.chi_star]
 
 lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
   rw [AspPerm.s_eq_se_card]
@@ -764,8 +764,8 @@ instance : PartialOrder AspPerm where
     intro a b
     exact Int.le_antisymm (h₁ a b) (h₂ a b)
 
-def leχ (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
-infix:50 " ≤χ " => leχ
+def le_chi (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
+infix:50 " ≤χ " => le_chi
 
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by
   constructor

@@ -293,7 +293,7 @@ noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
-@[simp] lemma id_χ : AspPerm.id.χ = 0 := by
+@[simp] lemma id_chi : AspPerm.id.χ = 0 := by
   have h_se : southeast_set AspPerm.id 0 0 = ∅ := by
     apply Set.eq_empty_iff_forall_notMem.mpr
     intro k hk
@@ -352,13 +352,13 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         simpa using ⟨τin_lt_b, a_le_n⟩
     _ = (τ⁻¹).s b a := by rfl
 
-lemma χ_dual : τ⁻¹.χ = - τ.χ := by
+lemma chi_dual : τ⁻¹.χ = - τ.χ := by
   dsimp [AspPerm.χ]
   simp only [AspPerm.dual_inverse, inv_inv]
   norm_num
 
-lemma χ_dual' : τ.χ = - (τ⁻¹).χ := by
-  rw [← χ_dual τ⁻¹, inv_inv]
+lemma chi_dual' : τ.χ = - (τ⁻¹).χ := by
+  rw [← chi_dual τ⁻¹, inv_inv]
 
 lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
@@ -746,7 +746,7 @@ theorem reconstruction : ∀ n : ℤ,
   omega
 
 /-- If two ASP permutations have the same shift and inversion set, then they are equal. -/
-theorem unique_from_inv_and_χ (σ τ : AspPerm) (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) :
+theorem unique_from_inv_and_chi (σ τ : AspPerm) (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) :
   σ = τ := by
   apply AspPerm.ext.mpr
   ext n
@@ -797,7 +797,7 @@ lemma s_ge (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := by
 lemma s'_ge (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
   rw [dual_inverse τ]
   have := (τ⁻¹).s_ge a b
-  rwa [χ_dual] at this
+  rwa [chi_dual] at this
 
 lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
   by_cases h : τ.s 0 b = 0
@@ -897,7 +897,7 @@ noncomputable def sf : SlipFace := {
 }
 
 @[simp] lemma sf_func_eq_s : τ.sf.func = τ.s := rfl
-@[simp] lemma sf_χ_eq : τ.sf.χ = τ.χ := rfl
+@[simp] lemma sf_chi_eq : τ.sf.χ = τ.χ := rfl
 
 lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
   apply (SF_ext τ.sf.dual τ⁻¹.sf).mpr
@@ -991,7 +991,7 @@ lemma mem_lamp_iff_s_geq (a m n : ℤ) :
   have := ramp_lamp_dual (τ := τ⁻¹) a n m
   rw [inv_inv] at this
   rw [← this]
-  rw [mem_ramp_iff_s_geq, χ_dual]
+  rw [mem_ramp_iff_s_geq, chi_dual]
   constructor <;> (intro h; convert h using 2; omega)
 
 namespace Wings
@@ -1348,7 +1348,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     use l
 
     have l_eq : l = a + n' - m' - α⁻¹.χ := by
-      simp [n', m', l, α.χ_dual]
+      simp [n', m', l, α.chi_dual]
       linarith [habMN]
     rw [← l_eq] at ineqs
     obtain ⟨hβ, hα⟩ := ineqs

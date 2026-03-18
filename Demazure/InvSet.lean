@@ -28,6 +28,12 @@ instance : SetLike AspSet (ℤ × ℤ) where
 
 namespace AspSet
 
+theorem ext {A B : AspSet} (hI : A.I = B.I) : A = B := by
+  cases A
+  cases B
+  cases hI
+  rfl
+
 abbrev directed (asps : AspSet) := asps.prop.directed
 abbrev closed (asps : AspSet) := asps.prop.closed
 abbrev coclosed (asps : AspSet) := asps.prop.coclosed

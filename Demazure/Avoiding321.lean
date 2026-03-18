@@ -14,7 +14,8 @@ structure set_321a_prop (I : Set (ℤ × ℤ)) where
 structure tfas : Type extends AspSet where
   prop_321a : set_321a_prop I
 
-theorem asp_of_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ) (h_321a : is_321a τ) : is_asp τ := by
+theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
+    (h_321a : is_321a τ) : is_asp τ := by
   have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ := by
     by_cases h : ∃ u : ℤ, ⟨u,0⟩ ∈ inv_set τ
     · obtain ⟨u, hu⟩ := h
@@ -84,7 +85,7 @@ theorem asp_of_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ) (h_321a :
 
   exact asp_of_finite_quadrants h_bij.injective se_finite nw_finite
 
-lemma tfree_of_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
+lemma tfree_of_is_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
   ∀ u v w : ℤ, ⟨u,v⟩ ∉ inv_set τ ∨ ⟨v,w⟩ ∉ inv_set τ := by
   intro u v w
   by_contra! h
@@ -94,17 +95,17 @@ lemma tfree_of_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
   contrapose! this
   exact ⟨le_of_lt uv_inv.2, le_of_lt vw_inv.2⟩
 
-theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_321a τ ↔
-  set_321a_prop (inv_set τ) := by
+theorem is_321a_iff_set_321a_prop (τ : ℤ → ℤ) (hperm : Function.Bijective τ) :
+    is_321a τ ↔ set_321a_prop (inv_set τ) := by
   constructor
   -- Forward direction
   · intro h321a
-    have h_asp := asp_of_321a τ hperm h321a
+    have h_asp := is_asp_of_is_321a τ hperm h321a
     let τ_asp : AspPerm := ⟨τ, hperm, h_asp⟩
     constructor
     · show AspSet_prop (inv_set τ)
       exact AspSet.AspSet_InvSet_of_AspPerm τ_asp
-    · exact tfree_of_321a τ h321a
+    · exact tfree_of_is_321a τ h321a
   -- Converse
   · rintro h i j k i_lt_j j_lt_k
     have := h.tfree i j k
@@ -123,13 +124,13 @@ theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_3
 def tfas_of_perm {τ : AspPerm} (h_321a : is_321a τ) : tfas := ⟨AspSet.of_AspPerm τ, by
   constructor
   · exact AspSet.AspSet_InvSet_of_AspPerm τ
-  · exact tfree_of_321a τ h_321a⟩
+  · exact tfree_of_is_321a τ h_321a⟩
 
 noncomputable def Perm321a_equiv_BijectiveFunc321a :
   {τ : AspPerm | is_321a τ} ≃ {τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ} where
   toFun τ := ⟨τ.val.func, ⟨τ.val.bijective, τ.prop⟩⟩
   invFun := fun ⟨τ, hτ⟩ =>
-    ⟨⟨τ, hτ.1, asp_of_321a τ hτ.1 hτ.2⟩, hτ.2⟩
+    ⟨⟨τ, hτ.1, is_asp_of_is_321a τ hτ.1 hτ.2⟩, hτ.2⟩
   left_inv := by
     intro τ
     apply Subtype.ext
@@ -143,10 +144,11 @@ noncomputable def Perm321a_equiv_BijectiveFunc321a :
 noncomputable def Perm321a_equiv_Tfas :
   {τ : AspPerm | is_321a τ} ≃ tfas × ℤ where
   toFun τ :=
-    ⟨⟨AspSet.of_AspPerm τ, (criterion_321a τ τ.val.bijective).mp τ.prop⟩, τ.val.χ⟩
+    ⟨⟨AspSet.of_AspPerm τ,
+        (is_321a_iff_set_321a_prop τ τ.val.bijective).mp τ.prop⟩, τ.val.χ⟩
   invFun := fun ⟨I, χ⟩ =>
     ⟨I.toAspPerm χ,
-      (criterion_321a (I.recon χ) (I.toAspPerm χ).bijective).mpr
+      (is_321a_iff_set_321a_prop (I.recon χ) (I.toAspPerm χ).bijective).mpr
         { asp := by
             show AspSet_prop (inv_set (I.recon χ))
             rw [I.invSet_func χ]
@@ -156,7 +158,7 @@ noncomputable def Perm321a_equiv_Tfas :
   left_inv := by
     intro τ
     apply Subtype.ext
-    refine AspPerm.unique_from_inv_and_chi _ _ ?_ ?_
+    refine AspPerm.eq_of_inv_set_eq_of_chi_eq _ _ ?_ ?_
     · change inv_set ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ) = inv_set τ
       simpa using (AspSet.of_AspPerm τ).invSet_of_toAspPerm τ.val.χ
     · change ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ).χ = τ.val.χ
@@ -184,14 +186,14 @@ theorem inv_321a_char (I : Set (ℤ × ℤ)) :
     let τ : AspPerm := I_321a.toAspPerm 0
     use τ.func
     constructor
-    · rw [criterion_321a τ.func τ.bijective]
+    · rw [is_321a_iff_set_321a_prop τ.func τ.bijective]
       have : inv_set τ.func = I := I_321a.invSet_func 0
       rwa [this]
     constructor
     · exact τ.bijective
     · exact I_321a.invSet_func 0
   · rintro ⟨τ, ⟨h_321a, h_bij, h_inv⟩⟩
-    have := (criterion_321a τ h_bij).mp h_321a
+    have := (is_321a_iff_set_321a_prop τ h_bij).mp h_321a
     rwa [h_inv] at this
 
 def is_src (τ : AspPerm) (u : ℤ) : Prop :=
@@ -233,7 +235,7 @@ lemma not_src_and_snk (n : ℤ) :
   obtain ⟨h_src, h_snk⟩ := this
   rcases h_snk with ⟨u, hu⟩
   rcases h_src with ⟨v, hv⟩
-  have := tfree_of_321a τ h_321a u n v
+  have := tfree_of_is_321a τ h_321a u n v
   rcases this <;> contradiction
 
 lemma snk_lt {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
@@ -247,7 +249,7 @@ lemma snk_lt {v x : ℤ} (v_snk : is_snk τ v) (v_lt_x : v < x) :
     rw [heq] at v_lt_x
     exact lt_irrefl v v_lt_x
   rcases v_snk with ⟨u, _⟩
-  have := tfree_of_321a τ h_321a u v x
+  have := tfree_of_is_321a τ h_321a u v x
   rcases this <;> contradiction
 
 lemma snk_le {v x : ℤ} (v_snk : is_snk τ v) (v_le_x : v ≤ x) :
@@ -269,7 +271,7 @@ lemma src_gt {u x : ℤ} (u_src : is_src τ u) (x_lt_u : x < u) :
     rw [heq] at x_lt_u
     exact lt_irrefl x x_lt_u
   rcases u_src with ⟨v, _⟩
-  have := tfree_of_321a τ h_321a x u v
+  have := tfree_of_is_321a τ h_321a x u v
   rcases this <;> contradiction
 
 lemma src_ge {u x : ℤ} (u_src : is_src τ u) (x_le_u : x ≤ u) :
@@ -298,7 +300,7 @@ lemma between_inv {u x v : ℤ}
       rcases this <;> contradiction
     have h_xv : ⟨x, v⟩ ∉ inv_set τ := by
       intro h_xv
-      have := tfree_of_321a τ h_321a u x v
+      have := tfree_of_is_321a τ h_321a u x v
       rcases this <;> contradiction
     constructor <;> simp [x_snk, x_not_src, h_ux, h_xv]
   · have h_xv : ⟨x, v⟩ ∈ inv_set τ := by
@@ -354,7 +356,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
         have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
         have un_inv : ⟨u, n⟩ ∈ inv_set τ :=
           ⟨lt_of_lt_of_le u_lt_b n_ge_b, lt_of_lt_of_le τn_lt_a τu_ge_a⟩
-        have := tfree_of_321a τ h_321a u n v
+        have := tfree_of_is_321a τ h_321a u n v
         rcases this <;> contradiction
     · rintro (⟨n_ge_v, τn_lt_a⟩ | ⟨n_ge_b, τn_lt_τv⟩)
       · exact ⟨le_trans b_le_v n_ge_v, τn_lt_a⟩
@@ -366,7 +368,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
     simp only [Set.mem_inter_iff, southeast_set, Set.mem_setOf_eq] at hx
     obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b, τx_lt_τv⟩⟩ := hx
     have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
-    have := tfree_of_321a τ h_321a u v x
+    have := tfree_of_is_321a τ h_321a u v x
     rcases this <;> contradiction
   have h_ncard : (southeast_set τ a b).ncard =
       (southeast_set τ a v).ncard + (southeast_set τ (τ v) b).ncard := by
@@ -399,7 +401,8 @@ lemma uv_duality {u : ℤ} {a b : ℤ}
 lemma uv_duality_ge {a b : ℤ}
   {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0) (m_sum : m + m' = τ.s a b + 1) :
   is_snk τ (τ.v b m_pos) → is_snk τ (τ⁻¹ (τ⁻¹.u a m'_pos)) →
-  (τ (τ.v b m_pos) ≥ τ⁻¹.u a m'_pos) ∧ (τ.v b m_pos ≥ τ⁻¹ (τ⁻¹.u a m'_pos)) := by
+    (τ (τ.v b m_pos) ≥ τ⁻¹.u a m'_pos) ∧
+      (τ.v b m_pos ≥ τ⁻¹ (τ⁻¹.u a m'_pos)) := by
   let v := τ.v b m_pos
   let w := τ⁻¹.u a m'_pos
   suffices is_snk τ v → is_snk τ (τ⁻¹ w) → (τ v ≥ w ∧ v ≥ τ⁻¹ w) by
@@ -576,8 +579,8 @@ lemma snk_of_snk {n : ℤ} (h_snk : is_snk β n) : is_snk τ n := by
   exact snk_of_inv (h_L h_inv)
 
 lemma is_321a_of_lel : is_321a β := by
-  rw [criterion_321a τ τ.bijective] at h_321a
-  rw [criterion_321a β β.bijective]
+  rw [is_321a_iff_set_321a_prop τ τ.bijective] at h_321a
+  rw [is_321a_iff_set_321a_prop β β.bijective]
   constructor
   · have := (AspSet.of_AspPerm β).prop
     congr
@@ -730,7 +733,8 @@ lemma sr_inv_of_ler_iff {α : AspPerm} (h_R : α ≤R τ)
     simpa [J] using (τ.sr_crit α u' v').mpr invJ
 
 omit h_321a h_L in
-lemma tfas_of_func (avset : tfas) (χ : ℤ) : set_321a_prop (inv_set (avset.recon χ)) := by
+lemma set_321a_prop_of_func (avset : tfas) (χ : ℤ) :
+    set_321a_prop (inv_set (avset.recon χ)) := by
   constructor
   · show AspSet_prop (inv_set (avset.recon χ))
     rw [avset.invSet_func χ]
@@ -766,7 +770,6 @@ theorem eq_s_of_lel
   exact inv_of_lel_iff h_321a h_L uv_inv nested
 
 
--- This is roughly a repeat of the proof above. Can it be unified with it somehow?
 lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
   β.s' b (β u) = τ.s' b (τ u) := by
@@ -814,8 +817,6 @@ lemma uv_eq_of_lel
   exact ⟨ (β.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
     (β.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
 
--- Almost identical to the above, but with β.u and β.v instead of τ.u and τ.v.
--- Can these be unified compactly?
 lemma uv_eq_of_lel'
   (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨β.u b n_pos, β.v b m_pos⟩ ∈ inv_set β
@@ -929,7 +930,9 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
     rw [inv_inv] at this
     rw [← this] at hα
 
-    have h : (τ v, τ u) ∈ inv_set α⁻¹.func ↔ (τ⁻¹.s u a + 1, τ.s a v) ∈ α⁻¹.ramp a := by
+    have h :
+        (τ v, τ u) ∈ inv_set α⁻¹.func ↔
+          (τ⁻¹.s u a + 1, τ.s a v) ∈ α⁻¹.ramp a := by
       have := inv_of_lel_iff_ramp (τ := τ⁻¹) (β := α⁻¹)
         (inv_is_321a h_321a) h_R τv_lt_a τu_ge_a
       rw [τ⁻¹.dual_inverse, inv_inv] at this
@@ -950,7 +953,8 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
 
     exact (τ.sr_crit α u v).mpr hα
 
-lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv_set α)) ∪ inv_set β) :
+lemma union_sufficient (a b : ℤ)
+    (h_union : inv_set τ ⊆ ((τ.sr α) '' inv_set α) ∪ inv_set β) :
    α.dprod_val_ge β a b (τ.s a b)
   := by
   let M := τ.s a b
@@ -974,7 +978,6 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv
   have v_ge_b : v ≥ b := (τ.v_ge b m_ge_1)
   have τv_lt_a : τ v < a := τ.τv_lt b m_ge_1 m_le_M
   have τu_ge_a : τ u ≥ a := τ.τu_ge b n_ge_1 n_le_N
-  -- [TODO] consider packaging all the above into a structure for use elsewhere
 
   have : ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b :=
     lel_ramp h_321a h_L b m_ge_1 n_ge_1
@@ -983,7 +986,6 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv
   let u' := τ⁻¹.u a m'_ge_1
   let v' := τ⁻¹.v a n'_ge_1
 
-  -- [TODO] bubble this out as a separate helper, and also the one below
   have u'_eq : τ v = u' := by
     apply (τ⁻¹.u_crit a m'_ge_1 (τ v)).mpr
     simp only [τ⁻¹.dual_inverse, inv_inv, τ.inv_mul_cancel_eval]
@@ -1009,14 +1011,16 @@ lemma union_sufficient (a b : ℤ) (h_union : inv_set τ ⊆ ((τ.sr α) '' (inv
 
   have lamp_equiv : ⟨u', v'⟩ ∈ inv_set α⁻¹.func
     ↔ ⟨m', n'⟩ ∈ α.lamp a := lel_lamp h_321a h_R a m'_ge_1 n'_ge_1
-  suffices ⟨u, v⟩ ∈ (τ.sr α) '' (inv_set α) ∨ ⟨u, v⟩ ∈ inv_set β  by
+  suffices ⟨u, v⟩ ∈ (τ.sr α) '' inv_set α ∨ ⟨u, v⟩ ∈ inv_set β by
     rwa [← lamp_equiv, ← u'_eq, ← v'_eq, ← τ.sr_crit α u v, Or.comm]
 
-  have uv_inv : ⟨u, v⟩ ∈ inv_set τ := ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
+  have uv_inv : ⟨u, v⟩ ∈ inv_set τ := by
+    exact ⟨lt_of_lt_of_le u_lt_b v_ge_b, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
   exact h_union uv_inv
 
 lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
-  (uv₁_inv : ⟨u, v₁⟩ ∈ (τ.sr α) '' (inv_set α)) (uv₂_inv : ⟨u, v₂⟩ ∈ inv_set β) :
+    (uv₁_inv : ⟨u, v₁⟩ ∈ (τ.sr α) '' inv_set α)
+    (uv₂_inv : ⟨u, v₂⟩ ∈ inv_set β) :
   let a := τ v₁ + 1
   let b := v₁ + 1
 
@@ -1035,7 +1039,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
         refine (τ.inv_iff_le ?_).mpr ?_
         linarith [x_mem.1]
         linarith [x_mem.2]
-      have := tfree_of_321a τ h_321a u v₁ x
+      have := tfree_of_is_321a τ h_321a u v₁ x
       rcases this <;> contradiction
     have h_ncard : (southeast_set τ a b).ncard = 0 := by
       exact (Set.ncard_eq_zero (s := southeast_set τ a b) (hs := τ.se_finite a b)).2 h_empty
@@ -1051,13 +1055,11 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
   obtain m_one : m = 1 := le_antisymm m_le_1 m_ge_1
   subst m_one
 
-  -- Can probably remove this after getting the rest hashed out
   let n' := N + 1 - n
   change ⟨1, n⟩ ∈ β.ramp b ∨ ⟨1, n'⟩ ∈ α.lamp a
 
   have u_lt_v₁ : u < v₁ := by linarith [uv₁_inv_τ.1]
   have v₁_le_v₂ : v₁ ≤ v₂ := by linarith
-  -- have τv₂_ge_a : τ v₂ ≥ a := by sorry
   have τu_ge_a : τ u ≥ a := by linarith [uv₁_inv_τ.2]
   have τv₁_lt_a : τ v₁ < a := by linarith
 
@@ -1107,7 +1109,7 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
   (m_pos : m ≥ 1) (m'_pos : m' ≥ 1) (n_pos : n ≥ 1) (n'_pos : n' ≥ 1)
   (msum : m + m' = τ.s a b + 2) (nsum : n + n' = τ⁻¹.s b a + 1)
   (hα : ⟨m', n'⟩ ∈ α.lamp a) (hβ : ⟨m, n⟩ ∈ β.ramp b) :
-  ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
+  ∃ (I J : ℤ × ℤ), {I, J} ⊆ (τ.sr α '' inv_set α) ∩ inv_set β ∧ I ≼ J ∧ I ≠ J
   := by
 
   have invβ : ⟨β.u b n_pos, β.v b m_pos⟩ ∈ inv_set β :=
@@ -1141,8 +1143,9 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
 
   have : n' + n = τ⁻¹.s b a + 1 := by linarith [nsum]
   have := uv_duality_ge (inv_is_321a h_321a) n'_pos n_pos this
-  have duality : is_snk τ⁻¹ v' → is_snk τ⁻¹ (τ u) → (τ⁻¹ v' ≥ u) ∧ (v' ≥ τ u) := by
-      simpa using this
+  have duality :
+      is_snk τ⁻¹ v' → is_snk τ⁻¹ (τ u) → (τ⁻¹ v' ≥ u) ∧ (v' ≥ τ u) := by
+    simpa using this
   have v'_snk : is_snk τ⁻¹ v' := snk_of_inv (h_R invα)
   have τiu_snk : is_snk τ⁻¹ (τ u) := by
     have : ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
@@ -1209,7 +1212,7 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
   exact ⟨I_prec_J, I_ne_J⟩
 
 lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b + 1)) :
-  ∃ (I J : (ℤ × ℤ)), {I, J} ⊆ (τ.sr α ''  (inv_set α)) ∩ (inv_set β) ∧ I ≼ J ∧ I ≠ J
+  ∃ (I J : ℤ × ℤ), {I, J} ⊆ (τ.sr α '' inv_set α) ∩ inv_set β ∧ I ≼ J ∧ I ≠ J
   := by
   let M := τ.s a b + 1
   let N := τ⁻¹.s b a + 1
@@ -1223,7 +1226,6 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
 
   have corner_nramp : ⟨M, N⟩ ∉ β.ramp b := by
     intro mem_ramp
-    -- [TODO] Consider extracting this as a general ramp ⊆ ramp lemma for ≤L.
     have M_pos : M > 0 := by linarith [τ.s_nonneg a b]
     have N_pos : N > 0 := by linarith [τ⁻¹.s_nonneg b a]
     have uv_inv_β : ⟨β.u b N_pos, β.v b M_pos⟩ ∈ inv_set β := by
@@ -1234,7 +1236,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
     have mem_ramp_τ : ⟨M, N⟩ ∈ τ.ramp b := by
       exact (τ.inv_ramp_correspondence b M_pos N_pos).mpr uv_inv_τ
     have : τ.s a b ≥ M := by
-      convert (τ.mem_ramp_iff_s_geq b M N).mp mem_ramp_τ
+      convert (τ.mem_ramp_iff_s_ge b M N).mp mem_ramp_τ
       linarith [hMN]
     linarith [this]
 
@@ -1255,7 +1257,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       have hba : a + N - M - τ⁻¹.χ = b := by
         rw [τ.chi_dual]
         linarith [hMN, h_χ]
-      simpa [hba] using (τ⁻¹.mem_ramp_iff_s_geq a N M).mp mem_ramp_τi
+      simpa [hba] using (τ⁻¹.mem_ramp_iff_s_ge a N M).mp mem_ramp_τi
     have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp [N, this]
     linarith
 
@@ -1268,8 +1270,9 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
     · simpa using hα
 
   have domino : ∃ m ∈ Set.Icc 1 M, ∃ n ∈ Set.Icc 1 N,
-    ⟨M+1-m, N+1-n⟩ ∈ α.lamp a
-    ∧ ((⟨m-1, n⟩ ∈ β.ramp b ∧ m ≥ 2) ∨ (⟨m, n-1⟩ ∈ β.ramp b ∧ n ≥ 2)) := by
+      ⟨M + 1 - m, N + 1 - n⟩ ∈ α.lamp a ∧
+        ((⟨m - 1, n⟩ ∈ β.ramp b ∧ m ≥ 2) ∨
+          (⟨m, n - 1⟩ ∈ β.ramp b ∧ n ≥ 2)) := by
     -- S encodes α.lamp a via the coordinate flip (m,n) ↦ (M+1-m, N+1-n).
     -- (M,N) ∈ S since corner_lamp gives (1,1) ∈ α.lamp a;
     -- (1,1) ∉ S since corner_nlamp gives (M,N) ∉ α.lamp a.
@@ -1306,14 +1309,19 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
     have hβi : ⟨n, m-1⟩ ∈ β⁻¹.lamp b := (β.ramp_lamp_dual b (m-1) n).mp hβ
     have hαi : ⟨N+1-n, M+1-m⟩ ∈ α⁻¹.ramp a := by
       simpa [α⁻¹.ramp_lamp_dual a]
-    have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR b a  (N+1-n) n (M+1-m) (m-1)
+    have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR b a (N + 1 - n) n
+      (M + 1 - m) (m - 1)
       (by linarith [n_Icc.2]) n_Icc.1
       (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith) (by simp; linarith) hβi hαi
     rcases this with ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩, ⟨h_mem, h_nest⟩⟩
-    have h1_mem : ⟨u₁, v₁⟩ ∈ ((τ⁻¹.sr β⁻¹) '' (inv_set β⁻¹.func)) ∩ (inv_set α⁻¹.func) :=
+    have h1_mem :
+        ⟨u₁, v₁⟩ ∈
+          ((τ⁻¹.sr β⁻¹) '' inv_set β⁻¹.func) ∩ inv_set α⁻¹.func :=
       h_mem (by simp : (u₁, v₁) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
-    have h2_mem : ⟨u₂, v₂⟩ ∈ ((τ⁻¹.sr β⁻¹) '' (inv_set β⁻¹.func)) ∩ (inv_set α⁻¹.func) :=
-       h_mem (by simp : (u₂, v₂) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
+    have h2_mem :
+        ⟨u₂, v₂⟩ ∈
+          ((τ⁻¹.sr β⁻¹) '' inv_set β⁻¹.func) ∩ inv_set α⁻¹.func :=
+      h_mem (by simp : (u₂, v₂) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
 
     have h1_sr : ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩ ∈ (τ.sr α) '' inv_set α := by
       apply (τ.sr_crit α (τ⁻¹ v₁) (τ⁻¹ u₁)).mpr
@@ -1371,9 +1379,10 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       (by linarith) (by linarith)
       hα hβ
 
---- Main result
+-- Main result
 
-theorem dprod_ge_iff_union : τ ≤ α ⋆ β ↔ inv_set τ ⊆ (τ.sr α) '' (inv_set α) ∪ inv_set β := by
+theorem dprod_ge_iff_union :
+    τ ≤ α ⋆ β ↔ inv_set τ ⊆ (τ.sr α) '' inv_set α ∪ inv_set β := by
   rw [τ.le_star_iff α β]
   constructor
   · intro ge
@@ -1464,7 +1473,6 @@ theorem dprod_eq_iff : τ = α ⋆ β
     ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β
     ∧ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)
   := by
-  -- rw [τ.eq_star_iff]
   constructor
   · intro dprod
     have h_χ : α.χ + β.χ = τ.χ := by
@@ -1553,7 +1561,8 @@ lemma mem_A_of_mem_inv_not_mem_B (L : Link) {p : ℤ × ℤ}
   · exact (hpB hpB').elim
 
 theorem ext {L₁ L₂ : Link}
-  (hA : L₁.A = L₂.A) (hB : L₁.B = L₂.B) (hχa : L₁.χa = L₂.χa) (hχb : L₁.χb = L₂.χb) : L₁ = L₂ := by
+    (hA : L₁.A = L₂.A) (hB : L₁.B = L₂.B)
+    (hχa : L₁.χa = L₂.χa) (hχb : L₁.χb = L₂.χb) : L₁ = L₂ := by
   have hS : L₁.S = L₂.S := by
     cases hs1 : L₁.S with
     | mk S1 p1 =>
@@ -1649,8 +1658,8 @@ lemma inv_set_τ (L : Link) : inv_set L.τ = L.S.I := by
   simpa [Link.τ] using (L.S.toAspSet.invSet_of_toAspPerm L.chi)
 
 lemma is_321a_τ (L : Link) : is_321a L.τ := by
-  rw [criterion_321a L.τ L.τ.bijective]
-  simpa [Link.τ] using tfas_of_func L.S L.chi
+  rw [is_321a_iff_set_321a_prop L.τ L.τ.bijective]
+  simpa [Link.τ] using set_321a_prop_of_func L.S L.chi
 
 @[simp]
 lemma chi_tau (L : Link) : L.τ.χ = L.chi := by
@@ -1696,7 +1705,8 @@ lemma A_AspSet_prop (L : Link) :
           exact (L.τ.inv_set_inverse u' v').mp hu'v'τ
       · intro h
         have h' : ⟨L.τ⁻¹ v, L.τ⁻¹ u⟩ ∈ inv_set L.τ := by
-          have hτi : ⟨L.τ (L.τ⁻¹ u), L.τ (L.τ⁻¹ v)⟩ ∈ inv_set (((L.τ)⁻¹).func) := by
+          have hτi :
+              ⟨L.τ (L.τ⁻¹ u), L.τ (L.τ⁻¹ v)⟩ ∈ inv_set ((L.τ)⁻¹).func := by
             simpa using h
           have := (L.τ.inv_set_inverse (L.τ⁻¹ v) (L.τ⁻¹ u)).mpr hτi
           simpa using this
@@ -1819,7 +1829,9 @@ noncomputable def Link_of_dprod {α β : AspPerm}
 lemma rev_A_eq_inv_inv_of_Link_of_dprod {α β : AspPerm} (dprod : α ⋆ β = τ) :
   τ.rev_map '' (Link_of_dprod h_321a dprod).A = inv_set α⁻¹.func := by
   ext ⟨u, v⟩
-  change ⟨u, v⟩ ∈ τ.rev_map '' (τ.sr α '' inv_set α.func) ↔ ⟨u, v⟩ ∈ inv_set α⁻¹.func
+  change
+    ⟨u, v⟩ ∈ τ.rev_map '' (τ.sr α '' inv_set α.func) ↔
+      ⟨u, v⟩ ∈ inv_set α⁻¹.func
   constructor
   · intro h
     rcases h with ⟨⟨u', v'⟩, hu'v', hEq⟩
@@ -1840,7 +1852,7 @@ noncomputable def link_equiv_dprod :
   invFun x := ⟨Link_of_dprod h_321a x.property, by
     rcases x with ⟨⟨α, β⟩, h_dprod⟩
     change α ⋆ β = τ at h_dprod
-    apply AspPerm.unique_from_inv_and_chi
+    apply AspPerm.eq_of_inv_set_eq_of_chi_eq
     · change inv_set ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)) = inv_set τ
       simpa [Link.τ, Link.chi, Link_of_dprod] using
         (AspSet.of_AspPerm τ).invSet_of_toAspPerm (α.χ + β.χ)
@@ -1869,7 +1881,7 @@ noncomputable def link_equiv_dprod :
     rcases x with ⟨⟨α, β⟩, h_dprod⟩
     change α ⋆ β = τ at h_dprod
     have hτL : (Link_of_dprod h_321a h_dprod).τ = τ := by
-      apply AspPerm.unique_from_inv_and_chi
+      apply AspPerm.eq_of_inv_set_eq_of_chi_eq
       · change inv_set ((tfas_of_perm h_321a).toAspPerm (α.χ + β.χ)) = inv_set τ
         simpa [Link.τ, Link.chi, Link_of_dprod] using
           (AspSet.of_AspPerm τ).invSet_of_toAspPerm (α.χ + β.χ)
@@ -1890,7 +1902,7 @@ noncomputable def link_equiv_dprod :
                   rfl
           _ = (α⁻¹)⁻¹ := by rw [this]
           _ = α := by simp
-      apply AspPerm.unique_from_inv_and_chi
+      apply AspPerm.eq_of_inv_set_eq_of_chi_eq
       · rw [AspSet.invSet_of_toAspPerm]
         subst asps
         simpa [Link.A_AspSet, hτL] using
@@ -1905,7 +1917,7 @@ noncomputable def link_equiv_dprod :
               = asps.toAspPerm (Link_of_dprod h_321a h_dprod).χb := by
                   rfl
           _ = β := this
-      apply AspPerm.unique_from_inv_and_chi
+      apply AspPerm.eq_of_inv_set_eq_of_chi_eq
       · rw [AspSet.invSet_of_toAspPerm]
         subst asps
         change inv_set β.func = inv_set β.func
@@ -1915,7 +1927,7 @@ noncomputable def link_equiv_dprod :
 
 end Link
 
-section Tableaux
+section Chains
 variable {τ : AspPerm} (h_321a : is_321a τ)
 
 noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
@@ -1954,7 +1966,8 @@ noncomputable def LSet_of_LPerm : List AspPerm → List (Set (ℤ × ℤ) × ℤ
     ((DProd (α :: L)).sr α '' (inv_set α), α.χ) :: LSet_of_LPerm L
 
 lemma LSet_cons (α : AspPerm) (L : List AspPerm) :
-  LSet_of_LPerm (α :: L) = ((DProd (α :: L)).sr α '' (inv_set α), α.χ) :: LSet_of_LPerm L := by
+    LSet_of_LPerm (α :: L) =
+      ((DProd (α :: L)).sr α '' inv_set α, α.χ) :: LSet_of_LPerm L := by
   rfl
 
 include h_321a
@@ -2056,11 +2069,13 @@ noncomputable def LPerm_of_Chain :
 
 omit h_321a in
 theorem DProd_LPerm_of_Chain :
-  (C : List (Set (ℤ × ℤ) × ℤ)) → (hC : isChain C) → (htfas : set_321a_prop (boxUnion C)) →
-    DProd (LPerm_of_Chain C hC htfas) = ((⟨boxUnion C, htfas.asp⟩ : AspSet).toAspPerm (chiSum C))
+    (C : List (Set (ℤ × ℤ) × ℤ)) → (hC : isChain C) →
+      (htfas : set_321a_prop (boxUnion C)) →
+        DProd (LPerm_of_Chain C hC htfas) =
+          ((⟨boxUnion C, htfas.asp⟩ : AspSet).toAspPerm (chiSum C))
   | [], _, htfas => by
       let asps : AspSet := ⟨∅, htfas.asp⟩
-      apply AspPerm.unique_from_inv_and_chi
+      apply AspPerm.eq_of_inv_set_eq_of_chi_eq
       · simpa [asps, LPerm_of_Chain, DProd, boxUnion] using (asps.invSet_of_toAspPerm 0).symm
       · simpa [asps, LPerm_of_Chain, DProd, chiSum] using (asps.chi_of_toAspPerm 0).symm
   | ⟨A, χ⟩ :: Q, hC, htfas => by
@@ -2074,11 +2089,11 @@ theorem DProd_LPerm_of_Chain :
 noncomputable def HF_of_PChain (C : PChain τ) : HeckeFactorization τ := by
   have tfas : set_321a_prop (boxUnion C.val) := by
     simp only [C.prop.2]
-    exact (criterion_321a τ.func τ.bijective).mp h_321a
+    exact (is_321a_iff_set_321a_prop τ.func τ.bijective).mp h_321a
   refine ⟨LPerm_of_Chain C.val C.prop.1 tfas, ?_⟩
   let asps : AspSet := ⟨boxUnion C.val, tfas.asp⟩
   have h_asps : asps.toAspPerm (chiSum C.val) = τ := by
-    apply AspPerm.unique_from_inv_and_chi
+    apply AspPerm.eq_of_inv_set_eq_of_chi_eq
     · simpa [asps, C.prop.2.1] using (asps.invSet_of_toAspPerm (chiSum C.val))
     · simpa [asps, C.prop.2.2] using (asps.chi_of_toAspPerm (chiSum C.val))
   exact (DProd_LPerm_of_Chain C.val C.prop.1 tfas).trans h_asps
@@ -2118,7 +2133,7 @@ lemma PChain_of_HF_of_PChain (C : PChain τ) :
   PChain_of_HF h_321a (HF_of_PChain h_321a C) = C := by
   have tfas : set_321a_prop (boxUnion C.val) := by
     simp only [C.prop.2]
-    exact (criterion_321a τ.func τ.bijective).mp h_321a
+    exact (is_321a_iff_set_321a_prop τ.func τ.bijective).mp h_321a
   apply Subtype.ext
   simpa [PChain_of_HF, HF_of_PChain] using
     (LSet_of_LPerm_of_Chain C.val C.prop.1 tfas)
@@ -2142,7 +2157,7 @@ lemma HF_of_PChain_of_HF (A : HeckeFactorization τ) :
       apply Subtype.ext
       have htfas : set_321a_prop (boxUnion (LSet_of_LPerm (α :: T))) := by
         rw [LSet_boxUnion h_321a ⟨α :: T, dprodA⟩]
-        exact (criterion_321a τ.func τ.bijective).mp h_321a
+        exact (is_321a_iff_set_321a_prop τ.func τ.bijective).mp h_321a
       change
         LPerm_of_Chain (LSet_of_LPerm (α :: T)) (LSet_isChain h_321a ⟨α :: T, dprodA⟩) htfas
           = α :: T
@@ -2199,134 +2214,133 @@ noncomputable def HF_equiv_PChain :
   right_inv C := by
     exact PChain_of_HF_of_PChain h_321a C
 
-end Tableaux
+end Chains
 
--- section SetValuedTableaux
--- -- This section written by Codex, using GPT-5.4.
+section SetValuedTableaux
 
--- /-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`, encoded as
--- `Fin n` labels. The order convention is chosen to match `IsLayering`: if
--- `p ≼ q` and `p ≠ q`, then every label in `q` is at most every label in `p`. -/
--- structure SetValuedTableau_prop {τ : AspPerm} {n : ℕ}
---     (T : ↥(inv_set τ) → Finset (Fin n)) : Prop where
---   nonempty : ∀ p, (T p).Nonempty
---   weak :
---     ∀ {p q : ↥(inv_set τ)} {i j : Fin n},
---       i ∈ T p → j ∈ T q → p.val ≼ q.val → p ≠ q → j ≤ i
+/-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`, encoded as
+`Fin n` labels. The order convention is chosen to match `IsLayering`: if
+`p ≼ q` and `p ≠ q`, then every label in `q` is at most every label in `p`. -/
+structure SetValuedTableau_prop {τ : AspPerm} {n : ℕ}
+    (T : ↥(inv_set τ) → Finset (Fin n)) : Prop where
+  nonempty : ∀ p, (T p).Nonempty
+  weak :
+    ∀ {p q : ↥(inv_set τ)} {i j : Fin n},
+      i ∈ T p → j ∈ T q → p.val ≼ q.val → p ≠ q → j ≤ i
 
--- /-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`. -/
--- def SetValuedTableau (τ : AspPerm) (n : ℕ) : Type :=
---   {T : ↥(inv_set τ) → Finset (Fin n) // SetValuedTableau_prop (τ := τ) T}
+/-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`. -/
+def SetValuedTableau (τ : AspPerm) (n : ℕ) : Type :=
+  {T : ↥(inv_set τ) → Finset (Fin n) // SetValuedTableau_prop (τ := τ) T}
 
--- /-- A length-`n` chain of box sets, where the `i`th set records the boxes
--- carrying symbol `i + 1`. Earlier labels are separated from later labels in the
--- same way as in `IsLayering`. -/
--- structure LabelChain_prop {τ : AspPerm} {n : ℕ}
---     (C : Fin n → Set (ℤ × ℤ)) : Prop where
---   cover : ∀ p, p ∈ inv_set τ ↔ ∃ i, p ∈ C i
---   sep :
---     ∀ {i j : Fin n}, i < j → ∀ p ∈ C i, ∀ q ∈ C j, p ≼ q → p = q
+/-- A length-`n` chain of box sets, where the `i`th set records the boxes
+carrying symbol `i + 1`. Earlier labels are separated from later labels in the
+same way as in `IsLayering`. -/
+structure LabelChain_prop {τ : AspPerm} {n : ℕ}
+    (C : Fin n → Set (ℤ × ℤ)) : Prop where
+  cover : ∀ p, p ∈ inv_set τ ↔ ∃ i, p ∈ C i
+  sep :
+    ∀ {i j : Fin n}, i < j → ∀ p ∈ C i, ∀ q ∈ C j, p ≼ q → p = q
 
--- /-- A fixed-length chain of subsets of `inv_set τ`, indexed by the symbols
--- `1, ..., n`. -/
--- def LabelChain (τ : AspPerm) (n : ℕ) : Type :=
---   {C : Fin n → Set (ℤ × ℤ) // LabelChain_prop (τ := τ) C}
+/-- A fixed-length chain of subsets of `inv_set τ`, indexed by the symbols
+`1, ..., n`. -/
+def LabelChain (τ : AspPerm) (n : ℕ) : Type :=
+  {C : Fin n → Set (ℤ × ℤ) // LabelChain_prop (τ := τ) C}
 
--- variable {τ : AspPerm} {n : ℕ}
+variable {τ : AspPerm} {n : ℕ}
 
--- /-- Convert a tableau to the corresponding family of label sets. -/
--- def labelChainOfTableau (T : SetValuedTableau τ n) : LabelChain τ n := by
---   refine ⟨fun i p => ∃ hp : p ∈ inv_set τ, i ∈ T.1 ⟨p, hp⟩, ?_⟩
---   refine ⟨?_, ?_⟩
---   · intro p
---     constructor
---     · intro hp
---       rcases T.2.nonempty ⟨p, hp⟩ with ⟨i, hi⟩
---       exact ⟨i, hp, hi⟩
---     · rintro ⟨i, hp⟩
---       exact hp.1
---   · intro i j hij p hp q hq hpq
---     by_cases hEq : p = q
---     · exact hEq
---     · rcases hp with ⟨hpτ, hip⟩
---       rcases hq with ⟨hqτ, hjq⟩
---       have hneq : (⟨p, hpτ⟩ : ↥(inv_set τ)) ≠ ⟨q, hqτ⟩ := by
---         intro h
---         apply hEq
---         exact congrArg Subtype.val h
---       exfalso
---       exact (not_le_of_gt hij) (T.2.weak hip hjq hpq hneq)
+/-- Convert a tableau to the corresponding family of label sets. -/
+def labelChainOfTableau (T : SetValuedTableau τ n) : LabelChain τ n := by
+  refine ⟨fun i p => ∃ hp : p ∈ inv_set τ, i ∈ T.1 ⟨p, hp⟩, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro p
+    constructor
+    · intro hp
+      rcases T.2.nonempty ⟨p, hp⟩ with ⟨i, hi⟩
+      exact ⟨i, hp, hi⟩
+    · rintro ⟨i, hp⟩
+      exact hp.1
+  · intro i j hij p hp q hq hpq
+    by_cases hEq : p = q
+    · exact hEq
+    · rcases hp with ⟨hpτ, hip⟩
+      rcases hq with ⟨hqτ, hjq⟩
+      have hneq : (⟨p, hpτ⟩ : ↥(inv_set τ)) ≠ ⟨q, hqτ⟩ := by
+        intro h
+        apply hEq
+        exact congrArg Subtype.val h
+      exfalso
+      exact (not_le_of_gt hij) (T.2.weak hip hjq hpq hneq)
 
--- /-- Convert a fixed-length chain of label sets to the corresponding tableau. -/
--- noncomputable def tableauOfLabelChain (C : LabelChain τ n) :
---     SetValuedTableau τ n := by
---   classical
---   refine ⟨fun p => Finset.univ.filter fun i => p.1 ∈ C.1 i, ?_⟩
---   refine ⟨?_, ?_⟩
---   · intro p
---     rcases (C.2.cover p.1).mp p.2 with ⟨i, hi⟩
---     exact ⟨i, by simp [hi]⟩
---   · intro p q i j hi hj hpq hneq
---     have hpC : p.1 ∈ C.1 i := by simpa using hi
---     have hqC : q.1 ∈ C.1 j := by simpa using hj
---     by_cases hlt : i < j
---     · have hpq_eq : p.1 = q.1 := C.2.sep hlt p.1 hpC q.1 hqC hpq
---       exfalso
---       apply hneq
---       apply Subtype.ext
---       exact hpq_eq
---     · exact le_of_not_gt hlt
+/-- Convert a fixed-length chain of label sets to the corresponding tableau. -/
+noncomputable def tableauOfLabelChain (C : LabelChain τ n) :
+    SetValuedTableau τ n := by
+  classical
+  refine ⟨fun p => Finset.univ.filter fun i => p.1 ∈ C.1 i, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro p
+    rcases (C.2.cover p.1).mp p.2 with ⟨i, hi⟩
+    exact ⟨i, by simp [hi]⟩
+  · intro p q i j hi hj hpq hneq
+    have hpC : p.1 ∈ C.1 i := by simpa using hi
+    have hqC : q.1 ∈ C.1 j := by simpa using hj
+    by_cases hlt : i < j
+    · have hpq_eq : p.1 = q.1 := C.2.sep hlt p.1 hpC q.1 hqC hpq
+      exfalso
+      apply hneq
+      apply Subtype.ext
+      exact hpq_eq
+    · exact le_of_not_gt hlt
 
--- lemma mem_labelChainOfTableau_iff (T : SetValuedTableau τ n)
---     (p : ↥(inv_set τ)) (i : Fin n) :
---     p.1 ∈ (labelChainOfTableau T).1 i ↔ i ∈ T.1 p := by
---   constructor
---   · rintro ⟨hp, hi⟩
---     have hp_eq : (⟨p.1, hp⟩ : ↥(inv_set τ)) = p := by
---       apply Subtype.ext
---       rfl
---     simpa [hp_eq] using hi
---   · intro hi
---     exact ⟨p.2, hi⟩
+lemma mem_labelChainOfTableau_iff (T : SetValuedTableau τ n)
+    (p : ↥(inv_set τ)) (i : Fin n) :
+    p.1 ∈ (labelChainOfTableau T).1 i ↔ i ∈ T.1 p := by
+  constructor
+  · rintro ⟨hp, hi⟩
+    have hp_eq : (⟨p.1, hp⟩ : ↥(inv_set τ)) = p := by
+      apply Subtype.ext
+      rfl
+    simpa [hp_eq] using hi
+  · intro hi
+    exact ⟨p.2, hi⟩
 
--- lemma mem_labelChainOfTableau_tableauOfLabelChain_iff (C : LabelChain τ n)
---     (p : ℤ × ℤ) (i : Fin n) :
---     p ∈ (labelChainOfTableau (tableauOfLabelChain C)).1 i ↔ p ∈ C.1 i := by
---   constructor
---   · rintro ⟨hp, hi⟩
---     simpa [tableauOfLabelChain] using hi
---   · intro hp
---     have hpτ : p ∈ inv_set τ := (C.2.cover p).mpr ⟨i, hp⟩
---     exact ⟨hpτ, by simp [tableauOfLabelChain, hp]⟩
+lemma mem_labelChainOfTableau_tableauOfLabelChain_iff (C : LabelChain τ n)
+    (p : ℤ × ℤ) (i : Fin n) :
+    p ∈ (labelChainOfTableau (tableauOfLabelChain C)).1 i ↔ p ∈ C.1 i := by
+  constructor
+  · rintro ⟨hp, hi⟩
+    simpa [tableauOfLabelChain] using hi
+  · intro hp
+    have hpτ : p ∈ inv_set τ := (C.2.cover p).mpr ⟨i, hp⟩
+    exact ⟨hpτ, by simp [tableauOfLabelChain, hp]⟩
 
--- /-- The tableau reconstructed from the label-chain of `T` is `T` itself. -/
--- lemma tableauOfLabelChain_labelChainOfTableau (T : SetValuedTableau τ n) :
---     tableauOfLabelChain (labelChainOfTableau T) = T := by
---   exact Subtype.ext (by
---     funext p
---     apply Finset.ext
---     intro i
---     calc
---       i ∈ (tableauOfLabelChain (labelChainOfTableau T)).1 p
---         ↔ p.1 ∈ (labelChainOfTableau T).1 i := by
---             simp [tableauOfLabelChain]
---       _ ↔ i ∈ T.1 p := mem_labelChainOfTableau_iff T p i)
+/-- The tableau reconstructed from the label-chain of `T` is `T` itself. -/
+lemma tableauOfLabelChain_labelChainOfTableau (T : SetValuedTableau τ n) :
+    tableauOfLabelChain (labelChainOfTableau T) = T := by
+  exact Subtype.ext (by
+    funext p
+    apply Finset.ext
+    intro i
+    calc
+      i ∈ (tableauOfLabelChain (labelChainOfTableau T)).1 p
+        ↔ p.1 ∈ (labelChainOfTableau T).1 i := by
+            simp [tableauOfLabelChain]
+      _ ↔ i ∈ T.1 p := mem_labelChainOfTableau_iff T p i)
 
--- /-- The label-chain reconstructed from the tableau of `C` is `C` itself. -/
--- lemma labelChainOfTableau_tableauOfLabelChain (C : LabelChain τ n) :
---     labelChainOfTableau (tableauOfLabelChain C) = C := by
---   exact Subtype.ext (by
---     funext i
---     ext p
---     exact mem_labelChainOfTableau_tableauOfLabelChain_iff C p i)
+/-- The label-chain reconstructed from the tableau of `C` is `C` itself. -/
+lemma labelChainOfTableau_tableauOfLabelChain (C : LabelChain τ n) :
+    labelChainOfTableau (tableauOfLabelChain C) = C := by
+  exact Subtype.ext (by
+    funext i
+    ext p
+    exact mem_labelChainOfTableau_tableauOfLabelChain_iff C p i)
 
--- /-- Fixed-length label-chains and set-valued tableaux are equivalent. -/
--- noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
---     SetValuedTableau τ n ≃ LabelChain τ n where
---   toFun := labelChainOfTableau
---   invFun := tableauOfLabelChain
---   left_inv := tableauOfLabelChain_labelChainOfTableau
---   right_inv := labelChainOfTableau_tableauOfLabelChain
+/-- Fixed-length label-chains and set-valued tableaux are equivalent. -/
+noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
+    SetValuedTableau τ n ≃ LabelChain τ n where
+  toFun := labelChainOfTableau
+  invFun := tableauOfLabelChain
+  left_inv := tableauOfLabelChain_labelChainOfTableau
+  right_inv := labelChainOfTableau_tableauOfLabelChain
 
--- end SetValuedTableaux
+end SetValuedTableaux
 end ASP321a

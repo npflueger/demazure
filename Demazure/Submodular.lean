@@ -357,7 +357,7 @@ theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, �
     exact α.submodular
 
 
-/-- The ``Demazure valley of α β a b is the function of l that
+/-- The `Demazure valley` of `α β a b` is the function of `l` that
   is minimized to compute sα ⋆ sβ (a,b). It is useful to consider
   the largest l where the minimum is attained, which is denoted
   M_{α ⋆ β}(a,b) in Definition 4.5. -/
@@ -748,7 +748,7 @@ lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
   rw [AspPerm.star_spec, id_sf]
   simpa using SlipFace.mul_id α.sf
 
--- The PartialOrder on AspPern is only now defined because we needed eq_of_sf_eq.
+-- The `PartialOrder` on `AspPerm` is only now defined because we needed `eq_of_sf_eq`.
 instance : PartialOrder AspPerm where
   le (σ τ : AspPerm) := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
   le_refl := by
@@ -849,7 +849,8 @@ theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
     have := (AspValley_step_b α β a u).1
     subst val_au
     simp [h] at this
-    rw [AspValley_min_eq_s dprod a (u+1), AspValley_min_eq_s dprod a u, τ.b_step_eq_iff a u] at this
+    rw [AspValley_min_eq_s dprod a (u + 1), AspValley_min_eq_s dprod a u,
+      τ.b_step_eq_iff a u] at this
     exact this
   have Mav_le_βv : val_av.M ≤ β v := by
     by_contra h

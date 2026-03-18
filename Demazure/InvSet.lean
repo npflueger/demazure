@@ -24,7 +24,8 @@ instance : SetLike AspSet (ℤ × ℤ) where
     cases a; cases b;
     congr
 
-@[simp] lemma mem_AspSet (asps : AspSet) (u v : ℤ) : ⟨u, v⟩ ∈ asps ↔ ⟨u, v⟩ ∈ asps.I := Iff.rfl
+@[simp] lemma mem_AspSet (asps : AspSet) (u v : ℤ) :
+    ⟨u, v⟩ ∈ asps ↔ ⟨u, v⟩ ∈ asps.I := Iff.rfl
 
 namespace AspSet
 
@@ -66,14 +67,18 @@ lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
 def of_AspPerm (τ : AspPerm) : AspSet :=
   ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩
 
-noncomputable abbrev inset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_indegree n).toFinset
+noncomputable abbrev inset (asps : AspSet) (n : ℤ) : Finset ℤ :=
+  (asps.finite_indegree n).toFinset
 
-noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ := (asps.finite_outdegree n).toFinset
+noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ :=
+  (asps.finite_outdegree n).toFinset
 
-@[simp] lemma mem_inset (asps : AspSet) (n x : ℤ) : x ∈ asps.inset n ↔ ⟨x, n⟩ ∈ asps := by
+@[simp] lemma mem_inset (asps : AspSet) (n x : ℤ) :
+    x ∈ asps.inset n ↔ ⟨x, n⟩ ∈ asps := by
   simp [inset]
 
-@[simp] lemma mem_outset (asps : AspSet) (n x : ℤ) : x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
+@[simp] lemma mem_outset (asps : AspSet) (n x : ℤ) :
+    x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
   simp [outset]
 
 noncomputable def recon (asps : AspSet) (χ : ℤ) : ℤ → ℤ :=
@@ -599,7 +604,7 @@ lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
     have hx' : ⟨n, x⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
--- This lemma is equivalent to the funtion being bounded above,
+-- This lemma is equivalent to the function being bounded above,
 -- but it is stated in a strange way. This is just for convenience
 -- in the proof of surjectivity.
 lemma surj_helper_up (m : ℤ) (n : ℕ) :
@@ -761,7 +766,7 @@ noncomputable def AspPerm_equiv_AspSet :
   invFun := fun ⟨asps, χ⟩ => asps.toAspPerm χ
   left_inv := by
     intro τ
-    refine AspPerm.unique_from_inv_and_chi _ _ ?_ ?_
+    refine AspPerm.eq_of_inv_set_eq_of_chi_eq _ _ ?_ ?_
     · have h_inv := invSet_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
       simpa using h_inv
     · have h_chi := chi_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ

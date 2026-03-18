@@ -118,7 +118,8 @@ structure D_props (f : ℤ → ℤ → ℤ) : Prop where
   large_b : ∀ a, ∃ B, ∀ b ≥ B, f a b = 0
   small_a : ∀ b, ∃ A, ∀ a ≤ A, f a b = 0
 
-lemma mono_a_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) : ∀ a a' b, a ≤ a' → f a' b ≥ f a b := by
+lemma mono_a_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
+    ∀ a a' b, a ≤ a' → f a' b ≥ f a b := by
   intro a a' b ha
   let n : ℕ := (a' - a).toNat
   have a'_eq : a' = a + n := by
@@ -131,7 +132,8 @@ lemma mono_a_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) : ∀ a a' b, 
     rw [Nat.cast_add, Nat.cast_one, ← add_assoc]
     exact h.a_step (a + n) b
 
-lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) : ∀ a b b', b ≤ b' → f a b' ≤ f a b := by
+lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
+    ∀ a b b', b ≤ b' → f a b' ≤ f a b := by
   intro a b b' hb
   let n : ℕ := (b' - b).toNat
   have b'_eq : b' = b + n := by
@@ -145,7 +147,8 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) : ∀ a b b', 
     exact h.b_step a (b + n)
 
 /-- Lemma 3.6 -/
-lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ} (h : ∀ a b, s a b - t b a = a - b + χ) :
+lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
+    (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
   ∃ sf : SlipFace, (sf.func = s ∧ sf.χ = χ) ∧ sf.dual.func = t := by
   rintro ⟨sp, tp⟩

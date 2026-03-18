@@ -75,9 +75,11 @@ lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
       (southeast_set (flip_func τ) (-a) (-b)).Finite := fun a b => by
     have hq := flip_quadrant (flip_func τ) (-a) (-b)
     simp only [hff, neg_neg] at hq
-    rw [show northwest_set τ a b = (-1 - ·) '' southeast_set (flip_func τ) (-a) (-b) from hq.symm]
-    exact ⟨fun h => h.of_finite_image (Set.injOn_of_injective (fun x y h => by omega)),
-           fun h => h.image _⟩
+    rw [show northwest_set τ a b = (-1 - ·) '' southeast_set (flip_func τ) (-a) (-b) from
+      hq.symm]
+    exact
+      ⟨fun h => h.of_finite_image (Set.injOn_of_injective (fun x y h => by omega)),
+        fun h => h.image _⟩
   rw [key m n, key m' n']
   exact se_finite_of_finite hf_inj (-m) (-n) (-m') (-n')
 
@@ -260,9 +262,11 @@ noncomputable instance : Group AspPerm where
   change τ.func (Function.invFun τ.func n) = n
   exact Function.rightInverse_invFun τ.surjective n
 
-lemma se_finite (a b : ℤ) : (southeast_set τ a b).Finite := se_finite_of_asp τ.injective a b τ.asp
+lemma se_finite (a b : ℤ) : (southeast_set τ a b).Finite :=
+  se_finite_of_asp τ.injective a b τ.asp
 
-lemma nw_finite (a b : ℤ) : (northwest_set τ a b).Finite := nw_finite_of_asp τ.injective a b τ.asp
+lemma nw_finite (a b : ℤ) : (northwest_set τ a b).Finite :=
+  nw_finite_of_asp τ.injective a b τ.asp
 
 noncomputable def se_finset (a b : ℤ) : Finset ℤ := (τ.se_finite a b).toFinset
 
@@ -276,7 +280,8 @@ noncomputable def nw_finset (a b : ℤ) : Finset ℤ := (τ.nw_finite a b).toFin
   unfold nw_finset northwest_set
   simp
 
-lemma inv_set_inverse (u v : ℤ) : ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
+lemma inv_set_inverse (u v : ℤ) :
+    ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
   constructor
   · intro h
     obtain ⟨u_lt_v, τv_lt_τu⟩ := h
@@ -474,7 +479,8 @@ lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
   rw [← h_union, Finset.card_union_of_disjoint h_disj]
 
 lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
-  τ.s a b ≥ τ.s a b' ∧ (τ.s a b = τ.s a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := by
+    τ.s a b ≥ τ.s a b' ∧
+      (τ.s a b = τ.s a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := by
   let S := {x ∈ Finset.Ico b b' | τ x < a}
   have heq : τ.s a b = τ.s a b' + S.card := by
     rw [b_move_up τ a b b' b_le_b']
@@ -566,7 +572,8 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
   omega
 
 lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
-  τ.s a b ≤ τ.s a' b ∧ (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b ) :=  by
+    τ.s a b ≤ τ.s a' b ∧
+      (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := by
   rw [a_move_up τ a a' b a_le_a']
   let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
 
@@ -746,8 +753,8 @@ theorem reconstruction : ∀ n : ℤ,
   omega
 
 /-- If two ASP permutations have the same shift and inversion set, then they are equal. -/
-theorem unique_from_inv_and_chi (σ τ : AspPerm) (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) :
-  σ = τ := by
+theorem eq_of_inv_set_eq_of_chi_eq (σ τ : AspPerm)
+    (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) : σ = τ := by
   apply AspPerm.ext.mpr
   ext n
   rw [reconstruction σ n, reconstruction τ n, h_χ]
@@ -762,7 +769,7 @@ theorem unique_from_inv_and_chi (σ τ : AspPerm) (h_inv : inv_set σ = inv_set 
     rw [h_inv]
 
 /-- An ASP permutation with empty inversion set and zero shift is the identity. -/
-theorem eq_id (τ : AspPerm)
+theorem eq_id_of_inv_set_eq_empty_of_chi_eq_zero (τ : AspPerm)
     (h_inv : inv_set τ = ∅) (h_χ : τ.χ = 0) : τ = AspPerm.id := by
   apply AspPerm.ext.mpr
   ext n
@@ -966,7 +973,7 @@ lemma ramp_lamp_dual (b m n : ℤ) :
   rw [← dual_inverse τ, dual_inverse τ⁻¹, inv_inv τ]
   constructor <;> (intro h; rcases h with ⟨l, _, _⟩; use l)
 
-lemma mem_ramp_iff_s_geq (b m n : ℤ) :
+lemma mem_ramp_iff_s_ge (b m n : ℤ) :
   ⟨m, n⟩ ∈ τ.ramp b ↔ τ.s (b + m - n - τ.χ) b ≥ m := by
   constructor
   · intro mn_ramp
@@ -978,20 +985,20 @@ lemma mem_ramp_iff_s_geq (b m n : ℤ) :
       rw [dual_inverse τ] at hn
       rw [τ.s_eq (b + m - n - τ.χ) b]
       omega
-  · intro s_geq
+  · intro s_ge
     use b + m - n - τ.χ
     rw [dual_inverse τ]
     constructor
-    · exact s_geq
-    · rw [s_eq] at s_geq
+    · exact s_ge
+    · rw [s_eq] at s_ge
       omega
 
-lemma mem_lamp_iff_s_geq (a m n : ℤ) :
+lemma mem_lamp_iff_s_ge (a m n : ℤ) :
   ⟨m, n⟩ ∈ τ.lamp a ↔ τ⁻¹.s (a - m + n + τ.χ) a ≥ n := by
   have := ramp_lamp_dual (τ := τ⁻¹) a n m
   rw [inv_inv] at this
   rw [← this]
-  rw [mem_ramp_iff_s_geq, chi_dual]
+  rw [mem_ramp_iff_s_ge, chi_dual]
   constructor <;> (intro h; convert h using 2; omega)
 
 namespace Wings
@@ -1070,11 +1077,11 @@ lemma v_crit (b : ℤ) {m : ℤ} (m_pos : m > 0) (v : ℤ) :
       rw [this] at s_inc
       exact lt_irrefl _ s_inc
     let s_inc : τ.s (τ v + 1) b = τ.s (τ v) b + 1 := (a_step_one_iff' τ v b).mpr v_ge_b
-    have s_next_leq : τ.s (τ v + 1) b ≤ m := by
+    have s_next_le : τ.s (τ v + 1) b ≤ m := by
       rw [s_inc]
       apply Int.lt_iff_add_one_le.mpr
       linarith [v_eq]
-    have : τ.s (τ v + 1) b = m := le_antisymm s_next_leq s_next
+    have : τ.s (τ v + 1) b = m := le_antisymm s_next_le s_next
     rw [s_inc] at this
     exact ⟨by linarith [this, s_inc], v_ge_b⟩
   · rintro ⟨s_eq, v_ge_b⟩
@@ -1204,7 +1211,7 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
   let a := b + m - n - τ.χ
   constructor
   · intro mn_ramp
-    have s_ge_m : τ.s a b ≥ m := (mem_ramp_iff_s_geq (τ := τ) b m n).mp mn_ramp
+    have s_ge_m : τ.s a b ≥ m := (mem_ramp_iff_s_ge (τ := τ) b m n).mp mn_ramp
     have s'_ge_n : τ.s' b a ≥ n := by
       rw [dual_inverse τ]
       have := τ.duality a b
@@ -1239,8 +1246,9 @@ lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹
   intro x; simp; intro hx
   exact h_L hx
 
--- "Slide right" inversions from α to inversions of τ
-noncomputable def sr (τ α : AspPerm) : (ℤ × ℤ) → (ℤ × ℤ) := fun x => ⟨ τ⁻¹ (α x.1), τ⁻¹ (α x.2) ⟩
+-- "Slide right" inversions from α to inversions of τ.
+noncomputable def sr (τ α : AspPerm) : (ℤ × ℤ) → (ℤ × ℤ) := fun x =>
+  ⟨τ⁻¹ (α x.1), τ⁻¹ (α x.2)⟩
 
 lemma sr_crit (τ α : AspPerm) : ∀ (u v : ℤ),
   ⟨u, v⟩ ∈ (τ.sr α) '' inv_set α ↔ ⟨τ v, τ u⟩ ∈ inv_set α⁻¹.func := by
@@ -1266,7 +1274,7 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
   simp at u_lt_v
   exact ⟨u_lt_v, τu_gt_τv⟩
 
--- Proposition mean that (α ⋆ β).s a b ≥ n.
+-- This means that `(α ⋆ β).s a b ≥ n`.
 def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
   ∀ l : ℤ, α.s a l + β.s l b ≥ n
 
@@ -1337,8 +1345,8 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       rw [← h]
       exact this
 
-    have sα := mem_ramp_iff_s_geq α⁻¹ a n' m'
-    have sβ := mem_ramp_iff_s_geq β b m n
+    have sα := mem_ramp_iff_s_ge α⁻¹ a n' m'
+    have sβ := mem_ramp_iff_s_ge β b m n
     rw [sα, sβ]
 
     unfold dprod_val_ge at dprod
@@ -1383,7 +1391,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     constructor
     · show ⟨m, n⟩ ∉ β.ramp b
       intro h_mn
-      apply (mem_ramp_iff_s_geq β b m n).mp at h_mn
+      apply (mem_ramp_iff_s_ge β b m n).mp at h_mn
       have hm : β.s l b ≥ m := by
         convert h_mn using 2
         linarith [l_eq]
@@ -1391,11 +1399,11 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       linarith [hm]
     · show ⟨M+1-m, N+1-n⟩ ∉ α.lamp a
       intro h_mn
-      have s_geq := (mem_lamp_iff_s_geq α a (M+1-m) (N+1-n)).mp h_mn
+      have s_ge := (mem_lamp_iff_s_ge α a (M + 1 - m) (N + 1 - n)).mp h_mn
       have : (a - (M + 1 - m) + (N + 1 - n) + α.χ) = l := by
         linarith [N, l_eq]
       have : α⁻¹.s l a ≥ N + 1 - n := by
-        rwa [this] at s_geq
+        rwa [this] at s_ge
       linarith [ineq']
 
 end AspPerm

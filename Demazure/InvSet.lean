@@ -749,12 +749,44 @@ lemma chi_of_toAspPerm : (toAspPerm asps χ).χ = χ := by
 
 end OfAspSet
 
+noncomputable def AspPerm_equiv_AspSet :
+  AspPerm ≃ AspSet × ℤ where
+  toFun τ := (⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩, τ.χ)
+  invFun := fun ⟨asps, χ⟩ => asps.toAspPerm χ
+  left_inv := by
+    intro τ
+    refine AspPerm.unique_from_inv_and_χ _ _ ?_ ?_
+    · have h_inv := invSet_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
+      simpa using h_inv
+    · have h_chi := chi_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
+      simpa using h_chi
+  right_inv := by
+    intro ⟨asps, χ⟩
+    apply Prod.ext
+    · apply SetLike.coe_injective
+      change inv_set (asps.toAspPerm χ) = asps
+      exact invSet_of_toAspPerm asps χ
+    · simpa using chi_of_toAspPerm asps χ
+
+@[simp] lemma AspPerm_equiv_AspSet_toFun_fst (τ : AspPerm) :
+    ((AspPerm_equiv_AspSet τ).1 : Set (ℤ × ℤ)) = inv_set τ := rfl
+
+@[simp] lemma AspPerm_equiv_AspSet_toFun_snd (τ : AspPerm) :
+    (AspPerm_equiv_AspSet τ).2 = τ.χ := rfl
+
+@[simp] lemma inv_set_AspPerm_equiv_AspSet_invFun (asps : AspSet) (χ : ℤ) :
+    inv_set (AspPerm_equiv_AspSet.invFun (asps, χ)) = asps := by
+  exact invSet_of_toAspPerm asps χ
+
+@[simp] lemma chi_AspPerm_equiv_AspSet_invFun (asps : AspSet) (χ : ℤ) :
+    (AspPerm_equiv_AspSet.invFun (asps, χ)).χ = χ := by
+  exact chi_of_toAspPerm asps χ
+
 theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) (χ : ℤ) :
   (∃ τ : AspPerm, inv_set τ = I ∧ τ.χ = χ) ↔  (AspSet_prop I) := by
   constructor
   · intro h
     rcases h with ⟨τ, τ_inv_eq, τ_chi_eq⟩
-
     rw [← τ_inv_eq]
     exact AspSet_InvSet_of_AspPerm τ
   · intro asp

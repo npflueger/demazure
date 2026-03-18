@@ -119,6 +119,55 @@ theorem criterion_321a (τ : ℤ → ℤ) (hperm : Function.Bijective τ) : is_3
       linarith
     exact ⟨ ⟨i_lt_j, h1⟩, ⟨j_lt_k, h2⟩ ⟩
 
+noncomputable def Perm321a_equiv_BijectiveFunc321a :
+  {τ : AspPerm | is_321a τ} ≃ {τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ} where
+  toFun τ := ⟨τ.val.func, ⟨τ.val.bijective, τ.prop⟩⟩
+  invFun := fun ⟨τ, hτ⟩ =>
+    ⟨⟨τ, hτ.1, asp_of_321a τ hτ.1 hτ.2⟩, hτ.2⟩
+  left_inv := by
+    intro τ
+    apply Subtype.ext
+    apply AspPerm.ext.mpr
+    rfl
+  right_inv := by
+    intro τ
+    apply Subtype.ext
+    rfl
+
+noncomputable def Perm321a_equiv_Set321a :
+  {τ : AspPerm | is_321a τ} ≃ set_321a × ℤ where
+  toFun τ :=
+    ⟨⟨AspSet.of_AspPerm τ, (criterion_321a τ τ.val.bijective).mp τ.prop⟩, τ.val.χ⟩
+  invFun := fun ⟨I, χ⟩ =>
+    ⟨I.toAspPerm χ,
+      (criterion_321a (I.recon χ) (I.toAspPerm χ).bijective).mpr
+        { asp := by
+            show AspSet_prop (inv_set (I.recon χ))
+            rw [I.invSet_func χ]
+            exact I.prop
+          tfree := by
+            simpa [I.invSet_func χ] using I.prop_321a.tfree }⟩
+  left_inv := by
+    intro τ
+    apply Subtype.ext
+    refine AspPerm.unique_from_inv_and_χ _ _ ?_ ?_
+    · change inv_set ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ) = inv_set τ
+      simpa using (AspSet.of_AspPerm τ).invSet_of_toAspPerm τ.val.χ
+    · change ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ).χ = τ.val.χ
+      simpa using (AspSet.of_AspPerm τ).chi_of_toAspPerm τ.val.χ
+  right_inv := by
+    intro ⟨I, χ⟩
+    rw [Prod.mk.injEq]
+    constructor
+    · cases I
+      case mk toAspSet prop_321a =>
+        rw [set_321a.mk.injEq]
+        apply SetLike.coe_injective
+        exact toAspSet.invSet_of_toAspPerm χ
+    · exact I.chi_of_toAspPerm χ
+
+
+
 theorem inv_321a_char (I : Set (ℤ × ℤ)) :
   set_321a_prop I
   ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
@@ -2659,4 +2708,133 @@ lemma Link_of_SVTL_of_SVTL_of_HF_cons {τ α : AspPerm} {L : List AspPerm}
   · change α.χ = α.χ
     rfl
 end Tableaux
+
+section SetValuedTableaux
+-- This section written by Codex, using GPT-5.4.
+
+/-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`, encoded as
+`Fin n` labels. The order convention is chosen to match `IsLayering`: if
+`p ≼ q` and `p ≠ q`, then every label in `q` is at most every label in `p`. -/
+structure SetValuedTableau_prop {τ : AspPerm} {n : ℕ}
+    (T : ↥(inv_set τ) → Finset (Fin n)) : Prop where
+  nonempty : ∀ p, (T p).Nonempty
+  weak :
+    ∀ {p q : ↥(inv_set τ)} {i j : Fin n},
+      i ∈ T p → j ∈ T q → p.val ≼ q.val → p ≠ q → j ≤ i
+
+/-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`. -/
+def SetValuedTableau (τ : AspPerm) (n : ℕ) : Type :=
+  {T : ↥(inv_set τ) → Finset (Fin n) // SetValuedTableau_prop (τ := τ) T}
+
+/-- A length-`n` chain of box sets, where the `i`th set records the boxes
+carrying symbol `i + 1`. Earlier labels are separated from later labels in the
+same way as in `IsLayering`. -/
+structure LabelChain_prop {τ : AspPerm} {n : ℕ}
+    (C : Fin n → Set (ℤ × ℤ)) : Prop where
+  cover : ∀ p, p ∈ inv_set τ ↔ ∃ i, p ∈ C i
+  sep :
+    ∀ {i j : Fin n}, i < j → ∀ p ∈ C i, ∀ q ∈ C j, p ≼ q → p = q
+
+/-- A fixed-length chain of subsets of `inv_set τ`, indexed by the symbols
+`1, ..., n`. -/
+def LabelChain (τ : AspPerm) (n : ℕ) : Type :=
+  {C : Fin n → Set (ℤ × ℤ) // LabelChain_prop (τ := τ) C}
+
+variable {τ : AspPerm} {n : ℕ}
+
+/-- Convert a tableau to the corresponding family of label sets. -/
+def labelChainOfTableau (T : SetValuedTableau τ n) : LabelChain τ n := by
+  refine ⟨fun i p => ∃ hp : p ∈ inv_set τ, i ∈ T.1 ⟨p, hp⟩, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro p
+    constructor
+    · intro hp
+      rcases T.2.nonempty ⟨p, hp⟩ with ⟨i, hi⟩
+      exact ⟨i, hp, hi⟩
+    · rintro ⟨i, hp⟩
+      exact hp.1
+  · intro i j hij p hp q hq hpq
+    by_cases hEq : p = q
+    · exact hEq
+    · rcases hp with ⟨hpτ, hip⟩
+      rcases hq with ⟨hqτ, hjq⟩
+      have hneq : (⟨p, hpτ⟩ : ↥(inv_set τ)) ≠ ⟨q, hqτ⟩ := by
+        intro h
+        apply hEq
+        exact congrArg Subtype.val h
+      exfalso
+      exact (not_le_of_gt hij) (T.2.weak hip hjq hpq hneq)
+
+/-- Convert a fixed-length chain of label sets to the corresponding tableau. -/
+noncomputable def tableauOfLabelChain (C : LabelChain τ n) :
+    SetValuedTableau τ n := by
+  classical
+  refine ⟨fun p => Finset.univ.filter fun i => p.1 ∈ C.1 i, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro p
+    rcases (C.2.cover p.1).mp p.2 with ⟨i, hi⟩
+    exact ⟨i, by simp [hi]⟩
+  · intro p q i j hi hj hpq hneq
+    have hpC : p.1 ∈ C.1 i := by simpa using hi
+    have hqC : q.1 ∈ C.1 j := by simpa using hj
+    by_cases hlt : i < j
+    · have hpq_eq : p.1 = q.1 := C.2.sep hlt p.1 hpC q.1 hqC hpq
+      exfalso
+      apply hneq
+      apply Subtype.ext
+      exact hpq_eq
+    · exact le_of_not_gt hlt
+
+lemma mem_labelChainOfTableau_iff (T : SetValuedTableau τ n)
+    (p : ↥(inv_set τ)) (i : Fin n) :
+    p.1 ∈ (labelChainOfTableau T).1 i ↔ i ∈ T.1 p := by
+  constructor
+  · rintro ⟨hp, hi⟩
+    have hp_eq : (⟨p.1, hp⟩ : ↥(inv_set τ)) = p := by
+      apply Subtype.ext
+      rfl
+    simpa [hp_eq] using hi
+  · intro hi
+    exact ⟨p.2, hi⟩
+
+lemma mem_labelChainOfTableau_tableauOfLabelChain_iff (C : LabelChain τ n)
+    (p : ℤ × ℤ) (i : Fin n) :
+    p ∈ (labelChainOfTableau (tableauOfLabelChain C)).1 i ↔ p ∈ C.1 i := by
+  constructor
+  · rintro ⟨hp, hi⟩
+    simpa [tableauOfLabelChain] using hi
+  · intro hp
+    have hpτ : p ∈ inv_set τ := (C.2.cover p).mpr ⟨i, hp⟩
+    exact ⟨hpτ, by simp [tableauOfLabelChain, hp]⟩
+
+/-- The tableau reconstructed from the label-chain of `T` is `T` itself. -/
+lemma tableauOfLabelChain_labelChainOfTableau (T : SetValuedTableau τ n) :
+    tableauOfLabelChain (labelChainOfTableau T) = T := by
+  exact Subtype.ext (by
+    funext p
+    apply Finset.ext
+    intro i
+    calc
+      i ∈ (tableauOfLabelChain (labelChainOfTableau T)).1 p
+        ↔ p.1 ∈ (labelChainOfTableau T).1 i := by
+            simp [tableauOfLabelChain]
+      _ ↔ i ∈ T.1 p := mem_labelChainOfTableau_iff T p i)
+
+/-- The label-chain reconstructed from the tableau of `C` is `C` itself. -/
+lemma labelChainOfTableau_tableauOfLabelChain (C : LabelChain τ n) :
+    labelChainOfTableau (tableauOfLabelChain C) = C := by
+  exact Subtype.ext (by
+    funext i
+    ext p
+    exact mem_labelChainOfTableau_tableauOfLabelChain_iff C p i)
+
+/-- Fixed-length label-chains and set-valued tableaux are equivalent. -/
+noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
+    SetValuedTableau τ n ≃ LabelChain τ n where
+  toFun := labelChainOfTableau
+  invFun := tableauOfLabelChain
+  left_inv := tableauOfLabelChain_labelChainOfTableau
+  right_inv := labelChainOfTableau_tableauOfLabelChain
+
+end SetValuedTableaux
 end ASP321a

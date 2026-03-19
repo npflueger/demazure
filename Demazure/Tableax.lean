@@ -822,4 +822,247 @@ noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
   right_inv := labelChainOfTableau_tableauOfLabelChain
 
 end SetValuedTableaux
+
+section FixedChi
+
+variable {τ : AspPerm} {n : ℕ}
+
+noncomputable def chiList (A : HeckeFactorization τ) : List ℤ :=
+  A.val.map AspPerm.χ
+
+def chainChiList (C : PChain τ) : List ℤ :=
+  C.val.map Prod.snd
+
+def FixedChiPChain (τ : AspPerm) (n : ℕ) (χs : Fin n → ℤ) : Type :=
+  {C : PChain τ // C.val.length = n ∧ chainChiList C = List.ofFn χs}
+
+def FixedChiHeckeFactorization (τ : AspPerm) (n : ℕ) (χs : Fin n → ℤ) : Type :=
+  {A : HeckeFactorization τ // A.val.length = n ∧ chiList A = List.ofFn χs}
+
+lemma chiSum_eq_sum_map_snd (L : List (Set (ℤ × ℤ) × ℤ)) :
+    chiSum L = (L.map Prod.snd).sum := by
+  induction L with
+  | nil =>
+      simp [chiSum]
+  | cons head tail ih =>
+      simp [chiSum, ih]
+
+lemma mem_boxUnion_iff_exists_mem {L : List (Set (ℤ × ℤ) × ℤ)} {p : ℤ × ℤ} :
+    p ∈ boxUnion L ↔ ∃ x ∈ L, p ∈ x.1 := by
+  induction L with
+  | nil =>
+      simp [boxUnion]
+  | cons head tail ih =>
+      simp [boxUnion, ih]
+
+lemma mem_boxUnion_iff_exists_index {L : List (Set (ℤ × ℤ) × ℤ)} {p : ℤ × ℤ} :
+    p ∈ boxUnion L ↔ ∃ i, ∃ h : i < L.length, p ∈ (L[i]'h).1 := by
+  rw [mem_boxUnion_iff_exists_mem]
+  constructor
+  · rintro ⟨x, hx, hp⟩
+    rcases List.mem_iff_getElem.mp hx with ⟨i, h, rfl⟩
+    exact ⟨i, h, hp⟩
+  · rintro ⟨i, h, hp⟩
+    exact ⟨L[i]'h, List.getElem_mem h, hp⟩
+
+lemma isChain_of_sep_ofFn (A : Fin n → Set (ℤ × ℤ)) (χs : Fin n → ℤ)
+    (hsep : ∀ {i j : Fin n}, i < j → ∀ p ∈ A i, ∀ q ∈ A j, p ≼ q → p = q) :
+    isChain (List.ofFn fun i => (A i, χs i)) := by
+  induction n with
+  | zero => simp [isChain]
+  | succ n ih =>
+      have hfun :
+          (fun i : Fin (n + 1) => (A i, χs i)) =
+            Fin.cons (A 0, χs 0) (fun i : Fin n => (A i.succ, χs i.succ)) := by
+        funext i
+        cases i using Fin.cases with
+        | zero => rfl
+        | succ i => rfl
+      rw [hfun, List.ofFn_cons]
+      constructor
+      · intro p hp q hq hpq
+        rcases (mem_boxUnion_iff_exists_mem.mp hq) with ⟨x, hx, hqx⟩
+        rcases List.mem_ofFn.mp hx with ⟨i, rfl⟩
+        exact hsep (by simp) p hp q hqx hpq
+      · apply ih
+        intro i j hij p hp q hq hpq
+        exact hsep (by simpa using hij) p hp q hq hpq
+
+lemma eq_of_isChain_getElem {L : List (Set (ℤ × ℤ) × ℤ)} (hChain : isChain L) :
+    ∀ {i j : ℕ} (hi : i < L.length) (hj : j < L.length), i < j →
+      ∀ p ∈ (L[i]'hi).1, ∀ q ∈ (L[j]'hj).1, p ≼ q → p = q := by
+  induction L with
+  | nil =>
+      intro i j hi
+      simp at hi
+  | cons head tail ih =>
+      intro i j hi hj hij p hp q hq hpq
+      rcases hChain with ⟨hLink, hTail⟩
+      cases i with
+      | zero =>
+          cases j with
+          | zero => omega
+          | succ j =>
+              have hq' : q ∈ boxUnion tail := by
+                rw [mem_boxUnion_iff_exists_index]
+                exact ⟨j, Nat.succ_lt_succ_iff.mp hj, hq⟩
+              exact hLink p hp q hq' hpq
+      | succ i =>
+          cases j with
+          | zero => omega
+          | succ j =>
+              exact ih hTail
+                (Nat.succ_lt_succ_iff.mp hi)
+                (Nat.succ_lt_succ_iff.mp hj)
+                (by omega) p hp q hq hpq
+
+noncomputable def pChainOfLabelChain (χs : Fin n → ℤ)
+    (hχs : (List.ofFn χs).sum = τ.χ) (C : LabelChain τ n) : PChain τ := by
+  refine ⟨List.ofFn fun i => (C.1 i, χs i), ?_⟩
+  constructor
+  · apply isChain_of_sep_ofFn
+    intro i j hij p hp q hq hpq
+    exact C.2.sep hij p hp q hq hpq
+  constructor
+  · ext p
+    rw [mem_boxUnion_iff_exists_mem]
+    constructor
+    · rintro ⟨x, hx, hp⟩
+      rcases List.mem_ofFn.mp hx with ⟨i, rfl⟩
+      exact (C.2.cover p).mpr ⟨i, hp⟩
+    · intro hp
+      rcases (C.2.cover p).mp hp with ⟨i, hi⟩
+      exact ⟨(C.1 i, χs i), List.mem_ofFn.mpr ⟨i, rfl⟩, hi⟩
+  · calc
+      chiSum (List.ofFn fun i => (C.1 i, χs i))
+        = (List.map Prod.snd (List.ofFn fun i => (C.1 i, χs i))).sum := by
+            simpa using chiSum_eq_sum_map_snd (List.ofFn fun i => (C.1 i, χs i))
+      _ = (List.ofFn χs).sum := by
+            rw [List.map_ofFn]
+            simp [Function.comp_def]
+      _ = τ.χ := hχs
+
+noncomputable def fixedChiPChainOfLabelChain (χs : Fin n → ℤ)
+    (hχs : (List.ofFn χs).sum = τ.χ) (C : LabelChain τ n) :
+    FixedChiPChain τ n χs :=
+  ⟨pChainOfLabelChain χs hχs C, by
+    constructor
+    · simp [pChainOfLabelChain]
+    · rw [chainChiList, pChainOfLabelChain, List.map_ofFn]
+      simp [Function.comp_def]⟩
+
+noncomputable def labelChainOfFixedChiPChain {χs : Fin n → ℤ}
+    (C : FixedChiPChain τ n χs) :
+    LabelChain τ n := by
+  have hlen : C.1.val.length = n := C.2.1
+  refine ⟨fun i => (C.1.val[i.1]'(by omega)).1, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro p
+    constructor
+    · intro hp
+      rw [← C.1.prop.2.1] at hp
+      rcases (mem_boxUnion_iff_exists_index.mp hp) with ⟨i, hi, hp⟩
+      exact ⟨⟨i, by omega⟩, by simpa using hp⟩
+    · rintro ⟨i, hi⟩
+      rw [← C.1.prop.2.1]
+      exact mem_boxUnion_iff_exists_index.mpr ⟨i.1, by omega, by simpa using hi⟩
+  · intro i j hij p hp q hq hpq
+    exact eq_of_isChain_getElem C.1.prop.1
+      (by omega) (by omega) hij
+      p (by simpa using hp) q (by simpa using hq) hpq
+
+noncomputable def labelChainEquivFixedChiPChain (χs : Fin n → ℤ)
+    (hχs : (List.ofFn χs).sum = τ.χ) :
+    LabelChain τ n ≃ FixedChiPChain τ n χs where
+  toFun := fixedChiPChainOfLabelChain χs hχs
+  invFun := labelChainOfFixedChiPChain
+  left_inv C := by
+    apply Subtype.ext
+    funext i
+    ext p
+    simp [labelChainOfFixedChiPChain, fixedChiPChainOfLabelChain,
+      pChainOfLabelChain, List.getElem_ofFn]
+  right_inv C := by
+    apply Subtype.ext
+    apply Subtype.ext
+    apply List.ext_getElem
+    · calc
+        (fixedChiPChainOfLabelChain χs hχs (labelChainOfFixedChiPChain C)).1.val.length = n := by
+          simp [fixedChiPChainOfLabelChain, pChainOfLabelChain]
+        _ = C.1.val.length := C.2.1.symm
+    · intro i hi1 hi2
+      have hχi : (C.1.val[i]'hi2).2 = χs ⟨i, by simpa [C.2.1] using hi2⟩ := by
+        have h := congrArg (fun l => l[i]?) C.2.2
+        have hi : i < n := by simpa [C.2.1] using hi2
+        simpa [chainChiList, hi2, hi] using h
+      apply Prod.ext
+      · simp [fixedChiPChainOfLabelChain, pChainOfLabelChain,
+          labelChainOfFixedChiPChain, List.getElem_ofFn]
+      · simpa [fixedChiPChainOfLabelChain, pChainOfLabelChain,
+          labelChainOfFixedChiPChain, List.getElem_ofFn, C.2.1] using hχi.symm
+
+lemma length_LSet_of_LPerm (L : List AspPerm) :
+    (LSet_of_LPerm L).length = L.length := by
+  induction L with
+  | nil =>
+      simp [LSet_of_LPerm]
+  | cons α tail ih =>
+      simp [LSet_of_LPerm, ih]
+
+lemma chainChiList_LSet_of_LPerm (L : List AspPerm) :
+    (LSet_of_LPerm L).map Prod.snd = L.map AspPerm.χ := by
+  induction L with
+  | nil =>
+      simp [LSet_of_LPerm]
+  | cons α tail ih =>
+      simp [LSet_of_LPerm, ih]
+
+lemma length_PChain_of_HF (h_321a : is_321a τ) (A : HeckeFactorization τ) :
+    (PChain_of_HF h_321a A).val.length = A.val.length := by
+  simpa [PChain_of_HF] using length_LSet_of_LPerm A.val
+
+lemma chainChiList_PChain_of_HF (h_321a : is_321a τ) (A : HeckeFactorization τ) :
+    chainChiList (PChain_of_HF h_321a A) = chiList A := by
+  simpa [PChain_of_HF, chainChiList, chiList] using chainChiList_LSet_of_LPerm A.val
+
+noncomputable def fixedChiHeckeFactorizationEquivFixedChiPChain
+    (h_321a : is_321a τ) (χs : Fin n → ℤ) :
+    FixedChiHeckeFactorization τ n χs ≃ FixedChiPChain τ n χs :=
+  Equiv.subtypeEquiv (HF_equiv_PChain h_321a) (by
+    intro A
+    change (A.val.length = n ∧ chiList A = List.ofFn χs) ↔
+      ((PChain_of_HF h_321a A).val.length = n ∧
+        chainChiList (PChain_of_HF h_321a A) = List.ofFn χs)
+    simp [length_PChain_of_HF h_321a A, chainChiList_PChain_of_HF h_321a A])
+
+noncomputable def labelChainEquivFixedChiHeckeFactorization
+    (h_321a : is_321a τ) (χs : Fin n → ℤ)
+    (hχs : (List.ofFn χs).sum = τ.χ) :
+    LabelChain τ n ≃ FixedChiHeckeFactorization τ n χs :=
+  (labelChainEquivFixedChiPChain χs hχs).trans
+    (fixedChiHeckeFactorizationEquivFixedChiPChain h_321a χs).symm
+
+noncomputable def setValuedTableauEquivFixedChiHeckeFactorization
+    (h_321a : is_321a τ) (χs : Fin n → ℤ)
+    (hχs : (List.ofFn χs).sum = τ.χ) :
+    SetValuedTableau τ n ≃ FixedChiHeckeFactorization τ n χs :=
+  (setValuedTableauEquivLabelChain τ n).trans
+    (labelChainEquivFixedChiHeckeFactorization h_321a χs hχs)
+
+noncomputable def setValuedTableauEquivHeckeFactorization
+    (h_321a : is_321a τ) (χs : List ℤ)
+    (h_len : χs.length = n) (h_sum : χs.sum = τ.χ) :
+    SetValuedTableau τ n ≃ {A : HeckeFactorization τ // A.val.length = n ∧ chiList A = χs} := by
+  let χf : Fin n → ℤ := fun i => χs[i.1]'(by omega)
+  have h_ofFn : List.ofFn χf = χs := by
+    apply List.ext_getElem
+    · simp [List.length_ofFn, h_len]
+    · intro i hi1 hi2
+      rw [List.getElem_ofFn]
+  have h_sum' : (List.ofFn χf).sum = τ.χ := by
+    simpa [h_ofFn] using h_sum
+  simpa [FixedChiHeckeFactorization, h_ofFn] using
+    setValuedTableauEquivFixedChiHeckeFactorization h_321a χf h_sum'
+
+end FixedChi
 end Tableaux

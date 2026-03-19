@@ -4,7 +4,7 @@ import Mathlib.Data.Int.LeastGreatest
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Ring
 
-/-- The inversion set $\Inv \tau = \{(u,v) \in \ZZ^2 : u < v \text{ and }
+/-- The inversion set $\operatorname{Inv} \tau = \{(u,v) \in \mathbb{Z}^2 : u < v \text{ and }
 \tau(u) > \tau(v)\}$.
 
 In Lean, membership is written `⟨u, v⟩ ∈ inv_set τ`, and the inequality is
@@ -89,7 +89,7 @@ lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
   exact se_finite_of_finite hf_inj (-m) (-n) (-m') (-n')
 
 /-- The almost-sign-preserving condition: the set
-$\{ n \in \ZZ : n \tau(n) < 0 \}$ is finite.
+$\{ n \in \mathbb{Z} : n \tau(n) < 0 \}$ is finite.
 
 Equivalently, only finitely many integers change sign under `τ`. -/
 def is_asp (τ : ℤ → ℤ) : Prop :=
@@ -145,7 +145,7 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
 
 /-- An almost-sign-preserving permutation of `ℤ`, abbreviated ASP permutation.
 
-This is the paper's group `\asp`, packaged in Lean as a function together with
+This is the paper's group $\mathrm{ASP}$, packaged in Lean as a function together with
 proofs of bijectivity and the ASP condition. -/
 structure AspPerm where
   func : ℤ → ℤ
@@ -321,7 +321,7 @@ noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 
 /-- The shift $\chi_\tau = s_\tau(0,0) - s_{\tau^{-1}}(0,0)$.
 
-The paper writes this as `\chi_\tau`; Lean writes it as `τ.χ`. -/
+The paper writes this as $\chi_\tau$; Lean writes it as `τ.χ`. -/
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
 @[simp] lemma id_chi : AspPerm.id.χ = 0 := by
@@ -767,11 +767,9 @@ lemma outset_finite (u : ℤ) : (τ.outset u).Finite := by
   apply τ.se_finite
 
 /-- Reconstruct `τ n` from its shift and inversion set:
-$$
-\tau(n) = n - \chi_\tau
-  + \#\{v \in \ZZ : (n,v) \in \Inv \tau\}
-  - \#\{u \in \ZZ : (u,n) \in \Inv \tau\}.
-$$
+$\tau(n) = n - \chi_\tau$
+$+ \#\{v \in \mathbb{Z} : (n,v) \in \operatorname{Inv} \tau\}$
+$- \#\{u \in \mathbb{Z} : (u,n) \in \operatorname{Inv} \tau\}$.
 
 In Lean the two finite sets are implemented as `τ.outset n` and `τ.inset n`. -/
 theorem reconstruction : ∀ n : ℤ,
@@ -1290,13 +1288,13 @@ This section introduces the left and right weak orders, the shifted-right map
 `sr`, and the comparison predicates used to express Demazure-product
 inequalities in terms of inversion sets and the functions `s` and `s'`. -/
 
-/-- The left weak order: `σ ≤L τ` if and only if $\Inv \sigma \subseteq
-\Inv \tau$. -/
+/-- The left weak order: `σ ≤L τ` if and only if $\operatorname{Inv} \sigma \subseteq
+\operatorname{Inv} \tau$. -/
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 
 /-- The right weak order: `σ ≤R τ` if and only if
-$\Inv(\sigma^{-1}) \subseteq \Inv(\tau^{-1})$. -/
+$\operatorname{Inv}(\sigma^{-1}) \subseteq \operatorname{Inv}(\tau^{-1})$. -/
 def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
 infix:50 " ≤R " => le_weak_R
 

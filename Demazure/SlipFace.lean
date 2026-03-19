@@ -2,15 +2,15 @@ import Demazure.Valley
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Int.Interval
 
-/-- A slipface function of shift `χ`, i.e. a function `s : \ZZ^2 \to \NN`
+/-- A slipface function of shift `χ`, i.e. a function $s : \mathbb{Z}^2 \to \mathbb{N}$
 satisfying the paper's conditions (S1) to (S3):
 
 - first differences in the `a`- and `b`-directions are in `{0,1}`
-- `s(a,b) \ge \max\{0, \chi + a - b\}`
-- each row and column eventually agrees with `\max\{0, \chi + a - b\}`
+- $s(a,b) \ge \max\{0, \chi + a - b\}$
+- each row and column eventually agrees with $\max\{0, \chi + a - b\}$
 
 Lean stores the function as `func` and the shift as `χ`; the paper would write
-this as `s \in \mathrm{SF}_\chi`. *Definition 3.1.* -/
+this as $s \in \mathrm{SF}_\chi$. *Definition 3.1.* -/
 structure SlipFace where
   func : ℤ → ℤ → ℤ
   χ : ℤ
@@ -53,7 +53,7 @@ lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
 namespace SlipFace
 variable (sf : SlipFace)
 
-/-- The dual slipface `s^\vee`, characterized by
+/-- The dual slipface $s^\vee$, characterized by
 $$
 s(a,b) - s^\vee(b,a) = \chi + a - b.
 $$
@@ -284,7 +284,7 @@ This section packages the minimization problem defining slipface product into a
 `Valley`, then uses it to construct the product `s ⋆ t` and prove its basic
 properties. -/
 
-/-- The valley `\ell \mapsto s(a,\ell) + t(\ell,b)` whose minimum computes the
+/-- The valley $\ell \mapsto s(a,\ell) + t(\ell,b)$ whose minimum computes the
 slipface product at `(a,b)`. -/
 noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
   f := fun l => s a l + t l b
@@ -305,7 +305,7 @@ noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
 
 /-- The min-plus product formula
 $$
-(s \star t)(a,b) = \min_{\ell \in \ZZ} [s(a,\ell) + t(\ell,b)].
+(s \star t)(a,b) = \min_{\ell \in \mathbb{Z}} [s(a,\ell) + t(\ell,b)].
 $$
 
 In Lean, `star_func s t a b` is this integer value, while `s ⋆ t` is the

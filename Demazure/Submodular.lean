@@ -355,8 +355,8 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
 /-- A slipface is submodular if and only if it is of the form $s_\alpha$ for
 some ASP permutation `α`.
 
-This is the paper's identification of `\asp` with the submodular slipfaces; in
-Lean the map `\alpha \mapsto s_\alpha` is implemented as `α ↦ α.sf`.
+This is the paper's identification of $\mathrm{ASP}$ with the submodular slipfaces; in
+Lean the map $\alpha \mapsto s_\alpha$ is implemented as `α ↦ α.sf`.
 *Proposition 4.3.* -/
 theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
   constructor
@@ -689,7 +689,7 @@ lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β
 
 /-- The Demazure product on ASP permutations, characterized by
 $$
-s_{\alpha \star \beta}(a,b) = \min_{\ell \in \ZZ}
+s_{\alpha \star \beta}(a,b) = \min_{\ell \in \mathbb{Z}}
   [s_\alpha(a,\ell) + s_\beta(\ell,b)].
 $$
 
@@ -799,7 +799,7 @@ instance : PartialOrder AspPerm where
     intro a b
     exact Int.le_antisymm (h₁ a b) (h₂ a b)
 
-/-- The paper's relation `\alpha \leq_\chi \beta`: Bruhat order together with
+/-- The paper's relation $\alpha \leq_\chi \beta$: Bruhat order together with
 equality of shifts. In Lean this is the infix `≤χ`. -/
 def le_chi (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
 infix:50 " ≤χ " => le_chi

@@ -1,7 +1,7 @@
 import Demazure.Avoiding321
 
-namespace ASP321a
-
+namespace Tableaux
+open ASP321a
 section Link
 
 def linked (A : Set (ℤ × ℤ)) (B : Set (ℤ × ℤ)) : Prop :=
@@ -822,4 +822,4 @@ noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
   right_inv := labelChainOfTableau_tableauOfLabelChain
 
 end SetValuedTableaux
-end ASP321a
+end Tableaux

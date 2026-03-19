@@ -1,16 +1,20 @@
 import Demazure.InvSet
 import Demazure.Submodular
 
+/-- The 321-avoidance condition used in this file: every triple `i < j < k`
+has either `τ i < τ j` or `τ j < τ k`. -/
 def is_321a (τ : ℤ → ℤ) : Prop :=
   ∀ (i j k : ℤ), i < j → j < k → τ i < τ j ∨ τ j < τ k
 
 namespace ASP321a
 
+/-- The abstract version of 321-avoidance for an ASP set: ASP-set axioms
+together with triangle-freeness. -/
 structure set_321a_prop (I : Set (ℤ × ℤ)) where
   asp : AspSet_prop I
   tfree : ∀ u v w : ℤ, ⟨u,v⟩ ∉ I ∨ ⟨v,w⟩ ∉ I
 
-/-- `tfas` = triangle-free ASP set. -/
+/-- A triangle-free ASP set. -/
 structure tfas : Type extends AspSet where
   prop_321a : set_321a_prop I
 
@@ -95,6 +99,8 @@ lemma tfree_of_is_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
   contrapose! this
   exact ⟨le_of_lt uv_inv.2, le_of_lt vw_inv.2⟩
 
+/-- A bijection of `ℤ` is 321-avoiding exactly when its inversion set is a
+triangle-free ASP set. -/
 theorem is_321a_iff_set_321a_prop (τ : ℤ → ℤ) (hperm : Function.Bijective τ) :
     is_321a τ ↔ set_321a_prop (inv_set τ) := by
   constructor
@@ -141,6 +147,8 @@ noncomputable def Perm321a_equiv_BijectiveFunc321a :
     apply Subtype.ext
     rfl
 
+/-- 321-avoiding ASP permutations are equivalent to triangle-free ASP sets
+together with a shift parameter. -/
 noncomputable def Perm321a_equiv_Tfas :
   {τ : AspPerm | is_321a τ} ≃ tfas × ℤ where
   toFun τ :=
@@ -174,8 +182,8 @@ noncomputable def Perm321a_equiv_Tfas :
         exact toAspSet.invSet_of_toAspPerm χ
     · exact I.chi_of_toAspPerm χ
 
-
-
+/-- Characterize the sets of boxes that arise as inversion sets of
+321-avoiding ASP permutations. -/
 theorem inv_321a_char (I : Set (ℤ × ℤ)) :
   set_321a_prop I
   ↔ (∃ τ : (ℤ → ℤ), (is_321a τ ∧ Function.Bijective τ ∧ inv_set τ = I)) := by
@@ -207,6 +215,12 @@ def is_snk (τ : AspPerm) (v : ℤ) : Prop :=
 
 lemma snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
   is_snk τ v := by use u
+
+/-! ### Source and Sink Geometry for a Fixed 321-Avoiding Permutation
+
+Fix a 321-avoiding ASP permutation `τ`. This section develops the source/sink
+geometry and the duality identities for `s` and `s'` that drive the later
+factorization arguments. -/
 
 section fixed_321a
 variable {τ : AspPerm} (h_321a : is_321a τ)
@@ -564,6 +578,12 @@ lemma split_s' {u v : ℤ} {a b : ℤ}
   have := this (τv_lt_a) (τu_ge_a) (by unfold v'; simpa) (by unfold u'; simpa)
   unfold u' v' at this; simpa using this
 
+/-! ### Passing to Left Weak Order Subpermutations
+
+Here `β ≤L τ` is fixed. The lemmas compare the inversion geometry of `β` and
+`τ`, especially the way ramps, sources, sinks, and shifted inversion sets are
+inherited along left weak order. -/
+
 section fixed_321a_and_lel
 variable {β : AspPerm} (h_L : β ≤L τ)
 include h_L
@@ -885,6 +905,12 @@ theorem inv_of_lel_iff_ramp
     rw [τ.v_crit b m_pos v]
     exact ⟨by linarith, b_le_v⟩
   rw [u_eq, v_eq]
+
+/-! ### Two-Factor Demazure Factorization for 321-Avoiding ASP Permutations
+
+This section proves the inversion-set criterion for a factorization
+`τ = α ⋆ β` in the 321-avoiding setting, first as upper and lower bounds and
+then as a full characterization. -/
 
 section factorization
 variable {α : AspPerm} (h_R : α ≤R τ) (h_χ : τ.χ = α.χ + β.χ)
@@ -1379,8 +1405,9 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
       (by linarith) (by linarith)
       hα hβ
 
--- Main result
-
+/-- In the 321-avoiding setting, the inequality `τ ≤ α ⋆ β` is equivalent to
+the inversion set of `τ` lying in the union of the shifted inversion set of
+`α` and the inversion set of `β`. -/
 theorem dprod_ge_iff_union :
     τ ≤ α ⋆ β ↔ inv_set τ ⊆ (τ.sr α) '' inv_set α ∪ inv_set β := by
   rw [τ.le_star_iff α β]
@@ -1394,8 +1421,13 @@ theorem dprod_ge_iff_union :
   · intro h_sub a b
     apply union_sufficient h_321a h_L h_R h_χ a b h_sub
 
+/-- A set of boxes is isolated if it contains no two distinct comparable
+elements. -/
 def isolated (S : Set (ℤ × ℤ)) : Prop := ∀ I ∈ S, ∀ J ∈ S, I ≼ J → I = J
 
+/-- In the 321-avoiding setting, the inequality `α ⋆ β ≤ τ` is equivalent to
+isolatedness of the overlap between the shifted inversion set of `α` and the
+inversion set of `β`. -/
 theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
   ↔ isolated ((τ.sr α) '' (inv_set α) ∩ inv_set β)  := by
   rw [τ.ge_star_iff α β]
@@ -1468,6 +1500,8 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     exact isolated I I_mem J J_mem prec
 
 omit h_L h_R h_χ in
+/-- Characterize the Demazure factorization `τ = α ⋆ β` by equality of shifts,
+a union formula for inversion sets, and isolatedness of the overlap. -/
 theorem dprod_eq_iff : τ = α ⋆ β
   ↔ (α.χ + β.χ = τ.χ)
     ∧ inv_set τ = (τ.sr α) '' (inv_set α) ∪ inv_set β

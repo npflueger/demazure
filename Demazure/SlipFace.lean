@@ -2,7 +2,15 @@ import Demazure.Valley
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Int.Interval
 
-/-- Definition 3.1 -/
+/-- A slipface function of shift `χ`, i.e. a function `s : \ZZ^2 \to \NN`
+satisfying the paper's conditions (S1) to (S3):
+
+- first differences in the `a`- and `b`-directions are in `{0,1}`
+- `s(a,b) \ge \max\{0, \chi + a - b\}`
+- each row and column eventually agrees with `\max\{0, \chi + a - b\}`
+
+Lean stores the function as `func` and the shift as `χ`; the paper would write
+this as `s \in \mathrm{SF}_\chi`. *Definition 3.1.* -/
 structure SlipFace where
   func : ℤ → ℤ → ℤ
   χ : ℤ
@@ -45,7 +53,13 @@ lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
 namespace SlipFace
 variable (sf : SlipFace)
 
-/-- Definition 3.4 -/
+/-- The dual slipface `s^\vee`, characterized by
+$$
+s(a,b) - s^\vee(b,a) = \chi + a - b.
+$$
+
+In Lean the dual is `sf.dual`, and its value at `(b,a)` is written
+`sf.dual b a`. *Definition 3.4.* -/
 def dual : SlipFace := {
   func := fun b a => sf a b - a + b - sf.χ
   χ := -sf.χ,
@@ -111,7 +125,11 @@ lemma s_eq (a b : ℤ) : sf a b = a - b + sf.χ + sf.dual b a := by
 lemma s'_eq (b a : ℤ) : sf.dual b a = sf a b - a + b - sf.χ := by
   linarith [sf.duality a b]
 
-/-- Properties D1 and D2 -/
+/-- The one-sided monotonicity and vanishing conditions providing a simplified
+criterion for slipfaces.
+
+These are the paper's conditions (D1) and (D2), extracted into a reusable Lean
+structure. *Properties D1 and D2.* -/
 structure D_props (f : ℤ → ℤ → ℤ) : Prop where
   a_step : ∀ a b : ℤ, f (a+1) b ≥ f a b
   b_step : ∀ a b : ℤ, f a (b+1) ≤ f a b
@@ -146,7 +164,8 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
     rw [Nat.cast_add, Nat.cast_one, ← add_assoc]
     exact h.b_step a (b + n)
 
-/-- Lemma 3.6 -/
+/-- Construct a slipface from a pair of functions satisfying `D_props` and the
+duality relation `s a b - t b a = a - b + χ`. *Lemma 3.6.* -/
 lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
     (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
@@ -256,6 +275,17 @@ lemma zero_below {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) :
   have ge_zero : sf a b ≥ 0 := sf.nonneg a b
   exact le_antisymm le_zero ge_zero
 
+/-! ### Slip Valleys and the Product Formula
+
+A `Valley` is an integer function rising on both sides, which therefore has a
+well-defined minimum achieved at finitely many places.
+
+This section packages the minimization problem defining slipface product into a
+`Valley`, then uses it to construct the product `s ⋆ t` and prove its basic
+properties. -/
+
+/-- The valley `\ell \mapsto s(a,\ell) + t(\ell,b)` whose minimum computes the
+slipface product at `(a,b)`. -/
 noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
   f := fun l => s a l + t l b
   rises := by
@@ -273,6 +303,13 @@ noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
     · linarith [t.nonneg n b, s.ge_diff a n]
     · linarith [s.nonneg a n, t.ge_diff n b]
 
+/-- The min-plus product formula
+$$
+(s \star t)(a,b) = \min_{\ell \in \ZZ} [s(a,\ell) + t(\ell,b)].
+$$
+
+In Lean, `star_func s t a b` is this integer value, while `s ⋆ t` is the
+resulting `SlipFace`. -/
 noncomputable def star_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => (SlipValley s t a b).min
 
@@ -368,6 +405,8 @@ lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
       linarith [s.nonneg a l, t.nonneg l b]
     exact le_antisymm le_zero ge_zero
 
+/-- The function `star_func s t` satisfies the slipface axioms and therefore
+comes from a slipface. -/
 lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
   ((p.func = star_func s t ∧ p.χ = s.χ + t.χ)
   ∧ p.dual.func = star_func t.dual s.dual) := by
@@ -383,6 +422,8 @@ lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
     exact h this
   exact ⟨D_props_of_star_func s t, D_props_of_star_func t.dual s.dual⟩
 
+/-- The product of two slipfaces, obtained from the minimum formula
+`star_func`. -/
 noncomputable def star (s t : SlipFace) : SlipFace :=
   Classical.choose (star_exists s t)
 
@@ -407,7 +448,10 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   intro a b
   rfl
 
-/-! ### Partial order on SlipFace, and interaction with ⋆  -/
+/-! ### Order Structure and Comparison with `⋆`
+
+This section puts the pointwise order on `SlipFace` and records the basic
+comparison lemmas relating that order to the product `⋆`. -/
 
 instance : PartialOrder SlipFace where
   le (s t : SlipFace) := ∀ a b, s a b ≤ t a b
@@ -424,9 +468,6 @@ instance : PartialOrder SlipFace where
     have le1 : s a b ≤ t a b := hst a b
     have le2 : t a b ≤ s a b := hts a b
     exact le_antisymm le1 le2
-
-/-!  The following functions/lemmas form a wrapper around SlipValley
-  to make it easier to work with. -/
 
 lemma star_val_le (s t : SlipFace) (a b l : ℤ) : (s ⋆ t) a b ≤ s a l + t l b := by
   let v := SlipValley s t a b
@@ -446,6 +487,8 @@ lemma star_wit_spec (s t : SlipFace) (a b : ℤ) :
   rw [star_func_eq]
   exact Eq.symm v.f_M
 
+/-- A lower bound for `(s ⋆ t) a b` is equivalent to a uniform lower bound
+against every witness `l`. -/
 lemma le_star_val_iff (r s t : SlipFace) (a b : ℤ) :
   r a b ≤ (s ⋆ t) a b ↔ ∀ l, r a b ≤ s a l + t l b
   := by
@@ -460,6 +503,8 @@ lemma le_star_val_iff (r s t : SlipFace) (a b : ℤ) :
     rw [this]
     exact h l
 
+/-- An upper bound for `(s ⋆ t) a b` is equivalent to exhibiting a single
+witness `l` that realizes it. -/
 lemma ge_star_val_iff (r s t : SlipFace) (a b : ℤ) :
   r a b ≥ (s ⋆ t) a b ↔ ∃ l, r a b ≥ s a l + t l b
   := by
@@ -471,8 +516,12 @@ lemma ge_star_val_iff (r s t : SlipFace) (a b : ℤ) :
   · rintro ⟨l, hl⟩
     exact le_trans (star_val_le s t a b l) hl
 
-/-! ### Monoid structure on SlipFace -/
+/-! ### Monoid Structure
 
+The product `⋆` is associative and has the positive-part function as identity,
+giving `SlipFace` a monoid structure. -/
+
+/-- Slipface product is associative. -/
 lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
   apply (SF_ext _ _).mpr
   intro a b
@@ -497,6 +546,7 @@ lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
     have h2 : (s ⋆ t) m b ≤ s m l + t l b := by apply star_val_le
     omega
 
+/-- The identity slipface, given by the positive part of `a - b`. -/
 def id : SlipFace := {
     func := fun a b => max (a - b) 0,
     χ := 0,
@@ -579,12 +629,23 @@ noncomputable instance : Monoid SlipFace where
   mul_one := mul_id
 
 
-/-! ### $\Delta$ and its properties -/
+/-! ### The Mixed Difference `Δ`
 
+This section studies the discrete mixed difference `Δ`, its behavior under
+duality, and the finite summation identities used later in submodularity
+arguments. -/
+
+/-- The mixed difference
+$$
+\Delta s(a,b) = s(a+1,b) - s(a,b) - s(a+1,b+1) + s(a,b+1).
+$$
+
+In Lean this is written `sf.Δ a b`. -/
 def Δ (a b : ℤ) : ℤ :=
   sf (a+1) b - sf a b - sf (a+1) (b+1) + sf a (b+1)
 
-/-- Equation (18) -/
+/-- Duality preserves the mixed difference `Δ` after swapping the coordinates.
+*Equation (18).* -/
 lemma Δ_dual (a b : ℤ) : sf.dual.Δ b a = sf.Δ a b := by
   dsimp [SlipFace.dual, Δ]
   omega
@@ -653,7 +714,8 @@ lemma sum_b (a : ℤ) {b₁ b₂ : ℤ} (hb : b₁ ≤ b₂) :
     rw [union, Finset.sum_union disj, Finset.sum_singleton, SlipFace.Δ, ih]
     omega
 
-/-- Modification of Equation (17) to a finite sum -/
+/-- Summing `Δ` over a rectangle recovers the corresponding boundary term in
+`sf`. *Modification of Equation (17) to a finite sum.* -/
 lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b₂) :
   ∑ b ∈ Finset.Ico b₁ b₂, ∑ a ∈ Finset.Ico a₁ a₂, sf.Δ a b
   = (sf a₂ b₁ - sf a₁ b₁) - (sf a₂ b₂ - sf a₁ b₂) := by
@@ -674,9 +736,11 @@ lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b�
     rw [union, Finset.sum_union disj, Finset.sum_singleton, ih, sf.sum_a ha (b₁ + n)]
     omega
 
-/-- Definition 4.2 -/
+/-- A slipface is submodular if $\Delta s(a,b) \ge 0$ for all `a, b`.
+*Definition 4.2.* -/
 def submodular : Prop := ∀ a b : ℤ, sf.Δ a b ≥ 0
 
+/-- The set of boxes where the mixed difference `Δ` is equal to `1`. -/
 def Γ : Set (ℤ × ℤ) := {(a, b) | sf.Δ a b = 1}
 
 lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := by

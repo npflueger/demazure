@@ -3,7 +3,9 @@ import Mathlib.Data.Int.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Tactic.Linarith
 
-/-- Function f satisfying the hypotheses of Lemma 4.6. -/
+/-- A function on `ℤ` whose sublevel sets are finite. This is the abstraction
+used to talk about minima and rightmost minimizers in the valley arguments.
+*Lemma 4.6.* -/
 structure Valley where
   f : ℤ → ℤ
   rises : ∀ m : ℤ, {n : ℤ | f n ≤ m}.Finite
@@ -15,6 +17,12 @@ instance : CoeFun Valley (fun _ => ℤ → ℤ) :=
 namespace Valley
 variable (v : Valley)
 
+/-! ### Minima and Rightmost Minimizers
+
+This namespace develops the basic API for working with a `Valley`: its minimum
+value, the rightmost index where that minimum is attained, and behavior under
+vertical shifts. -/
+
 noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m)
 
 @[simp] lemma mem_floor (m n : ℤ) : n ∈ v.floor m ↔ v.f n ≤ m := by
@@ -24,6 +32,7 @@ lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Non
   refine ⟨v.f n, ?_⟩
   exact Finset.mem_image.mpr ⟨n, by simp, rfl⟩
 
+/-- The minimum value of a valley. -/
 noncomputable def min : ℤ := Finset.min' (Finset.image v.f (v.floor (v.f 0)))
   (v.floor_image_nonempty 0)
 
@@ -47,7 +56,7 @@ lemma argmin_set_nonempty : (v.floor v.min).Nonempty := by
   rcases v.min_mem with ⟨m, -, hm⟩
   exact ⟨m, by simp [hm]⟩
 
-/-- The *maximum* preimage of the minimum value of f. -/
+/-- The largest index at which the minimum of the valley is attained. -/
 noncomputable def M : ℤ := Finset.max' (v.floor v.min) v.argmin_set_nonempty
 
 lemma f_M : v.f v.M = v.min := by
@@ -68,6 +77,7 @@ lemma M_spec : ∀ n : ℤ, v.f n ≥ v.f v.M ∧ (n > v.M → v.f n > v.f v.M) 
       simpa [v.f_M] using fn_le_fM
     simpa using Finset.le_max' (v.floor v.min) n this
 
+/-- Shift every value of a valley downward by the constant `k`. -/
 def shift_down (k : ℤ) : Valley where
   f := fun n => v.f n - k
   rises := by
@@ -81,6 +91,7 @@ def shift_down (k : ℤ) : Valley where
     rw [this]
     apply v.rises
 
+/-- Shifting a valley downward does not change its rightmost minimizer. -/
 lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
   let v' := v.shift_down k
   suffices v.M = v'.M by rw [this]
@@ -112,6 +123,7 @@ lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
     exfalso; apply lt_irrefl (v.f v'.M) this
   exact le_antisymm M_le_M' M'_le_M
 
+/-- Shifting a valley downward subtracts `k` from its minimum value. -/
 lemma shift_down_min (k : ℤ) : (v.shift_down k).min = v.min - k := by
   let v' := v.shift_down k
   rw [← v'.f_M, ← v.f_M, v.shift_down_M k]

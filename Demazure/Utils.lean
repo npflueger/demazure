@@ -1,13 +1,16 @@
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Int.Basic
 import Mathlib.Tactic.Linarith
+
+/-! ### Small Finset and Set Helpers
+
+This namespace contains auxiliary lemmas used across the development but not
+specific to ASP permutations or Demazure product. -/
+
 namespace Utils
 
-/-
-  The difference between cardinalities of two finite sets is equal to the
-  difference of cardinalities of their difference sets. This is a general
-  fact that does not appear to yet be in Mathlib.
--/
+/-- The difference of the cardinalities of two finite sets is equal to the
+difference of the cardinalities of their set-theoretic differences. -/
 lemma sub_card_eq_sub_card_diff (S T : Finset ℤ) :
   (↑S.card : ℤ) - ↑T.card = ↑(S \ T).card - ↑(T \ S).card := by
   have h1 := Finset.card_sdiff_add_card_inter S T

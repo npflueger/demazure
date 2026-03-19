@@ -1,6 +1,8 @@
 import Demazure.AspPerm
 import Mathlib.Order.Interval.Set.Infinite
 
+/-- The axioms characterizing inversion sets of ASP permutations: directedness,
+closure, coclosure, and finite in/out degree. -/
 structure AspSet_prop (I : Set (ℤ × ℤ)) where
   directed :
     (∀ u v : ℤ, ⟨u, v⟩ ∈ I → u < v)
@@ -13,6 +15,8 @@ structure AspSet_prop (I : Set (ℤ × ℤ)) where
   finite_indegree:
     (∀ v : ℤ, { u : ℤ | ⟨u, v⟩ ∈ I }.Finite)
 
+/-- An abstract ASP inversion set: a set of boxes equipped with the axioms of
+`AspSet_prop`. -/
 structure AspSet where
   I : Set (ℤ × ℤ)
   prop : AspSet_prop I
@@ -29,6 +33,7 @@ instance : SetLike AspSet (ℤ × ℤ) where
 
 namespace AspSet
 
+/-- Two `AspSet`s are equal if their underlying sets of boxes are equal. -/
 theorem ext {A B : AspSet} (hI : A.I = B.I) : A = B := by
   cases A
   cases B
@@ -81,6 +86,8 @@ noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ :=
     x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
   simp [outset]
 
+/-- Reconstruct a function `ℤ → ℤ` from an abstract ASP inversion set and a
+shift parameter `χ`. -/
 noncomputable def recon (asps : AspSet) (χ : ℤ) : ℤ → ℤ :=
   fun n => n + (asps.outset n).card - (asps.inset n).card - χ
 
@@ -542,9 +549,16 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
 
 end σ_diff
 
+/-! ### Reconstructing ASP Permutations from ASP Sets
+
+Starting from an abstract ASP set `asps` and a shift `χ`, this section proves
+that the reconstructed function is bijective, ASP, and has the expected
+inversion data, yielding an `AspPerm`. -/
+
 section OfAspSet
 variable (asps : AspSet) (χ : ℤ)
 
+/-- The reconstructed function has the prescribed inversion set. -/
 theorem invSet_func : inv_set (asps.recon χ) = asps := by
   ext ⟨u, v⟩
   wlog u_lt_v : u < v
@@ -664,6 +678,7 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
     simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
 
+/-- The function reconstructed from an ASP set and a shift is surjective. -/
 theorem func_surjective : Function.Surjective (asps.recon χ) := by
   intro y
   have : ∃ m : ℤ, m ≤ 0 ∧ asps.recon χ m ≤ y := by
@@ -716,6 +731,8 @@ theorem func_asp : is_asp (asps.recon χ) := by
     rw [inset_eq_nw asps χ 0]
   apply asp_of_finite_quadrants (func_injective χ asps) se_fin nw_fin
 
+/-- Package the function reconstructed from an ASP set and a shift as an
+`AspPerm`. -/
 noncomputable def toAspPerm : AspPerm :=
   ⟨asps.recon χ, func_bijective asps χ, func_asp asps χ⟩
 
@@ -760,6 +777,8 @@ lemma chi_of_toAspPerm : (toAspPerm asps χ).χ = χ := by
 
 end OfAspSet
 
+/-- ASP permutations are equivalent to abstract ASP inversion sets together
+with a shift parameter. -/
 noncomputable def AspPerm_equiv_AspSet :
   AspPerm ≃ AspSet × ℤ where
   toFun τ := (⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩, τ.χ)

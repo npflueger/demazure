@@ -2,11 +2,21 @@ import Demazure.Avoiding321
 
 namespace Tableaux
 open ASP321a
+
+/-! ### Links and Two-Factor Data
+
+A `Link` packages the data needed to split a triangle-free ASP set into two
+pieces that behave like the two inversion-set components in a Demazure
+factorization. This section proves that such links are equivalent to
+two-factor factorizations. -/
+
 section Link
 
 def linked (A : Set (ℤ × ℤ)) (B : Set (ℤ × ℤ)) : Prop :=
   ∀ p ∈ A, ∀ q ∈ B, p ≼ q → p = q
 
+/-- A decomposition of a triangle-free ASP set into two linked pieces,
+together with the shifts attached to the two factors. -/
 structure Link where
   A : Set (ℤ × ℤ)
   B : Set (ℤ × ℤ)
@@ -325,6 +335,8 @@ lemma rev_A_eq_inv_inv_of_Link_of_dprod {α β : AspPerm} (dprod : α ⋆ β = �
     refine ⟨⟨τ⁻¹ v, τ⁻¹ u⟩, hsr, ?_⟩
     simp [AspPerm.rev_map]
 
+/-- Links with ambient permutation `τ` are equivalent to Demazure
+factorizations `τ = α ⋆ β`. -/
 noncomputable def link_equiv_dprod :
   {L : Link | L.τ = τ } ≃ {⟨α, β⟩ : AspPerm × AspPerm | α ⋆ β = τ } where
   toFun L := ⟨⟨L.val.α, L.val.β⟩, by simp; rw [L.val.dprod, L.prop]⟩
@@ -406,6 +418,12 @@ noncomputable def link_equiv_dprod :
 
 end Link
 
+/-! ### Chains and Hecke Factorizations
+
+This section iterates the two-factor link construction to compare Hecke
+factorizations of a 321-avoiding ASP permutation with chains of inversion-box
+data whose union and total shift recover `τ`. -/
+
 section Chains
 variable {τ : AspPerm} (h_321a : is_321a τ)
 
@@ -417,6 +435,8 @@ lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
   unfold DProd
   rw [List.foldr_cons]
 
+/-- A Hecke factorization of `τ`, represented as a list of ASP permutations
+whose Demazure product is `τ`. -/
 def HeckeFactorization (τ : AspPerm) : Type :=
   {P : List AspPerm //
     DProd P = τ}
@@ -435,7 +455,8 @@ def isChain : List (Set (ℤ × ℤ) × ℤ) → Prop
       linked A (boxUnion Q)
       ∧ isChain Q
 
-/-- Chain matching a given permutation τ in box union and shift. -/
+/-- A chain of box sets with shifts whose union is `inv_set τ`, whose total
+shift is `τ.χ`, and whose pieces are linked in order. -/
 def PChain (τ : AspPerm) : Type :=
   {C : List (Set (ℤ × ℤ) × ℤ) // isChain C ∧ boxUnion C = inv_set τ ∧ chiSum C = τ.χ}
 
@@ -683,6 +704,8 @@ lemma HF_of_PChain_of_HF (A : HeckeFactorization τ) :
                   (LSet_isChain h_321a ⟨α :: T, dprodA⟩).2 htfasT) hα
         _ = α :: T := by simp [hTail]
 
+/-- Hecke factorizations of a 321-avoiding ASP permutation are equivalent to
+chains of box sets with shifts. -/
 noncomputable def HF_equiv_PChain :
   HeckeFactorization τ ≃ PChain τ
   where
@@ -695,11 +718,16 @@ noncomputable def HF_equiv_PChain :
 
 end Chains
 
+/-! ### Set-Valued Tableaux and Label Chains
+
+This section recodes chains of box sets by distributing labels `1, ..., n`
+among the boxes of `inv_set τ`. The order condition on labels is exactly the
+chain-separation condition in tableau form. -/
+
 section SetValuedTableaux
 
-/-- A set-valued tableau on `inv_set τ` with symbols `1, ..., n`, encoded as
-`Fin n` labels. The order convention is chosen to match `IsLayering`: if
-`p ≼ q` and `p ≠ q`, then every label in `q` is at most every label in `p`. -/
+/-- The semistandard-style conditions on a set-valued tableau on `inv_set τ`:
+every box is nonempty, and labels weakly decrease along the order `≼`. -/
 structure SetValuedTableau_prop {τ : AspPerm} {n : ℕ}
     (T : ↥(inv_set τ) → Finset (Fin n)) : Prop where
   nonempty : ∀ p, (T p).Nonempty
@@ -711,9 +739,8 @@ structure SetValuedTableau_prop {τ : AspPerm} {n : ℕ}
 def SetValuedTableau (τ : AspPerm) (n : ℕ) : Type :=
   {T : ↥(inv_set τ) → Finset (Fin n) // SetValuedTableau_prop (τ := τ) T}
 
-/-- A length-`n` chain of box sets, where the `i`th set records the boxes
-carrying symbol `i + 1`. Earlier labels are separated from later labels in the
-same way as in `IsLayering`. -/
+/-- The compatibility conditions on a label chain: the labeled box sets cover
+`inv_set τ`, and earlier labels are separated from later ones. -/
 structure LabelChain_prop {τ : AspPerm} {n : ℕ}
     (C : Fin n → Set (ℤ × ℤ)) : Prop where
   cover : ∀ p, p ∈ inv_set τ ↔ ∃ i, p ∈ C i
@@ -813,7 +840,8 @@ lemma labelChainOfTableau_tableauOfLabelChain (C : LabelChain τ n) :
     ext p
     exact mem_labelChainOfTableau_tableauOfLabelChain_iff C p i)
 
-/-- Fixed-length label-chains and set-valued tableaux are equivalent. -/
+/-- Set-valued tableaux on `inv_set τ` with labels `1, ..., n` are equivalent
+to fixed-length label chains. -/
 noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
     SetValuedTableau τ n ≃ LabelChain τ n where
   toFun := labelChainOfTableau
@@ -823,10 +851,17 @@ noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
 
 end SetValuedTableaux
 
+/-! ### Prescribed Chi Data
+
+Fix a list of shifts. This section refines the chain/Hecke-factorization
+correspondence by keeping track of the individual `χ`-values of the factors,
+yielding a tableau model for factorizations with prescribed `χ`-list. -/
+
 section FixedChi
 
 variable {τ : AspPerm} {n : ℕ}
 
+/-- The list of shifts of the factors in a Hecke factorization, in order. -/
 noncomputable def chiList (A : HeckeFactorization τ) : List ℤ :=
   A.val.map AspPerm.χ
 
@@ -836,6 +871,8 @@ def chainChiList (C : PChain τ) : List ℤ :=
 def FixedChiPChain (τ : AspPerm) (n : ℕ) (χs : Fin n → ℤ) : Type :=
   {C : PChain τ // C.val.length = n ∧ chainChiList C = List.ofFn χs}
 
+/-- The subtype of Hecke factorizations of `τ` of length `n` whose ordered list
+of shifts is `List.ofFn χs`. -/
 def FixedChiHeckeFactorization (τ : AspPerm) (n : ℕ) (χs : Fin n → ℤ) : Type :=
   {A : HeckeFactorization τ // A.val.length = n ∧ chiList A = List.ofFn χs}
 
@@ -1035,6 +1072,8 @@ noncomputable def fixedChiHeckeFactorizationEquivFixedChiPChain
         chainChiList (PChain_of_HF h_321a A) = List.ofFn χs)
     simp [length_PChain_of_HF h_321a A, chainChiList_PChain_of_HF h_321a A])
 
+/-- A label chain is equivalent to a Hecke factorization with prescribed
+ordered shift data. -/
 noncomputable def labelChainEquivFixedChiHeckeFactorization
     (h_321a : is_321a τ) (χs : Fin n → ℤ)
     (hχs : (List.ofFn χs).sum = τ.χ) :
@@ -1049,6 +1088,9 @@ noncomputable def setValuedTableauEquivFixedChiHeckeFactorization
   (setValuedTableauEquivLabelChain τ n).trans
     (labelChainEquivFixedChiHeckeFactorization h_321a χs hχs)
 
+/-- For a prescribed length-`n` list of shifts summing to `τ.χ`, set-valued
+tableaux on `inv_set τ` are equivalent to Hecke factorizations of `τ` with
+exactly that ordered `χ`-list. -/
 noncomputable def setValuedTableauEquivHeckeFactorization
     (h_321a : is_321a τ) (χs : List ℤ)
     (h_len : χs.length = n) (h_sum : χs.sum = τ.χ) :

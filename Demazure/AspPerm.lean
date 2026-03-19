@@ -4,6 +4,11 @@ import Mathlib.Data.Int.LeastGreatest
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Ring
 
+/-- The inversion set $\Inv \tau = \{(u,v) \in \ZZ^2 : u < v \text{ and }
+\tau(u) > \tau(v)\}$.
+
+In Lean, membership is written `⟨u, v⟩ ∈ inv_set τ`, and the inequality is
+encoded as `τ v < τ u`. -/
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
@@ -83,6 +88,10 @@ lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
   rw [key m n, key m' n']
   exact se_finite_of_finite hf_inj (-m) (-n) (-m') (-n')
 
+/-- The almost-sign-preserving condition: the set
+$\{ n \in \ZZ : n \tau(n) < 0 \}$ is finite.
+
+Equivalently, only finitely many integers change sign under `τ`. -/
 def is_asp (τ : ℤ → ℤ) : Prop :=
   { n : ℤ | n * (τ n) < 0 }.Finite
 
@@ -134,6 +143,10 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
   · exact se_finite_of_finite h_inj m n 0 1 fin_se
   · exact nw_finite_of_finite h_inj m' n' 1 0 fin_nw
 
+/-- An almost-sign-preserving permutation of `ℤ`, abbreviated ASP permutation.
+
+This is the paper's group `\asp`, packaged in Lean as a function together with
+proofs of bijectivity and the ASP condition. -/
 structure AspPerm where
   func : ℤ → ℤ
   bijective : Function.Bijective func
@@ -294,8 +307,21 @@ lemma inv_set_inverse (u v : ℤ) :
 
 def rev_map : ℤ × ℤ → ℤ × ℤ := fun ⟨i, j⟩ => ⟨τ j, τ i⟩
 
+/-- The slipface value $s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$.
+
+This is one of the main notation shifts from the paper to Lean: the paper
+writes $s_\tau(a,b)$, while the code writes `τ.s a b`. -/
 noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
+
+/-- The companion counting function $s_{\tau^{-1}}(b,a)$.
+
+In Lean this is written `τ.s' b a`; later `dual_inverse` identifies it with
+`(τ⁻¹).s`. -/
 noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
+
+/-- The shift $\chi_\tau = s_\tau(0,0) - s_{\tau^{-1}}(0,0)$.
+
+The paper writes this as `\chi_\tau`; Lean writes it as `τ.χ`. -/
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
 @[simp] lemma id_chi : AspPerm.id.χ = 0 := by
@@ -740,6 +766,14 @@ lemma outset_finite (u : ℤ) : (τ.outset u).Finite := by
   rw [τ.outset_eq_se u]
   apply τ.se_finite
 
+/-- Reconstruct `τ n` from its shift and inversion set:
+$$
+\tau(n) = n - \chi_\tau
+  + \#\{v \in \ZZ : (n,v) \in \Inv \tau\}
+  - \#\{u \in \ZZ : (u,n) \in \Inv \tau\}.
+$$
+
+In Lean the two finite sets are implemented as `τ.outset n` and `τ.inset n`. -/
 theorem reconstruction : ∀ n : ℤ,
   τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
   intro n
@@ -752,7 +786,8 @@ theorem reconstruction : ∀ n : ℤ,
   have := τ.duality (τ n) n
   omega
 
-/-- If two ASP permutations have the same shift and inversion set, then they are equal. -/
+/-- Two ASP permutations are equal if they have the same inversion set and the
+same shift. -/
 theorem eq_of_inv_set_eq_of_chi_eq (σ τ : AspPerm)
     (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) : σ = τ := by
   apply AspPerm.ext.mpr
@@ -849,6 +884,10 @@ lemma tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
   rw [τ⁻¹.flip_s, τ⁻¹.dual_inverse] at hb
   simpa using hb
 
+/-- The slipface attached to `τ`.
+
+The paper writes its values as $s_\tau(a,b)$; in Lean the corresponding value
+is `τ.s a b`, and `τ.sf` packages the same data as a `SlipFace`. -/
 noncomputable def sf : SlipFace := {
   func := τ.s
   χ := τ.χ
@@ -950,12 +989,21 @@ lemma submodular : τ.sf.submodular := by
   have Δ_eq := τ.Δ_eq a b
   by_cases h : τ b = a <;> simp [h, Δ_eq]
 
+/-! ### Ramps, Lamps, and Wing Parameters
+
+This section defines the ramp and lamp regions associated to an ASP
+permutation and develops the auxiliary wing parameters `u` and `v` used to move
+between inequalities for `s` and geometric statements about inversion sets. -/
+
 section RampWings
 variable (τ : AspPerm)
 
+/-- The `b`-ramp of an ASP permutation: the region cut out by the inequality
+`τ.s m n ≥ n - b + 1`. -/
 def ramp (b : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}
 
+/-- The `a`-lamp of an ASP permutation, defined as the dual of a ramp. -/
 def lamp (a : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s a l ≥ m ∧ τ.s' l a ≥ n}
 
@@ -1196,6 +1244,8 @@ lemma τu_ge (b : ℤ) {n : ℤ} (n_pos : n > 0)
   have hu_ge : a ≤ τ (τ.u b n_pos) := (τ.u_spec b n_pos).2 a s_ge_n
   omega
 
+/-- A box lies in the ramp exactly when it corresponds to an inversion between
+the wing parameters `u` and `v`. -/
 theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨m, n⟩ ∈ τ.ramp b ↔ ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set τ := by
   let u := τ.u b n_pos
@@ -1234,9 +1284,19 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
 
 end RampWings
 
+/-! ### Weak Order and Demazure Comparison Data
+
+This section introduces the left and right weak orders, the shifted-right map
+`sr`, and the comparison predicates used to express Demazure-product
+inequalities in terms of inversion sets and the functions `s` and `s'`. -/
+
+/-- The left weak order: `σ ≤L τ` if and only if $\Inv \sigma \subseteq
+\Inv \tau$. -/
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 
+/-- The right weak order: `σ ≤R τ` if and only if
+$\Inv(\sigma^{-1}) \subseteq \Inv(\tau^{-1})$. -/
 def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
 infix:50 " ≤R " => le_weak_R
 

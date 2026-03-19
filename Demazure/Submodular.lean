@@ -2,6 +2,11 @@ import Demazure.AspPerm
 import Demazure.Valley
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
+/-! ### Submodular Slipfaces and Recovery of ASP Permutations
+
+This section shows that submodular slipfaces are exactly those arising from
+ASP permutations. -/
+
 namespace Submodular
 
 lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
@@ -347,7 +352,12 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
     · exact b_le_b'
     · exact hA.2
 
-/-- Proposition 4.3 -/
+/-- A slipface is submodular if and only if it is of the form $s_\alpha$ for
+some ASP permutation `α`.
+
+This is the paper's identification of `\asp` with the submodular slipfaces; in
+Lean the map `\alpha \mapsto s_\alpha` is implemented as `α ↦ α.sf`.
+*Proposition 4.3.* -/
 theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
   constructor
   · intro hsub
@@ -357,10 +367,11 @@ theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, �
     exact α.submodular
 
 
-/-- The `Demazure valley` of `α β a b` is the function of `l` that
-  is minimized to compute sα ⋆ sβ (a,b). It is useful to consider
-  the largest l where the minimum is attained, which is denoted
-  M_{α ⋆ β}(a,b) in Definition 4.5. -/
+/-- The valley $\ell \mapsto s_\alpha(a,\ell) + s_\beta(\ell,b)$.
+
+Its minimum is $s_{\alpha \star \beta}(a,b)$, and its rightmost minimizer is
+the paper's $M_{\alpha \star \beta}(a,b)$. In Lean that rightmost minimizer is
+`(AspValley α β a b).M`. *Definition 4.5.* -/
 noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
     f := fun l => α.s a l + β.s l b
     rises := by
@@ -385,6 +396,8 @@ lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
   ext l
   dsimp [AspValley, SlipFace.SlipValley, AspPerm.sf]
 
+/-- If `τ = α ⋆ β` in the Demazure sense, then the minimum of
+`AspValley α β a b` is `τ.s a b`. -/
 lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
   (AspValley α β a b).min = τ.s a b := by
   apply le_antisymm
@@ -401,7 +414,8 @@ lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b :
     unfold AspValley
     simp
 
-/-- Lemma 4.6 -/
+/-- Compare the minima and rightmost minimizers of two valleys that differ by
+`1` below a cutoff and agree above it. *Lemma 4.6.* -/
 lemma sediment (v w : Valley) {A : ℤ}
   (low : ∀ l : ℤ, l ≤ A → w.f l = v.f l + 1) (high : ∀ l : ℤ, l > A → w.f l = v.f l) :
   ((v.M ≤ A → w.min = v.min + 1)
@@ -475,7 +489,10 @@ lemma sediment (v w : Valley) {A : ℤ}
     suffices w.min = v.min by exact And.intro this eq
     rw [← w.f_M, ← eq, high v.M h, v.f_M]
 
-/-- Lemma 4.7, in slightly different phrasing. -/
+/-- Incrementing the first coordinate changes the valley minimum by `1`
+exactly when the rightmost minimizer lies at or to the left of `α⁻¹ a`, and
+the rightmost minimizer can only move to the right. *Lemma 4.7, in slightly
+different phrasing.* -/
 lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   let v := AspValley α β a b
   let w := AspValley α β (a+1) b
@@ -500,7 +517,10 @@ lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   · simp [h]
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
-/-- Lemma 4.8, in slightly different phrasing. -/
+/-- Incrementing the second coordinate changes the valley minimum according to
+the position of the rightmost minimizer relative to `β b`, and the rightmost
+minimizer can only move to the right. *Lemma 4.8, in slightly different
+phrasing.* -/
 lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
   let v := (AspValley α β a b)
   let w := AspValley α β a (b+1)
@@ -564,10 +584,8 @@ lemma AspValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
     congr 2
     rw [Nat.cast_add, add_assoc, Nat.cast_one]
 
-/-- A useful submodularity criterion: s is submodular at a, b if and only if
-  s (a+1) b not dropping when b increasing implies the same is true of
-  s a b. This corresponds to the geometric situation: if a linear series L has a
-  base point at p, then so does L - q if q ≠ p. -/
+/-- A local criterion for submodularity: if `s (a + 1) b` does not drop when
+`b` increases, then `s a b` does not drop either. -/
 lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
   s.Δ a b ≥ 0 ↔ (s (a + 1) b = s (a + 1) (b + 1) → s a b = s a (b + 1)) := by
   let d1 := s (a + 1) b - s (a + 1) (b + 1)
@@ -593,7 +611,8 @@ lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
       have h2 : d2 ≤ 1 := by linarith [s.b_step a b]
       exact le_trans h2 h1
 
-/-- Theorem 4.4, part 1/5 -/
+/-- The product of two submodular slipfaces is submodular.
+*Theorem 4.4, part 1/5.* -/
 theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.submodular) :
   (s.star t).submodular := by
   intro a b
@@ -633,9 +652,14 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
 
 end Submodular
 
-/- Back to AspPerm namespace to define Demazure product and its properties. -/
+/-! ### Demazure Product on `AspPerm`
+
+Using the slipface construction above, this section defines Demazure product
+on ASP permutations and proves its basic structural properties. -/
+
 namespace AspPerm
 
+/-- Two ASP permutations are equal if their associated slipfaces are equal. -/
 lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   suffices α.func = β.func by
     cases α; cases β
@@ -648,7 +672,8 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   contrapose! this with neq
   simp [neq]
 
-/-- Theorem 4.4, part 2/5 -/
+/-- The slipface product of two ASP permutations is represented by a unique ASP
+permutation. *Theorem 4.4, part 2/5.* -/
 lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
   intro α β
   have : (α.sf ⋆ β.sf).submodular := by
@@ -662,6 +687,13 @@ lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β
     rw [← hσ] at hτ
     rw [τ.eq_of_sf_eq hτ]
 
+/-- The Demazure product on ASP permutations, characterized by
+$$
+s_{\alpha \star \beta}(a,b) = \min_{\ell \in \ZZ}
+  [s_\alpha(a,\ell) + s_\beta(\ell,b)].
+$$
+
+In Lean this operation is written `α ⋆ β`. -/
 noncomputable def star (α β : AspPerm) : AspPerm :=
   Classical.choose (star_exists α β)
 
@@ -670,7 +702,8 @@ noncomputable def star (α β : AspPerm) : AspPerm :=
 
 infixl:70 " ⋆ " => star
 
-/-- Theorem 4.4, part 3/5 -/
+/-- Demazure product on ASP permutations is associative.
+*Theorem 4.4, part 3/5.* -/
 lemma star_assoc : ∀ α β γ : AspPerm, (α ⋆ β) ⋆ γ = α ⋆ (β ⋆ γ) := by
   intro α β γ
   apply AspPerm.eq_of_sf_eq
@@ -690,7 +723,7 @@ lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
-/-- Theorem 4.4, part 4/5 -/
+/-- Inversion reverses Demazure products. *Theorem 4.4, part 4/5.* -/
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
   have ex := star_exists (β⁻¹) (α⁻¹)
   let τ := β⁻¹ ⋆ α⁻¹
@@ -701,7 +734,9 @@ lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ :=
   repeat rw [← AspPerm.sf_dual]
   simp
 
-/-- Theorem 4.4, part 5/5 -/
+/-- The shift of a Demazure product satisfies
+`(α ⋆ β).χ = α.χ + β.χ`, i.e. $\chi_{\alpha \star \beta}
+= \chi_\alpha + \chi_\beta$. *Theorem 4.4, part 5/5.* -/
 lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have ex := star_exists α β
   let τ := α ⋆ β
@@ -764,9 +799,13 @@ instance : PartialOrder AspPerm where
     intro a b
     exact Int.le_antisymm (h₁ a b) (h₂ a b)
 
+/-- The paper's relation `\alpha \leq_\chi \beta`: Bruhat order together with
+equality of shifts. In Lean this is the infix `≤χ`. -/
 def le_chi (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
 infix:50 " ≤χ " => le_chi
 
+/-- Comparison `τ ≤ α ⋆ β` is equivalent to the lower Demazure-product
+inequalities defining `τ.le_dprod α β`. -/
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by
   constructor
   · intro le a b
@@ -784,6 +823,8 @@ lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β 
     rw [star_valley, ← v.f_M]
     exact Int.le_refl (v.f v.M)
 
+/-- Comparison `α ⋆ β ≤ τ` is equivalent to the upper Demazure-product
+inequalities defining `τ.ge_dprod α β`. -/
 lemma ge_star_iff (τ α β : AspPerm) : α ⋆ β ≤ τ ↔ τ.ge_dprod α β := by
   constructor
   · intro ge a b
@@ -804,6 +845,8 @@ lemma ge_star_iff (τ α β : AspPerm) : α ⋆ β ≤ τ ↔ τ.ge_dprod α β 
     rw [v.f_M]
     exact v.min_spec l
 
+/-- Equality `τ = α ⋆ β` is equivalent to satisfying both Demazure comparison
+conditions. -/
 lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β := by
   constructor
   · intro eq
@@ -825,9 +868,15 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
 
 end AspPerm
 
+/-! ### Weak-Order Consequences of Demazure Product
+
+The final results in this file record the weak-order inequalities satisfied by
+the factors of a Demazure product. -/
+
 namespace Submodular
 
-/-- Lemma 4.9, part 1 -/
+/-- In a Demazure product `α ⋆ β`, the factor `β` lies below the product in
+left weak order. *Lemma 4.9, part 1.* -/
 theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by
@@ -866,7 +915,8 @@ theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
     exact le_of_lt u_lt_v
   omega
 
-/-- Lemma 4.9, part 2 -/
+/-- In a Demazure product `α ⋆ β`, the factor `α` lies below the product in
+right weak order. *Lemma 4.9, part 2.* -/
 theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by

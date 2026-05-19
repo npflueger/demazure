@@ -101,12 +101,12 @@ lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
   have f_eq : v.f v.M = v.f v'.M := by
     subst v'
     unfold Valley.shift_down at le ge ⊢
-    simp at le
+    simp only [tsub_le_iff_right, sub_add_cancel] at le
     omega
   have f'_eq : v'.f v.M = v'.f v'.M := by
     subst v'
     unfold Valley.shift_down at le ge ⊢
-    simp at le ⊢
+    simp only [tsub_le_iff_right, sub_add_cancel, sub_left_inj] at le ⊢
     omega
   have M_le_M' : v.M ≤ v'.M := by
     have := (v'.M_spec v.M).2

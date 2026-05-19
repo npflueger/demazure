@@ -295,9 +295,10 @@ noncomputable def SlipValley (s t : SlipFace) (a b : ℤ) : Valley where
     suffices {n : ℤ | s a n + t n b ≤ m} ⊆ Finset.Icc L R by
       apply Set.Finite.subset _ this
       apply Set.Finite.ofFinset (Finset.Icc L R)
-      intro x; simp
+      intro x
+      simp only [Finset.mem_Icc, Finset.coe_Icc, Set.mem_Icc]
     intro n hn
-    simp at hn
+    simp only [Set.mem_setOf_eq] at hn
     suffices n ≥ L ∧ n ≤ R by simpa
     constructor
     · linarith [t.nonneg n b, s.ge_diff a n]

@@ -536,13 +536,17 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
   by_cases h_lt : τ b < a
   · simp only [h_lt]
     suffices {x ∈ Finset.Ico b (b+1) | τ x < a} = {b} by
-      rw [this]; simp [Finset.card_singleton]
+      rw [this]
+      simp only [Finset.card_singleton, if_true]
     ext n
     constructor
-    · intro h; simp at h ⊢
+    · intro h; simp only [Finset.mem_filter, Finset.mem_Ico, Finset.mem_singleton] at h ⊢
       linarith [h.1]
-    · intro h; simp at h ⊢
-      simp [h, h_lt]
+    · intro h
+      rw [Finset.mem_singleton] at h
+      subst n
+      simp only [Finset.mem_filter, Finset.mem_Ico]
+      exact ⟨⟨le_rfl, by omega⟩, h_lt⟩
   · have ge_a : τ b ≥ a := by omega
     simp only [h_lt, ite_false, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
     intro x x_Ico
@@ -958,7 +962,7 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
   simp only [sf_func_eq_s]
   rw [τ.s'_eq]
   have := τ.sf.duality b a
-  simp at this
+  simp only [sf_func_eq_s, sf_chi_eq] at this
   omega
 
 lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by

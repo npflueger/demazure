@@ -261,14 +261,16 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     have : A ∪ B ⊆ U := by
       unfold A B U
       intro x hx
-      simp at hx ⊢
+      simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
+        Set.mem_setOf_eq] at hx ⊢
       tauto
     simp only [Finset.card_sdiff_of_subset this]
     suffices A ∪ B ⊆ U by
       simp [Finset.card_le_card this]
     intro x hx
     unfold A B at hx
-    simp at hx
+    simp only [Finset.mem_union, Finset.mem_inter, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq] at hx
     tauto
   linarith [h_diff, h_union]
 

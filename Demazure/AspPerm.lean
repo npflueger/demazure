@@ -996,8 +996,8 @@ between inequalities for `s` and geometric statements about inversion sets. -/
 section RampWings
 variable (τ : AspPerm)
 
-/-- The `b`-ramp of an ASP permutation: the region cut out by the inequality
-`τ.s m n ≥ n - b + 1`. -/
+/-- The `b`-ramp of an ASP permutation: the region, shaped like a Young diagram, of pairs `(m,n)`
+such that $s_\tau(\ell,b) \ge m$ and $s^∨_\tau(b,\ell) \ge n$ for some $\ell$. -/
 def ramp (b : ℤ) : Set (ℤ × ℤ) :=
   {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}
 

@@ -1062,6 +1062,8 @@ lemma chainChiList_PChain_of_HF (h_321a : is_321a τ) (A : HeckeFactorization τ
     chainChiList (PChain_of_HF h_321a A) = chiList A := by
   simpa [PChain_of_HF, chainChiList, chiList] using chainChiList_LSet_of_LPerm A.val
 
+
+
 noncomputable def fixedChiHeckeFactorizationEquivFixedChiPChain
     (h_321a : is_321a τ) (χs : Fin n → ℤ) :
     FixedChiHeckeFactorization τ n χs ≃ FixedChiPChain τ n χs :=

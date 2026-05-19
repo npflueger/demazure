@@ -98,14 +98,16 @@ noncomputable abbrev σ := asps.recon χ
 noncomputable abbrev lf_pos : Finset ℤ := asps.inset m \ asps.inset n
 @[simp] lemma mem_lf_pos (x : ℤ) : x ∈ lf_pos asps m n
     ↔ x < m ∧ ⟨x, m⟩ ∈ asps ∧ ⟨x, n⟩ ∉ asps := by
-  simp [lf_pos]
+  simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq, mem_AspSet,
+    iff_and_self, and_imp]
   intro hm hn
   exact asps.directed x m hm
 
 noncomputable abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m ∪ asps.inset n)
 @[simp] lemma mem_md_pos (x : ℤ) : x ∈ md_pos asps m n
     ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∉ asps ∧ ⟨x, n⟩ ∉ asps := by
-  simp [md_pos]
+  simp only [Finset.mem_sdiff, Finset.mem_Ico, Finset.mem_union, Set.Finite.mem_toFinset,
+    Set.mem_setOf_eq, not_or, mem_AspSet]
   constructor
   · intro h
     obtain ⟨x_ge_m, x_lt_n⟩ := h.1
@@ -117,10 +119,11 @@ noncomputable abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m �
 noncomputable abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
 @[simp] lemma mem_rt_pos (x : ℤ) : x ∈ rt_pos asps m n
     ↔ x ≥ n ∧ ⟨m,x⟩ ∉ asps ∧ ⟨n,x⟩ ∈ asps := by
-  simp [rt_pos]
+  simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq, ge_iff_le,
+    mem_AspSet]
   constructor
   · intro h
-    simp [h]
+    simp only [h, not_false_eq_true, and_self, and_true]
     exact le_of_lt (asps.directed n x h.1)
   · intro h
     simp [h]
@@ -128,38 +131,38 @@ noncomputable abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
 noncomputable abbrev lf_neg : Finset ℤ := (asps.inset n \ asps.inset m).filter (· < m)
 @[simp] lemma mem_lf_neg (x : ℤ) : x ∈ lf_neg asps m n
     ↔ x < m ∧ ⟨x, m⟩ ∉ asps ∧ ⟨x, n⟩ ∈ asps := by
-  simp [lf_neg]
+  simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
+    mem_AspSet]
   constructor <;> (intro h; simp [h])
 
 noncomputable abbrev md_neg : Finset ℤ := (Finset.Ico m n) ∩ (asps.outset m ∩ asps.inset n)
 @[simp] lemma mem_md_neg (x : ℤ) : x ∈ md_neg asps m n
     ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨x, n⟩ ∈ asps := by
-  simp [md_neg]
+  simp only [Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
+    mem_AspSet]
   constructor <;> (intro h; simp [h])
 
 noncomputable abbrev rt_neg : Finset ℤ := (asps.outset m \ asps.outset n).filter (· ≥  n)
 @[simp] lemma mem_rt_neg (x : ℤ) : x ∈ rt_neg asps m n
     ↔ x ≥ n ∧ ⟨m,x⟩ ∈ asps ∧ ⟨n,x⟩ ∉ asps := by
-  simp [rt_neg]
+  simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
+    ge_iff_le, mem_AspSet]
   constructor <;> (intro h; simp [h])
 
 lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
   ((lf_pos asps m n).card + (md_pos asps m n).card + (rt_pos asps m n).card)
   - ((lf_neg asps m n).card + (md_neg asps m n).card + (rt_neg asps m n).card) := by
-
   have : asps.σ χ n - asps.σ χ m =
     (Finset.Ico m n).card
     + ( (asps.outset n) \ (asps.outset m)).card  - ( (asps.outset m) \ (asps.outset n)).card
     + ( (asps.inset m) \ (asps.inset n)).card - ( (asps.inset n) \ (asps.inset m)).card := by
     unfold σ recon
-
     have h1 := Utils.sub_card_eq_sub_card_diff (asps.outset n) (asps.outset m)
     have h2 := Utils.sub_card_eq_sub_card_diff (asps.inset m) (asps.inset n)
     have h3 : (Finset.Ico m n).card = n-m := by
       simp [m_le_n]
     linarith [h1,h2,h3]
   rw [this]
-
   have rp : (asps.outset n \ asps.outset m) = rt_pos asps m n := rfl
   have lp : (asps.inset m \ asps.inset n) = lf_pos asps m n := rfl
   have rn :
@@ -178,17 +181,19 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
       rw [this]
     ext x
     unfold A B
-    simp
+    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, Finset.mem_filter, Finset.mem_sdiff, ge_iff_le]
     constructor
     · intro hx
       rcases hx with (hA | hB)
-      · simp [hA]
+      · simp only [hA, true_and]
         intro h
         have : n < x := asps.directed n x h
         omega
       · exact hB.1
     · intro h
-      simp [h, le_of_lt (asps.directed m x h.1)]
+      simp only [le_of_lt (asps.directed m x h.1), true_and, h, and_true, not_false_eq_true,
+        and_self]
       exact lt_or_ge x n
   have ln : (asps.inset n \ asps.inset m).card
     = ( (Finset.Ico m n) ∩ (asps.inset n) ).card + (lf_neg asps m n).card := by
@@ -206,7 +211,9 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     suffices (A ∪ B) = (asps.inset n \ asps.inset m) by
       rw [this]
     ext x
-    unfold A B; simp
+    unfold A B
+    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, Finset.mem_filter, Finset.mem_sdiff]
     constructor
     · intro hx
       rcases hx with (hA | hB)
@@ -217,7 +224,7 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
       · exact hB.1
     · intro h
       have x_lt_n : x < n := asps.directed x n h.1
-      simp [h, x_lt_n]
+      simp only [x_lt_n, and_true, h, not_false_eq_true, and_self, true_and]
       exact le_or_gt m x
   suffices ((Finset.Ico m n).card : ℤ)
     - ↑(md_pos asps m n).card
@@ -228,7 +235,6 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     rw [rp, lp, rn, ln]
     simp only [Nat.cast_add]
     linarith [this]
-
   unfold md_pos md_neg
   let U := (Finset.Ico m n)
   let A := U ∩ asps.outset m
@@ -244,7 +250,6 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     rw [h_diff, h_inter] at this
     unfold U A B at this
     linarith [this]
-
   have h_union : (A.card : ℤ) + (B.card : ℤ) - (A ∩ B).card = (A ∪ B).card := by
     simp only [Finset.card_union A B]
     suffices A.card + B.card ≥ (A ∩ B).card by
@@ -252,7 +257,6 @@ lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     have : A ∩ B ⊆ A := by apply Finset.inter_subset_left
     have : (A ∩ B).card ≤ A.card := Finset.card_le_card this
     linarith [this]
-
   have h_diff : ((U \ (A ∪ B)).card : ℤ) = U.card - (A ∪ B).card := by
     have : A ∪ B ⊆ U := by
       unfold A B U
@@ -274,19 +278,23 @@ lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   have diff := σ_diff asps m n χ (le_of_lt m_lt_n)
   have h_lf : asps.lf_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx
+    simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq] at hx
     exact (asps.coclosed x m n hx.2 m_lt_n hx.1.2 mn_I) hx.1.1
   have h_md : asps.md_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx; simp only [Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq] at hx
     exact mn_I (asps.closed m x n hx.2.1 hx.2.2)
   have h_rt : asps.rt_neg m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx
+    simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
+      ge_iff_le] at hx
     have n_ne_x : n ≠ x := by rintro rfl; exact mn_I hx.1.1
     exact (asps.coclosed m n x m_lt_n (lt_of_le_of_ne hx.2 n_ne_x) mn_I hx.1.2) hx.1.1
   rw [h_lf, h_md, h_rt] at diff
-  simp at diff
+  simp only [Finset.card_empty, Nat.cast_zero, add_zero, sub_zero] at diff
   exact diff
 
 lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ χ m < asps.σ χ n := by
@@ -306,16 +314,20 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ χ m > asps
   have diff := σ_diff asps m n χ (le_of_lt m_lt_n)
   have h_lf : asps.lf_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx
+    simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq] at hx
     exact hx.2 (asps.closed x m n hx.1 mn_I)
   have h_md : asps.md_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx
+    simp only [Finset.mem_sdiff, Finset.mem_Ico, Finset.mem_union, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, not_or] at hx
     have m_ne_x : m ≠ x := fun h => hx.2.2 (h ▸ mn_I)
     exact (asps.coclosed m x n (lt_of_le_of_ne hx.1.1 m_ne_x) hx.1.2 hx.2.1 hx.2.2) mn_I
   have h_rt : asps.rt_pos m n = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
-    intro x hx; simp at hx
+    intro x hx
+    simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq] at hx
     exact hx.2 (asps.closed m n x mn_I hx.1)
   rw [h_lf, h_md, h_rt] at diff
   simp at diff
@@ -326,7 +338,8 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ χ m > asps
   apply Finset.eq_empty_iff_forall_notMem.mp at h_empty
   specialize h_empty n
   have : ⟨n, n⟩ ∈ asps := by
-    simp at h_empty
+    simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
+      ge_iff_le, le_refl, and_true, not_and, not_not] at h_empty
     exact h_empty mn_I
   linarith [asps.directed n n this]
 
@@ -364,8 +377,9 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ 
     have := σ_dec asps m n χ m_lt_n h
     linarith [σ_m_lt_n]
   ext k
-  simp
-
+  simp only [Set.mem_preimage, Set.mem_Ico, Finset.union_assoc, Finset.coe_union,
+    Finset.coe_sdiff, Set.Finite.coe_toFinset, Finset.coe_Ico, Set.mem_union, Set.mem_diff,
+    Set.mem_setOf_eq, not_or]
   by_cases k_lt_m : k < m
   · have h0 : ¬ (m ≤ k) := not_le_of_gt k_lt_m
     have h1 : ⟨m, k⟩ ∉ asps := by
@@ -439,7 +453,7 @@ lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ 
   have n_le_k : n ≤ k := le_of_not_gt k_lt_n
   clear k_lt_n
   have : ¬(k < n) := not_lt_of_ge n_le_k
-  simp [m_le_k, this]
+  simp only [m_le_k, this, and_false, false_and, false_or]
   have : asps.σ χ m ≤ asps.σ χ k ↔ ⟨m, k⟩ ∉ asps := by
     simp [mem_iff_lt asps m k χ m_le_k]
   rw [this]
@@ -464,7 +478,6 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
   let I := Finset.Ico (σ m) (σ n)
   let J := asps.lf_pos m n ∪ asps.md_pos m n ∪ asps.rt_pos m n
   let K := Finset.image σ J
-
   have inv_image : σ ⁻¹' I = ↑J:= by
     unfold I σ
     have := contiguity_helper asps m n χ m_lt_n σ_m_lt_n
@@ -476,7 +489,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
       rw [mem_iff_lt asps m n χ (le_of_lt m_lt_n)]
       omega
     rw [σ_diff_pos asps m n χ m_lt_n this]
-    simp
+    simp only [Finset.union_assoc]
     let L := asps.lf_pos m n
     let M := asps.md_pos m n
     let R := asps.rt_pos m n
@@ -491,7 +504,9 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
         have : ⟨a, m⟩ ∈ asps := by tauto
         exact asps.directed a m this
       have b_large : b ≥ m := by
-        unfold M R at hb; simp at hb
+        unfold M R at hb
+        simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_Ico, Set.Finite.mem_toFinset,
+          Set.mem_setOf_eq, not_or] at hb
         rcases hb with (hb | hb)
         · tauto
         · have : ⟨n,b⟩ ∈ asps := by tauto
@@ -538,7 +553,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
     exact le_of_lt σ_m_lt_n
   intro k σm_le_k k_lt_σn
   have k_in_I : k ∈ I := by
-    simp [I]
+    simp only [Finset.mem_Ico, I]
     exact ⟨σm_le_k, k_lt_σn⟩
   rw [← K_eq_I] at k_in_I
   unfold K at k_in_I
@@ -583,7 +598,7 @@ theorem invSet_func : inv_set (asps.recon χ) = asps := by
   · intro h
     exact ⟨u_lt_v, σ_dec asps u v χ u_lt_v h⟩
 
-lemma inset_eq_nw (n : ℤ) : (asps.inset n).toSet
+lemma inset_eq_nw (n : ℤ) : ↑(asps.inset n)
    = northwest_set (asps.σ χ) ((asps.σ χ n) + 1) n := by
   ext x
   unfold northwest_set
@@ -601,7 +616,7 @@ lemma inset_eq_nw (n : ℤ) : (asps.inset n).toSet
     have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
     simpa using hx'
 
-lemma outset_eq_se (n : ℤ) : (asps.outset n).toSet
+lemma outset_eq_se (n : ℤ) : ↑(asps.outset n)
    = southeast_set (asps.σ χ) (asps.σ χ n) (n+1) := by
   ext x
   have := Set.ext_iff.mp <| invSet_func asps χ
@@ -640,7 +655,7 @@ lemma surj_helper_up (m : ℤ) (n : ℕ) :
   use y
   constructor
   · omega
-  · simp at y_not_outset_x
+  · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_outset_x
     have h_ineq : asps.recon χ x ≤ asps.recon χ y := by
       rw [← not_lt, ← mem_iff_lt asps x y χ (le_of_lt y_gt_x)]
       exact y_not_outset_x
@@ -668,7 +683,7 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
   use y
   constructor
   · omega
-  · simp at y_not_inset_x
+  · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_inset_x
     have h_ineq : asps.recon χ y ≤ asps.recon χ x := by
       rw [← not_lt, ← mem_iff_lt asps y x χ (le_of_lt y_lt_x)]
       exact y_not_inset_x
@@ -687,8 +702,8 @@ theorem func_surjective : Function.Surjective (asps.recon χ) := by
     rcases surj_helper_down asps χ 0 (asps.recon χ 0 - y).toNat with
       ⟨m, m_le_0, fm_le⟩
     use m
-    simp at fm_le
-    simp [m_le_0]
+    simp only [Int.ofNat_toNat] at fm_le
+    simp only [m_le_0, true_and]
     apply le_trans fm_le
     rw [max_eq_left (by omega)]
     simp
@@ -699,7 +714,7 @@ theorem func_surjective : Function.Surjective (asps.recon χ) := by
     rcases surj_helper_up asps χ 1 (y + 1 - asps.recon χ 1).toNat with
       ⟨n, n_ge_1, fn_ge⟩
     use n
-    simp at fn_ge
+    simp only [Int.ofNat_toNat, ge_iff_le] at fn_ge
     rw [max_eq_left (by omega)] at fn_ge
     simp [n_ge_1]
     omega

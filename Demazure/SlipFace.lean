@@ -31,7 +31,7 @@ lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
   · rintro rfl
     simp
   · intro h
-    have : s.χ = t.χ := by
+    have hχ : s.χ = t.χ := by
       obtain ⟨As, hAs⟩ := s.large_a 0
       obtain ⟨At, hAt⟩ := t.large_a 0
       let A := max As At
@@ -44,11 +44,11 @@ lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
       rw [hs, ht, h A 0]
     cases s
     cases t
-    simp at h this ⊢
+    rw [SlipFace.mk.injEq]
     constructor
     · funext a b
       exact h a b
-    · exact this
+    · exact hχ
 
 namespace SlipFace
 variable (sf : SlipFace)
@@ -534,7 +534,6 @@ lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
     rw [this]
     have h1 : (r ⋆ s ⋆ t) a b ≤ (r ⋆ s) a m + t m b := by apply star_val_le
     have h2 : (r ⋆ s) a m ≤ r a l + s l m := by apply star_val_le
-
     omega
   · let l := star_wit (r ⋆ s) t a b
     have : ((r ⋆ s) ⋆ t) a b = (r ⋆ s) a l + t l b := star_wit_spec (r ⋆ s) t a b

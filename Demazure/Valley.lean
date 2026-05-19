@@ -108,7 +108,6 @@ lemma shift_down_M (k : ℤ) : (v.shift_down k).M = v.M := by
     unfold Valley.shift_down at le ge ⊢
     simp at le ⊢
     omega
-
   have M_le_M' : v.M ≤ v'.M := by
     have := (v'.M_spec v.M).2
     contrapose! ge with h

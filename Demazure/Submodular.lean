@@ -21,12 +21,10 @@ lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
     by_contra! h
     have : A' ≤ A - 1 := by linarith
     specialize hA' (A-1) (by linarith)
-
     have hAb : s.dual b (A-1) = 0 := by
       have := (s.dual.a_step b (A-1)).1
       rw [hA'] at this
       exact le_antisymm this (s.dual.nonneg b (A-1))
-
     have : s.Δ (A-1) b = -1 := by
       dsimp [SlipFace.Δ]
       have : A - 1 + 1 = A := by omega
@@ -69,9 +67,8 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   obtain ⟨a_ge_A, a_lt_A'⟩ := Finset.mem_Ico.mp a_Ico
   use a
   constructor
-  · simp; exact hΓ
+  · simp only; exact hΓ
   intro a' ha'
-
   let A'new := max A' (a' + 1)
   have A_le_A'new : A' ≤ A'new := by apply Int.le_max_left
   let Anew := min A a'
@@ -82,7 +79,6 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   have a_Ico : a ∈ Finset.Ico Anew A'new := by
     simp only [Finset.mem_Ico]
     constructor <;> linarith
-
   have hAnew : ∀ a ≤ Anew, s a b = 0 := by
     intro a ha
     have : a ≤ A := by linarith [Anew_le_A]
@@ -91,9 +87,7 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
     intro a ha
     have : a ≥ A' := by linarith [A_le_A'new]
     exact hA' a this
-
   obtain ⟨A'new_le_A'new, h_sum⟩ := unique_a_helper hsub Anew A'new b hAnew hA'new
-
   have : (∑ x ∈ Finset.Ico Anew A'new, s.Δ x b)
     = s.Δ a b + ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b := by
     apply Finset.sum_eq_add_sum_diff_singleton a_Ico
@@ -109,7 +103,6 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   have all0 : ∀ i ∈ Finset.Ico Anew A'new \ {a}, s.Δ i b = 0 :=
     (Finset.sum_eq_zero_iff_of_nonneg this).mp sum0
   specialize all0 a'
-
   by_contra! a'_ne_a
   have : a' ∈ Finset.Ico Anew A'new \ {a} := by
     simp only [Finset.mem_sdiff, Finset.mem_Ico, Finset.mem_singleton]
@@ -157,15 +150,12 @@ lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
     have mem1 : ⟨a1, b1⟩ ∈ s.Γ := (unique_a hsub b1).choose_spec.1
     have mem2 : ⟨a2, b2⟩ ∈ s.Γ := (unique_a hsub b2).choose_spec.1
     have eq : a1 = a2 := h
-
     let b := (unique_b hsub a1).choose
     have eq1 : b1 = b :=
       (unique_b hsub a1).choose_spec.2 b1 mem1
-
     rw [← eq] at mem2
     have eq2 : b2 = b :=
       (unique_b hsub a1).choose_spec.2 b2 mem2
-
     rw [eq1, eq2]
   · intro a
     let b := (unique_b hsub a).choose
@@ -185,7 +175,6 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
     suffices S.Finite by exact this
     obtain ⟨B, hB⟩ := s.dual.small_a 0
     obtain ⟨B', hB'⟩ := s.large_b 0
-
     have b_lt : ∀ b ∈ S, b < max 0 B' := by
       intro b hb
       by_cases b_neg : b < 0
@@ -194,7 +183,6 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
       clear b_neg
       suffices b < B' by
         exact lt_of_lt_of_le this (le_max_right 0 B')
-
       let a := asp_func hsub b
       have a_neg : a < 0 := by
         by_contra! a_nonneg
@@ -214,7 +202,6 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
       have : s.Δ a b = 0 := s.Δ_zero_of_s_zero a b s0
       rw [this]
       norm_num
-
     have b_ge : ∀ b ∈ S, b ≥ min 0 B := by
       intro b hb
       by_cases b_nonneg : b ≥ 0
@@ -246,13 +233,11 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
         apply s.dual.Δ_zero_of_s_zero b a s0
       rw [this]
       norm_num
-
     have : S ⊆ Set.Ico (min 0 B) (max 0 B') := by
       intro b hb
       have lt := b_lt b hb
       have ge := b_ge b hb
       simp [lt, ge]
-
     apply Set.Finite.subset _ this
     apply Set.finite_Ico
 
@@ -286,7 +271,6 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
       have := hB b this
       exact ⟨le_refl b, this⟩
   obtain ⟨B, hB⟩ := this
-
   have hAB : s A B = 0 := by
     apply s.zero_below (a' := A) (b' := b)
     repeat linarith
@@ -294,7 +278,6 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
     rw [this]
     rw [s.sum_ab hA.1 hB.1]
     omega
-
   classical
   have ite : ∀ a' b' : ℤ, s.Δ a' b' = if τ b' = a' then 1 else 0 := by
     intro a' b'
@@ -304,32 +287,28 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
     rcases this with (h | (h | h)) <;> simp [h]
     have := hsub a' b'
     linarith
-
   have inner_sum : ∀ b' ∈ Finset.Ico b B,
     ∑ a' ∈ Finset.Ico A a, s.Δ a' b' = if τ b' < a ∧ τ b' ≥ A then 1 else 0 := by
     intro b' hb'
-    simp [ite]
+    simp only [ite, Finset.sum_ite_eq, Finset.mem_Ico, ge_iff_le]
     congr 1
     rw [And.comm]
-  simp [ite]
+  simp only [ite, Finset.sum_ite_eq, Finset.mem_Ico, Finset.sum_boole]
   rw [τ.s_eq_se_card]
   suffices τ.se_finset a b = {x ∈ Finset.Ico b B | A ≤ τ.func x ∧ τ.func x < a} by congr
   ext b'
   simp only [τ.mem_se, Finset.mem_filter, Finset.mem_Ico]
-
   by_cases h : b' < b
   · have : ¬ (b' ≥ b) := by linarith
     simp [this]
   have b_le_b' : b ≤ b' := by linarith
-  simp [b_le_b']
-
+  simp only [ge_iff_le, b_le_b', true_and]
   by_cases h : τ b' ≥ a
   · have : ¬ (τ b' < a) := by linarith
     simp [this]
   have τb'_lt_a : τ b' < a := by linarith
-  simp [τb'_lt_a]
+  simp only [τb'_lt_a, and_true, true_iff]
   clear h
-
   -- We now have an element b' of the southeast set. It remains to show b' < B and τ b' ≥ A.
   have : s.Δ (τ b') b' = 1 := by
     simpa using ite (τ b') b'
@@ -340,7 +319,6 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
   constructor
   · -- show b' < B
     contrapose! this with b'_ge_B
-
     apply s.zero_below (a' := a) (b' := B)
     · exact Int.add_one_le_iff.mpr τb'_lt_a
     · exact b'_ge_B
@@ -443,7 +421,6 @@ lemma sediment (v w : Valley) {A : ℤ}
       have : w.f v.M ≥ w.min := w.min_spec v.M
       apply le_trans this
       rw [low v.M h]
-
     suffices w.min ≥ v.min + 1 by exact le_antisymm le this
     rw [← w.f_M]
     by_cases hM : w.M ≤ A
@@ -500,7 +477,7 @@ lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   intro v w
   have : ∀ n : ℤ, w.f n = v.f n + (if n ≤ α⁻¹ a then 1 else 0) := by
     intro n
-    subst v w; simp [AspValley]
+    subst v w; simp only [AspValley]
     rw [α.a_step a n]
     omega
   have low : (∀ n : ℤ, n ≤ α⁻¹ a → w.f n = v.f n + 1) := by
@@ -512,9 +489,9 @@ lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
     simp [hn]
   have sed := sediment v w low high
   by_cases h : v.M ≤ α⁻¹ a
-  · simp [h]
+  · simp only [h, ↓reduceIte]
     exact ⟨sed.1.1 h, sed.2⟩
-  · simp [h]
+  · simp only [h, ↓reduceIte, add_zero]
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
 /-- Incrementing the second coordinate changes the valley minimum according to
@@ -539,10 +516,9 @@ lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
   suffices w.min = v.min  + (if v.M ≤ β b then 1 else 0) ∧ v.M ≤ w.M by
     omega
   subst v₀
-
   have : ∀ n : ℤ, w.f n = v.f n + (if n ≤ β b then 1 else 0) := by
     intro n
-    subst v w; simp [AspValley]
+    subst v w; simp only [AspValley]
     rw [β.b_step n b]
     unfold Valley.shift_down
     by_cases h : n ≤ β b
@@ -557,9 +533,9 @@ lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
     rw [this n, if_neg (not_le.mpr hn), add_zero]
   have sed := sediment v w low high
   by_cases h : v.M ≤ β b
-  · simp [h]
+  · simp only [h, ↓reduceIte]
     exact ⟨sed.1.1 h, sed.2⟩
-  · simp [h]
+  · simp only [h, ↓reduceIte, add_zero]
     exact ⟨sed.1.2 (lt_of_not_ge h), sed.2⟩
 
 lemma AspValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
@@ -624,7 +600,6 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
   have α_spec : α.sf = s := asp_spec s subS
   let β := asp subT
   have β_spec : β.sf = t := asp_spec t subT
-
   intro eq
   have : ∀ a b : ℤ, (s ⋆ t) a b = (AspValley α β a b).min := by
     intro a b
@@ -635,7 +610,7 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
     rw [AspSlipValley, α_spec, β_spec]
   simp only [this] at eq ⊢
   have := (AspValley_step_b α β (a+1) b).1
-  simp at this
+  simp only at this
   rw [this] at eq
   let M' := (AspValley α β (a + 1) b).M
   have M'_ge_b : M' ≤ β b := by
@@ -897,16 +872,15 @@ theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
     contrapose! τv_le_τu with h
     have := (AspValley_step_b α β a u).1
     subst val_au
-    simp [h] at this
+    simp only [h, ↓reduceIte, sub_add_cancel] at this
     rw [AspValley_min_eq_s dprod a (u + 1), AspValley_min_eq_s dprod a u,
       τ.b_step_eq_iff a u] at this
     exact this
   have Mav_le_βv : val_av.M ≤ β v := by
     by_contra h
-
     have := (AspValley_step_b α β a v).1
     subst val_av
-    simp [h] at this
+    simp only [h, ↓reduceIte, add_zero] at this
     rw [AspValley_min_eq_s dprod a (v+1), AspValley_min_eq_s dprod a v,
       τ.b_step_one_iff a v] at this
     exact lt_irrefl a this

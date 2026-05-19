@@ -13,7 +13,7 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "f897ebcf72cd16f89ab4577d0c826cd14afaafc7"
+rev = "v4.28.0"
 
 [[lean_lib]]
 name = "Demazure"

@@ -32,6 +32,11 @@ tactics except when closing a goal; it is preferable to use `simp only`.
 A good strategy is to first write a proof with `simp`, then replace that with
 `simp?` and apply the suggestion when it is reasonably small and readable.
 
+In docstrings, LaTeX syntax mirroring the source paper is prefered over Lean 
+code snippets, except in cases where the lean implementation should be 
+emphasized. The documentation is meant primarily as a guide for a reader of 
+the paper.
+
 Work in small chunks. It is often better to first write a proof skeleton with
 deeper `sorry`s, then fill those `sorry`s one at a time, than to submit a large
 proof all at once. This keeps the work readable and makes it easier to revise.

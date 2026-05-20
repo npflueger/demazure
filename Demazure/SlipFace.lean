@@ -628,6 +628,500 @@ noncomputable instance : Monoid SlipFace where
   one_mul := id_mul
   mul_one := mul_id
 
+/-! ### The contraction operations `◃` and `▹`
+This section develops the basic properties of the operations $s \triangleleft t$
+and $s \triangleright t$ at the level of slipface functions.
+-/
+
+lemma left_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+  s a l - t.dual b l ≤ s a m - t.dual b m := by
+  -- Proof written by Sonnet 4.6.
+  obtain ⟨B₁, hB₁⟩ := s.small_b a
+  obtain ⟨B₂, hB₂⟩ := t.dual.small_b b
+  obtain ⟨U₁, hU₁⟩ := s.large_b a
+  obtain ⟨U₂, hU₂⟩ := t.dual.large_b b
+  -- Ensure the interval is non-empty by taking max of upper bounds vs min of lower bounds
+  let L := min B₁ B₂
+  let U := max (max U₁ U₂) L
+  have L_le_U : L ≤ U := le_max_right _ _
+  have hne : (Finset.Icc L U).Nonempty :=
+    ⟨L, Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩⟩
+  obtain ⟨m, -, hm_max⟩ := Finset.exists_max_image
+    (Finset.Icc L U) (fun l => s a l - t.dual b l) hne
+  use m
+  intro l
+  by_cases hlL : l ≤ L
+  · -- l is in the left constant regime: f(l) = f(L)
+    have hsl : s a l = a - l + s.χ := hB₁ l (le_trans hlL (min_le_left _ _))
+    have htl : t.dual b l = b - l + t.dual.χ := hB₂ l (le_trans hlL (min_le_right _ _))
+    have hsL : s a L = a - L + s.χ := hB₁ L (min_le_left _ _)
+    have htL : t.dual b L = b - L + t.dual.χ := hB₂ L (min_le_right _ _)
+    have hm_L := hm_max L (Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩)
+    omega
+  · push_neg at hlL
+    by_cases hUl : l ≤ U
+    · -- l is in the finite interval: directly bounded by argmax
+      exact hm_max l (Finset.mem_Icc.mpr ⟨le_of_lt hlL, hUl⟩)
+    · push_neg at hUl
+      -- l is in the right zero regime: f(l) = 0 ≤ f(U) ≤ f(m)
+      have hU₁l : U₁ ≤ l :=
+        le_trans (le_trans (le_max_left _ _) (le_max_left _ L)) hUl.le
+      have hU₂l : U₂ ≤ l :=
+        le_trans (le_trans (le_max_right _ _) (le_max_left _ L)) hUl.le
+      have hU₁U : U₁ ≤ U := le_trans (le_max_left _ _) (le_max_left _ L)
+      have hU₂U : U₂ ≤ U := le_trans (le_max_right _ _) (le_max_left _ L)
+      have hs0 : s a l = 0 := hU₁ l hU₁l
+      have ht0 : t.dual b l = 0 := hU₂ l hU₂l
+      have hsU : s a U = 0 := hU₁ U hU₁U
+      have htU : t.dual b U = 0 := hU₂ U hU₂U
+      have hm_U := hm_max U (Finset.mem_Icc.mpr ⟨L_le_U, le_refl _⟩)
+      omega
+
+
+
+/-- The argmax witnessing the left contraction value $s \triangleleft t (a,b)$. -/
+noncomputable def lc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
+  Classical.choose (left_contraction_exists s t a b)
+
+/-- The left contraction function
+$$
+(s \triangleleft t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[s(a,\ell) - t^\vee(b,\ell)\bigr].
+$$
+*Definition 3.7 (first half).* -/
+noncomputable def lc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
+  fun a b => s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
+
+/-- Every value $s(a,\ell) - t^\vee(b,\ell)$ is at most $s \triangleleft t (a,b)$. -/
+lemma lc_val_ge (s t : SlipFace) (a b l : ℤ) : s a l - t.dual b l ≤ lc_func s t a b :=
+  Classical.choose_spec (left_contraction_exists s t a b) l
+
+/-- The left contraction is nonnegative, since for `l ≫ 0` both terms in the
+maximizing expression vanish. -/
+lemma lc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ lc_func s t a b := by
+  -- Proof written by GPT 5.5.
+  obtain ⟨U₁, hU₁⟩ := s.large_b a
+  obtain ⟨U₂, hU₂⟩ := t.dual.large_b b
+  let l := max U₁ U₂
+  have hs0 : s a l = 0 := hU₁ l (le_max_left _ _)
+  have ht0 : t.dual b l = 0 := hU₂ l (le_max_right _ _)
+  have hmax := lc_val_ge s t a b l
+  rw [hs0, ht0] at hmax
+  omega
+
+/-- The left contraction function $s \triangleleft t$ satisfies `D_props`.
+*Proposition 3.9 (part).* -/
+lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
+  -- Proof written by GPT 5.5.
+  constructor
+  · intro a b
+    let l := lc_wit s t a b
+    change s a l - t.dual b l ≤ lc_func s t (a+1) b
+    have hmax : s (a+1) l - t.dual b l ≤ lc_func s t (a+1) b :=
+      lc_val_ge s t (a+1) b l
+    have hstep : s a l ≤ s (a+1) l := (s.a_step a l).1
+    omega
+  · intro a b
+    let l := lc_wit s t a (b+1)
+    change s a l - t.dual (b+1) l ≤ lc_func s t a b
+    have hmax : s a l - t.dual b l ≤ lc_func s t a b :=
+      lc_val_ge s t a b l
+    have hstep : t.dual b l ≤ t.dual (b+1) l := (t.dual.a_step b l).1
+    omega
+  · intro a
+    suffices hEventuallyNonpos : ∃ B, ∀ b ≥ B, ∀ l,
+        s a l - t.dual b l ≤ 0 by
+      obtain ⟨B, hB⟩ := hEventuallyNonpos
+      use B
+      intro b hb
+      apply le_antisymm
+      · let l := lc_wit s t a b
+        change s a l - t.dual b l ≤ 0
+        exact hB b hb l
+      · exact lc_func_nonneg s t a b
+    -- Paper proof: for fixed `a`, consider
+    -- `L(a,b) = {l | s(a,l) > t.dual(b,l)}`.  The sets shrink as `b`
+    -- increases, `L(a,b₀)` is finite once `s.χ + t.χ + a - b₀ ≤ 0`, and
+    -- each individual `l` eventually leaves the set by the large-`a` behavior
+    -- of `t.dual`.
+    obtain ⟨L₀, hL₀⟩ := s.small_b a
+    obtain ⟨U₀, hU₀⟩ := s.large_b a
+    let L := L₀
+    let U := max U₀ L
+    let middle := Finset.Icc L U
+    have hmiddle_nonempty : middle.Nonempty := by
+      refine ⟨L, ?_⟩
+      simp [middle, U]
+    let middleBounds := middle.image (fun l => s a l + l + t.χ)
+    have hbounds_nonempty : middleBounds.Nonempty := hmiddle_nonempty.image _
+    let M := middleBounds.max' hbounds_nonempty
+    use max (a + s.χ + t.χ) M
+    intro b hb l
+    have hb_left : a + s.χ + t.χ ≤ b := by
+      exact le_trans (le_max_left _ _) hb
+    have hb_middle : M ≤ b := by
+      exact le_trans (le_max_right _ _) hb
+    have htd_ge : t.dual b l ≥ b - l - t.χ := by
+      change t.dual b l ≥ b - l + t.dual.χ
+      exact t.dual.ge_diff b l
+    by_cases hl_left : l ≤ L
+    · have hs : s a l = a - l + s.χ := hL₀ l hl_left
+      omega
+    · push_neg at hl_left
+      by_cases hl_right : U ≤ l
+      · have hU₀_le_l : U₀ ≤ l := le_trans (le_max_left U₀ L) hl_right
+        have hs : s a l = 0 := hU₀ l hU₀_le_l
+        have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
+        omega
+      · push_neg at hl_right
+        have hl_mem : l ∈ middle := by
+          simp [middle]
+          omega
+        have hval_mem : s a l + l + t.χ ∈ middleBounds := by
+          exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
+        have hval_le_M : s a l + l + t.χ ≤ M := by
+          exact Finset.le_max' middleBounds (s a l + l + t.χ) hval_mem
+        omega
+  · intro b
+    suffices hEventuallyNonpos : ∃ A, ∀ a ≤ A, ∀ l,
+        s a l - t.dual b l ≤ 0 by
+      obtain ⟨A, hA⟩ := hEventuallyNonpos
+      use A
+      intro a ha
+      apply le_antisymm
+      · let l := lc_wit s t a b
+        change s a l - t.dual b l ≤ 0
+        exact hA a ha l
+      · exact lc_func_nonneg s t a b
+    -- Paper proof, with `a` moving left: `L(a-1,b) ⊆ L(a,b)`, the initial
+    -- bad set is finite once `s.χ + t.χ + a - b ≤ 0`, and each fixed `l`
+    -- eventually leaves because `s(a,l) = 0` for `a ≪ 0`.
+    let A₀ := b - t.χ - s.χ
+    obtain ⟨Lₛ, hLₛ⟩ := s.small_b A₀
+    obtain ⟨Uₛ, hUₛ⟩ := s.large_b A₀
+    obtain ⟨Lₜ, hLₜ⟩ := t.dual.small_b b
+    let L := min Lₛ Lₜ
+    let U := max Uₛ L
+    let middle := Finset.Icc L U
+    have hmiddle_nonempty : middle.Nonempty := by
+      refine ⟨L, ?_⟩
+      simp [middle, U]
+    let cutoffs := middle.image (fun l => Classical.choose (s.small_a l))
+    have hcutoffs_nonempty : cutoffs.Nonempty := hmiddle_nonempty.image _
+    let A₁ := cutoffs.min' hcutoffs_nonempty
+    use min A₀ A₁
+    intro a ha l
+    have ha_A₀ : a ≤ A₀ := le_trans ha (min_le_left _ _)
+    have hs_le_A₀ : s a l ≤ s A₀ l := by
+      exact s.nondec ha_A₀ (le_refl l)
+    by_cases hl_left : l ≤ L
+    · have hsA₀ : s A₀ l = A₀ - l + s.χ :=
+        hLₛ l (le_trans hl_left (min_le_left _ _))
+      have ht : t.dual b l = b - l - t.χ := by
+        change t.dual b l = b - l + t.dual.χ
+        exact hLₜ l (le_trans hl_left (min_le_right _ _))
+      omega
+    · push_neg at hl_left
+      by_cases hl_right : U ≤ l
+      · have hUₛ_le_l : Uₛ ≤ l := le_trans (le_max_left Uₛ L) hl_right
+        have hsA₀ : s A₀ l = 0 := hUₛ l hUₛ_le_l
+        have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
+        omega
+      · push_neg at hl_right
+        have hl_mem : l ∈ middle := by
+          simp [middle]
+          omega
+        let A_l := Classical.choose (s.small_a l)
+        have hAl_mem : A_l ∈ cutoffs := by
+          exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
+        have hA₁_le_Al : A₁ ≤ A_l := by
+          exact Finset.min'_le cutoffs A_l hAl_mem
+        have ha_Al : a ≤ A_l := by
+          exact le_trans ha (le_trans (min_le_right A₀ A₁) hA₁_le_Al)
+        have hs0 : s a l = 0 := by
+          exact Classical.choose_spec (s.small_a l) a ha_Al
+        have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
+        omega
+
+lemma right_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+    t l b - s.dual l a ≤ t m b - s.dual m a := by
+  obtain ⟨A₁, hA₁⟩ := t.small_a b
+  obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
+  obtain ⟨U₁, hU₁⟩ := t.large_a b
+  obtain ⟨U₂, hU₂⟩ := s.dual.large_a a
+  -- Ensure the interval is non-empty by taking max of upper bounds vs min of lower bounds
+  let L := min A₁ A₂
+  let U := max (max U₁ U₂) L
+  have L_le_U : L ≤ U := le_max_right _ _
+  have hne : (Finset.Icc L U).Nonempty :=
+    ⟨L, Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩⟩
+  obtain ⟨m, -, hm_max⟩ := Finset.exists_max_image
+    (Finset.Icc L U) (fun l => t l b - s.dual l a) hne
+  use m
+  intro l
+  by_cases hlL : l ≤ L
+  · -- l is in the left zero regime: g(l) = 0 = g(L) ≤ g(m)
+    have htl : t l b = 0 := hA₁ l (le_trans hlL (min_le_left _ _))
+    have hsl : s.dual l a = 0 := hA₂ l (le_trans hlL (min_le_right _ _))
+    have htL : t L b = 0 := hA₁ L (min_le_left _ _)
+    have hsL : s.dual L a = 0 := hA₂ L (min_le_right _ _)
+    have hm_L := hm_max L (Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩)
+    omega
+  · push_neg at hlL
+    by_cases hUl : l ≤ U
+    · -- l is in the finite interval: directly bounded by argmax
+      exact hm_max l (Finset.mem_Icc.mpr ⟨le_of_lt hlL, hUl⟩)
+    · push_neg at hUl
+      -- l is in the right constant regime: g(l) = g(U) ≤ g(m)
+      have hU₁l : U₁ ≤ l :=
+        le_trans (le_trans (le_max_left _ _) (le_max_left _ L)) hUl.le
+      have hU₂l : U₂ ≤ l :=
+        le_trans (le_trans (le_max_right _ _) (le_max_left _ L)) hUl.le
+      have hU₁U : U₁ ≤ U := le_trans (le_max_left _ _) (le_max_left _ L)
+      have hU₂U : U₂ ≤ U := le_trans (le_max_right _ _) (le_max_left _ L)
+      have htl : t l b = l - b + t.χ := hU₁ l hU₁l
+      have hsl : s.dual l a = l - a + s.dual.χ := hU₂ l hU₂l
+      have htU : t U b = U - b + t.χ := hU₁ U hU₁U
+      have hsU : s.dual U a = U - a + s.dual.χ := hU₂ U hU₂U
+      have hm_U := hm_max U (Finset.mem_Icc.mpr ⟨L_le_U, le_refl _⟩)
+      omega
+
+/-- The argmax witnessing the right contraction value $s \triangleright t (a,b)$. -/
+noncomputable def rc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
+  Classical.choose (right_contraction_exists s t a b)
+
+/-- The right contraction function
+$$
+(s \triangleright t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[t(\ell,b) - s^\vee(\ell,a)\bigr].
+$$
+*Definition 3.7 (second half).* -/
+noncomputable def rc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
+  fun a b => t (rc_wit s t a b) b - s.dual (rc_wit s t a b) a
+
+/-- Every value $t(\ell,b) - s^\vee(\ell,a)$ is at most $s \triangleright t (a,b)$. -/
+lemma rc_val_ge (s t : SlipFace) (a b l : ℤ) : t l b - s.dual l a ≤ rc_func s t a b :=
+  Classical.choose_spec (right_contraction_exists s t a b) l
+
+/-- The right contraction is nonnegative, since for `l ≪ 0` both terms in the
+maximizing expression vanish. -/
+lemma rc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ rc_func s t a b := by
+  -- Proof written by GPT 5.5.
+  obtain ⟨A₁, hA₁⟩ := t.small_a b
+  obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
+  let l := min A₁ A₂
+  have ht0 : t l b = 0 := hA₁ l (min_le_left _ _)
+  have hs0 : s.dual l a = 0 := hA₂ l (min_le_right _ _)
+  have hmax := rc_val_ge s t a b l
+  rw [ht0, hs0] at hmax
+  omega
+
+/-- The right contraction function $s \triangleright t$ satisfies `D_props`.
+*Proposition 3.9 (part).* -/
+lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
+  -- Proof written by GPT 5.5.
+  constructor
+  · intro a b
+    let l := rc_wit s t a b
+    change t l b - s.dual l a ≤ rc_func s t (a+1) b
+    have hmax : t l b - s.dual l (a+1) ≤ rc_func s t (a+1) b :=
+      rc_val_ge s t (a+1) b l
+    have hstep : s.dual l (a+1) ≤ s.dual l a := (s.dual.b_step l a).1
+    omega
+  · intro a b
+    let l := rc_wit s t a (b+1)
+    change t l (b+1) - s.dual l a ≤ rc_func s t a b
+    have hmax : t l b - s.dual l a ≤ rc_func s t a b :=
+      rc_val_ge s t a b l
+    have hstep : t l (b+1) ≤ t l b := (t.b_step l b).1
+    omega
+  · intro a
+    suffices hEventuallyNonpos : ∃ B, ∀ b ≥ B, ∀ l,
+        t l b - s.dual l a ≤ 0 by
+      obtain ⟨B, hB⟩ := hEventuallyNonpos
+      use B
+      intro b hb
+      apply le_antisymm
+      · let l := rc_wit s t a b
+        change t l b - s.dual l a ≤ 0
+        exact hB b hb l
+      · exact rc_func_nonneg s t a b
+    -- Paper proof, with `b` moving right: the positive set is finite after
+    -- choosing an initial `b`, and each fixed middle `l` eventually leaves
+    -- because `t(l,b) = 0` for `b ≫ 0`.
+    let B₀ := a + s.χ + t.χ
+    obtain ⟨Lₜ, hLₜ⟩ := t.small_a B₀
+    obtain ⟨Uₜ, hUₜ⟩ := t.large_a B₀
+    obtain ⟨Lₛ, hLₛ⟩ := s.dual.small_a a
+    obtain ⟨Uₛ, hUₛ⟩ := s.dual.large_a a
+    let L := min Lₜ Lₛ
+    let U := max (max Uₜ Uₛ) L
+    let middle := Finset.Icc L U
+    have hmiddle_nonempty : middle.Nonempty := by
+      refine ⟨L, ?_⟩
+      simp [middle, U]
+    let cutoffs := middle.image (fun l => Classical.choose (t.large_b l))
+    have hcutoffs_nonempty : cutoffs.Nonempty := hmiddle_nonempty.image _
+    let B₁ := cutoffs.max' hcutoffs_nonempty
+    use max B₀ B₁
+    intro b hb l
+    have hb_B₀ : B₀ ≤ b := le_trans (le_max_left _ _) hb
+    have hb_B₁ : B₁ ≤ b := le_trans (le_max_right _ _) hb
+    have ht_le_B₀ : t l b ≤ t l B₀ := t.nondec (le_refl l) hb_B₀
+    by_cases hl_left : l ≤ L
+    · have htB₀ : t l B₀ = 0 := hLₜ l (le_trans hl_left (min_le_left _ _))
+      have hs_nonneg : s.dual l a ≥ 0 := s.dual.nonneg l a
+      omega
+    · push_neg at hl_left
+      by_cases hl_right : U ≤ l
+      · have hUₜ_le_l : Uₜ ≤ l :=
+          le_trans (le_trans (le_max_left Uₜ Uₛ) (le_max_left _ L)) hl_right
+        have hUₛ_le_l : Uₛ ≤ l :=
+          le_trans (le_trans (le_max_right Uₜ Uₛ) (le_max_left _ L)) hl_right
+        have htB₀ : t l B₀ = l - B₀ + t.χ := hUₜ l hUₜ_le_l
+        have hs : s.dual l a = l - a - s.χ := by
+          change s.dual l a = l - a + s.dual.χ
+          exact hUₛ l hUₛ_le_l
+        omega
+      · push_neg at hl_right
+        have hl_mem : l ∈ middle := by
+          simp [middle]
+          omega
+        let B_l := Classical.choose (t.large_b l)
+        have hBl_mem : B_l ∈ cutoffs := by
+          exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
+        have hBl_le_B₁ : B_l ≤ B₁ := by
+          exact Finset.le_max' cutoffs B_l hBl_mem
+        have hBl_le_b : B_l ≤ b := le_trans hBl_le_B₁ hb_B₁
+        have ht0 : t l b = 0 := by
+          exact Classical.choose_spec (t.large_b l) b hBl_le_b
+        have hs_nonneg : s.dual l a ≥ 0 := s.dual.nonneg l a
+        omega
+  · intro b
+    suffices hEventuallyNonpos : ∃ A, ∀ a ≤ A, ∀ l,
+        t l b - s.dual l a ≤ 0 by
+      obtain ⟨A, hA⟩ := hEventuallyNonpos
+      use A
+      intro a ha
+      apply le_antisymm
+      · let l := rc_wit s t a b
+        change t l b - s.dual l a ≤ 0
+        exact hA a ha l
+      · exact rc_func_nonneg s t a b
+    -- Paper proof, with `a` moving left: the left tail is zero, the right
+    -- tail is controlled by the line inequality, and the middle interval is
+    -- finite.
+    obtain ⟨L₀, hL₀⟩ := t.small_a b
+    obtain ⟨U₀, hU₀⟩ := t.large_a b
+    let L := L₀
+    let U := max U₀ L
+    let middle := Finset.Icc L U
+    have hmiddle_nonempty : middle.Nonempty := by
+      refine ⟨L, ?_⟩
+      simp [middle, U]
+    let middleBounds := middle.image (fun l => l - s.χ - t l b)
+    have hbounds_nonempty : middleBounds.Nonempty := hmiddle_nonempty.image _
+    let A := middleBounds.min' hbounds_nonempty
+    use min (b - s.χ - t.χ) A
+    intro a ha l
+    have ha_right : a ≤ b - s.χ - t.χ := le_trans ha (min_le_left _ _)
+    have ha_middle : a ≤ A := le_trans ha (min_le_right _ _)
+    have hsd_ge : s.dual l a ≥ l - a - s.χ := by
+      change s.dual l a ≥ l - a + s.dual.χ
+      exact s.dual.ge_diff l a
+    by_cases hl_left : l ≤ L
+    · have ht : t l b = 0 := hL₀ l hl_left
+      have hs_nonneg : s.dual l a ≥ 0 := s.dual.nonneg l a
+      omega
+    · push_neg at hl_left
+      by_cases hl_right : U ≤ l
+      · have hU₀_le_l : U₀ ≤ l := le_trans (le_max_left U₀ L) hl_right
+        have ht : t l b = l - b + t.χ := hU₀ l hU₀_le_l
+        omega
+      · push_neg at hl_right
+        have hl_mem : l ∈ middle := by
+          simp [middle]
+          omega
+        have hval_mem : l - s.χ - t l b ∈ middleBounds := by
+          exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
+        have hA_le_val : A ≤ l - s.χ - t l b := by
+          exact Finset.min'_le middleBounds (l - s.χ - t l b) hval_mem
+        omega
+
+/-- The left contraction is dual to the right contraction.
+*Proposition 3.9 (duality identity).* -/
+lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
+    lc_func s t a b - rc_func t.dual s.dual b a = a - b + s.χ + t.χ := by
+  -- Proof written by GPT 5.5.
+  let C := a - b + s.χ + t.χ
+  suffices lc_func s t a b ≤ rc_func t.dual s.dual b a + C ∧
+      rc_func t.dual s.dual b a + C ≤ lc_func s t a b by
+    omega
+  constructor
+  · let l := lc_wit s t a b
+    change s a l - t.dual b l ≤ rc_func t.dual s.dual b a + C
+    have hmax : s.dual l a - t l b ≤ rc_func t.dual s.dual b a := by
+      have h := rc_val_ge t.dual s.dual b a l
+      rwa [SlipFace.dual_dual t] at h
+    linarith [s.s_eq a l, t.s'_eq b l, hmax]
+  · let l := rc_wit t.dual s.dual b a
+    change s.dual l a - (t.dual).dual l b + C ≤ lc_func s t a b
+    have htdd : (t.dual).dual l b = t l b := by
+      rw [SlipFace.dual_dual t]
+    have hmax : s a l - t.dual b l ≤ lc_func s t a b :=
+      lc_val_ge s t a b l
+    linarith [s.s_eq a l, t.s'_eq b l, htdd, hmax]
+
+/-- The function `lc_func s t` satisfies the slipface axioms and therefore
+comes from a slipface. *Proposition 3.9 (part).* -/
+lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
+    ((p.func = lc_func s t ∧ p.χ = s.χ + t.χ)
+    ∧ p.dual.func = rc_func t.dual s.dual) := by
+  -- Proof written by GPT 5.5.
+  let P := lc_func s t
+  let P' := rc_func t.dual s.dual
+  let χ := s.χ + t.χ
+  have hdual : ∀ a b : ℤ, P a b - P' b a = a - b + χ := by
+    intro a b
+    rw [lc_rc_dual_eq s t a b]
+    omega
+  have h := sf_of_D_props hdual
+  suffices D_props P ∧ D_props P' by
+    exact h this
+  exact ⟨D_props_of_lc_func s t, D_props_of_rc_func t.dual s.dual⟩
+
+/-- The left contraction of two slipfaces, obtained from the maximum formula
+`lc_func`. -/
+noncomputable def left_contract (s t : SlipFace) : SlipFace :=
+  Classical.choose (lc_exists s t)
+
+infixl:70 " ◃ " => left_contract
+
+lemma lc_func_eq (s t : SlipFace) : (s ◃ t).func = lc_func s t := by
+  have h := lc_exists s t
+  exact (Classical.choose_spec h).1.1
+
+@[simp] lemma chi_lc (s t : SlipFace) : (s ◃ t).χ = s.χ + t.χ := by
+  have h := lc_exists s t
+  exact (Classical.choose_spec h).1.2
+
+/-- The right contraction of two slipfaces, defined by duality from left
+contraction. -/
+noncomputable def right_contract (s t : SlipFace) : SlipFace :=
+  (t.dual ◃ s.dual).dual
+
+infixl:70 " ▹ " => right_contract
+
+lemma rc_func_eq (s t : SlipFace) : (s ▹ t).func = rc_func s t := by
+  dsimp [right_contract]
+  calc
+    (t.dual ◃ s.dual).dual.func = rc_func s.dual.dual t.dual.dual :=
+      (Classical.choose_spec (lc_exists t.dual s.dual)).2
+    _ = rc_func s t := by rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
+
+@[simp] lemma chi_rc (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
+  dsimp [right_contract, SlipFace.dual]
+  rw [chi_lc]
+  dsimp [SlipFace.dual]
+  omega
 
 /-! ### The Mixed Difference `Δ`
 

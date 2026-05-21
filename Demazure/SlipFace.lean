@@ -1115,7 +1115,7 @@ contraction. *Proposition 3.9, part 3/5.* -/
 noncomputable def right_contract (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
-infixl:70 " ▹ " => right_contract
+infixr:70 " ▹ " => right_contract
 
 lemma rc_func_eq (s t : SlipFace) : (s ▹ t).func = rc_func s t := by
   dsimp [right_contract]

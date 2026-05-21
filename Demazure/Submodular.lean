@@ -1211,6 +1211,66 @@ equality of shifts. In Lean this is the infix `≤χ`. -/
 def le_chi (σ τ : AspPerm) : Prop := σ ≤ τ ∧ σ.χ = τ.χ
 infix:50 " ≤χ " => le_chi
 
+/-- Bruhat order on ASP permutations agrees with pointwise order on their
+slipfaces. -/
+lemma sf_le_iff (α β : AspPerm) : α.sf ≤ β.sf ↔ α ≤ β := Iff.rfl
+
+/-- Inversion preserves Bruhat comparisons between ASP permutations of the
+same shift. *Lemma 2.4 (`lem:bruhatInverse`).* -/
+theorem le_chi_inv_iff (α β : AspPerm) : α ≤χ β ↔ α⁻¹ ≤χ β⁻¹ := by
+  -- Proof written by Codex.
+  have inverse_of_le_chi : ∀ {σ τ : AspPerm}, σ ≤χ τ → σ⁻¹ ≤χ τ⁻¹ := by
+    intro σ τ h
+    constructor
+    · intro a b
+      rw [σ.s'_eq a b, τ.s'_eq a b, h.2]
+      linarith [h.1 b a]
+    · simp only [chi_dual, h.2]
+  constructor
+  · exact inverse_of_le_chi
+  · intro h
+    simpa only [inv_inv] using inverse_of_le_chi h
+
+/-- An ASP permutation of nonnegative shift lies above the identity in Bruhat
+order. This is the $\chi = 0$ case of the paper's minimum-shift observation
+after Definition 2.5. -/
+lemma id_le_of_chi_nonneg {τ : AspPerm} (hχ : 0 ≤ τ.χ) : AspPerm.id ≤ τ := by
+  -- Proof written by Codex.
+  intro a b
+  rw [id_s_eq]
+  apply max_le
+  · linarith [τ.s_ge a b]
+  · exact τ.s_nonneg a b
+
+/-- Demazure product on ASP permutations is Bruhat-increasing in both
+arguments. This lifts the slipface comparison of Lemma 3.8. -/
+lemma star_mono {α₁ α₂ β₁ β₂ : AspPerm}
+    (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ ⋆ β₁ ≤ α₂ ⋆ β₂ := by
+  -- Proof written by Codex.
+  apply (sf_le_iff (α₁ ⋆ β₁) (α₂ ⋆ β₂)).mp
+  simp only [star_spec]
+  exact SlipFace.star_mono
+    ((sf_le_iff α₁ α₂).mpr hα)
+    ((sf_le_iff β₁ β₂).mpr hβ)
+
+/-- The left contraction $\tau \triangleleft \beta^{-1}$ is the Bruhat
+minimum of the ASP permutations $\alpha$ such that $\alpha \star \beta \geq \tau$.
+*Theorem 4.10 (`thm:tllExists`), part 7/8.* -/
+lemma ge_star_iff_ge_left_contract (α β τ : AspPerm) :
+    α ≥ τ ◃ β⁻¹ ↔ α ⋆ β ≥ τ := by
+  change (τ ◃ β⁻¹).sf ≤ α.sf ↔ τ.sf ≤ (α ⋆ β).sf
+  simpa only [left_contract_spec, star_spec, sf_dual] using
+    (SlipFace.ge_star_iff_ge_left_contract α.sf β.sf τ.sf)
+
+/-- The right contraction $\alpha^{-1} \triangleright \tau$ is the Bruhat
+minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$.
+*Theorem 4.10 (`thm:tllExists`), part 8/8.* -/
+lemma ge_star_iff_ge_right_contract (α β τ : AspPerm) :
+    β ≥ α⁻¹ ▹ τ ↔ α ⋆ β ≥ τ := by
+  change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
+  simpa only [right_contract_spec, star_spec, sf_dual] using
+    (SlipFace.ge_star_iff_ge_right_contract α.sf β.sf τ.sf)
+
 /-- Comparison `τ ≤ α ⋆ β` is equivalent to the lower Demazure-product
 inequalities defining `τ.le_dprod α β`. -/
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by

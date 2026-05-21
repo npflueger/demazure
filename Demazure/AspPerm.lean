@@ -402,6 +402,149 @@ lemma chi_dual : τ⁻¹.χ = - τ.χ := by
 lemma chi_dual' : τ.χ = - (τ⁻¹).χ := by
   rw [← chi_dual τ⁻¹, inv_inv]
 
+/-- Shift is additive under ordinary multiplication:
+$\chi_{\alpha\beta} = \chi_\alpha + \chi_\beta$.
+*Equation (`eq:chiHom`).* -/
+lemma chi_mul (α β : AspPerm) : (α * β).χ = α.χ + β.χ := by
+  -- Proof written by Codex.
+  let A := Finset.image β (β.se_finset 0 0)
+  let B := Finset.image β (β.nw_finset 0 0)
+  let P := α.se_finset 0 0
+  let Q := α.nw_finset 0 0
+  let R := Finset.image β ((α * β).se_finset 0 0)
+  let S := Finset.image β ((α * β).nw_finset 0 0)
+  have hA (n : ℤ) : n ∈ A ↔ 0 ≤ β⁻¹ n ∧ n < 0 := by
+    simp only [A, Finset.mem_image, mem_se, ge_iff_le]
+    constructor
+    · rintro ⟨m, ⟨hm, hβm⟩, rfl⟩
+      simpa only [inv_mul_cancel_eval] using ⟨hm, hβm⟩
+    · intro hn
+      refine ⟨β⁻¹ n, ?_, by simp only [mul_inv_cancel_eval]⟩
+      simpa only [mul_inv_cancel_eval] using hn
+  have hB (n : ℤ) : n ∈ B ↔ β⁻¹ n < 0 ∧ 0 ≤ n := by
+    simp only [B, Finset.mem_image, mem_nw, ge_iff_le]
+    constructor
+    · rintro ⟨m, ⟨hm, hβm⟩, rfl⟩
+      simpa only [inv_mul_cancel_eval] using ⟨hm, hβm⟩
+    · intro hn
+      refine ⟨β⁻¹ n, ?_, by simp only [mul_inv_cancel_eval]⟩
+      simpa only [mul_inv_cancel_eval] using hn
+  have hR (n : ℤ) : n ∈ R ↔ 0 ≤ β⁻¹ n ∧ α n < 0 := by
+    simp only [R, Finset.mem_image, mem_se, ge_iff_le, mul_apply]
+    constructor
+    · rintro ⟨m, ⟨hm, hαβm⟩, rfl⟩
+      simpa only [inv_mul_cancel_eval] using ⟨hm, hαβm⟩
+    · intro hn
+      refine ⟨β⁻¹ n, ?_, by simp only [mul_inv_cancel_eval]⟩
+      simpa only [mul_inv_cancel_eval] using hn
+  have hS (n : ℤ) : n ∈ S ↔ β⁻¹ n < 0 ∧ 0 ≤ α n := by
+    simp only [S, Finset.mem_image, mem_nw, ge_iff_le, mul_apply]
+    constructor
+    · rintro ⟨m, ⟨hm, hαβm⟩, rfl⟩
+      simpa only [inv_mul_cancel_eval] using ⟨hm, hαβm⟩
+    · intro hn
+      refine ⟨β⁻¹ n, ?_, by simp only [mul_inv_cancel_eval]⟩
+      simpa only [mul_inv_cancel_eval] using hn
+  have hR_pos :
+      R.filter (fun n => 0 ≤ n) = P.filter (fun n => 0 ≤ β⁻¹ n) := by
+    ext n
+    simp only [Finset.mem_filter, hR, P, mem_se, ge_iff_le]
+    omega
+  have hR_neg :
+      R.filter (fun n => ¬ 0 ≤ n) = A.filter (fun n => α n < 0) := by
+    ext n
+    simp only [Finset.mem_filter, hR, hA]
+    omega
+  have hS_pos :
+      S.filter (fun n => 0 ≤ n) = B.filter (fun n => 0 ≤ α n) := by
+    ext n
+    simp only [Finset.mem_filter, hS, hB]
+    omega
+  have hS_neg :
+      S.filter (fun n => ¬ 0 ≤ n) = Q.filter (fun n => β⁻¹ n < 0) := by
+    ext n
+    simp only [Finset.mem_filter, hS, Q, mem_nw, ge_iff_le]
+    omega
+  have hP_cross :
+      P.filter (fun n => ¬ 0 ≤ β⁻¹ n) = B.filter (fun n => α n < 0) := by
+    ext n
+    simp only [Finset.mem_filter, P, mem_se, ge_iff_le, hB]
+    omega
+  have hQ_cross :
+      Q.filter (fun n => 0 ≤ β⁻¹ n) = A.filter (fun n => ¬ α n < 0) := by
+    ext n
+    simp only [Finset.mem_filter, Q, mem_nw, ge_iff_le, hA]
+    omega
+  have hR_card :
+      R.card =
+        (P.filter (fun n => 0 ≤ β⁻¹ n)).card
+          + (A.filter (fun n => α n < 0)).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := R) (p := fun n => 0 ≤ n)
+    simpa only [hR_pos, hR_neg] using hsplit.symm
+  have hS_card :
+      S.card =
+        (B.filter (fun n => 0 ≤ α n)).card
+          + (Q.filter (fun n => β⁻¹ n < 0)).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := S) (p := fun n => 0 ≤ n)
+    simpa only [hS_pos, hS_neg] using hsplit.symm
+  have hP_card :
+      P.card =
+        (P.filter (fun n => 0 ≤ β⁻¹ n)).card
+          + (B.filter (fun n => α n < 0)).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := P) (p := fun n => 0 ≤ β⁻¹ n)
+    simpa only [hP_cross] using hsplit.symm
+  have hQ_card :
+      Q.card =
+        (A.filter (fun n => ¬ α n < 0)).card
+          + (Q.filter (fun n => β⁻¹ n < 0)).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := Q) (p := fun n => 0 ≤ β⁻¹ n)
+    have hnot :
+        Q.filter (fun n => ¬ 0 ≤ β⁻¹ n) = Q.filter (fun n => β⁻¹ n < 0) := by
+      ext n
+      simp only [Finset.mem_filter, not_le]
+    simpa only [hQ_cross, hnot] using hsplit.symm
+  have hA_card :
+      A.card =
+        (A.filter (fun n => α n < 0)).card
+          + (A.filter (fun n => ¬ α n < 0)).card := by
+    exact (Finset.card_filter_add_card_filter_not
+      (s := A) (p := fun n => α n < 0)).symm
+  have hB_card :
+      B.card =
+        (B.filter (fun n => α n < 0)).card
+          + (B.filter (fun n => 0 ≤ α n)).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := B) (p := fun n => α n < 0)
+    have hnot :
+        B.filter (fun n => ¬ α n < 0) = B.filter (fun n => 0 ≤ α n) := by
+      ext n
+      simp only [Finset.mem_filter, not_lt]
+    simpa only [hnot] using hsplit.symm
+  have hse_image :
+      (β.se_finset 0 0).card = A.card :=
+    (Finset.card_image_of_injective _ β.injective).symm
+  have hnw_image :
+      (β.nw_finset 0 0).card = B.card :=
+    (Finset.card_image_of_injective _ β.injective).symm
+  have hmul_se_image :
+      ((α * β).se_finset 0 0).card = R.card :=
+    (Finset.card_image_of_injective _ β.injective).symm
+  have hmul_nw_image :
+      ((α * β).nw_finset 0 0).card = S.card :=
+    (Finset.card_image_of_injective _ β.injective).symm
+  have hcards :
+      (R.card : ℤ) - S.card =
+        ((P.card : ℤ) - Q.card) + ((A.card : ℤ) - B.card) := by
+    omega
+  rw [AspPerm.χ, AspPerm.χ, AspPerm.χ, s_eq_se_card, s'_eq_nw_card,
+    s_eq_se_card, s'_eq_nw_card, s_eq_se_card, s'_eq_nw_card,
+    hmul_se_image, hmul_nw_image, hse_image, hnw_image]
+  exact hcards
+
 lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
   · intro x y h; simp only [sub_right_inj, Int.reduceNeg] at h

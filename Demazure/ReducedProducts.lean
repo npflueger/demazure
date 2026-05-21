@@ -1,0 +1,554 @@
+import Demazure.Submodular
+
+/-! ### Reduced Products and Ordinary Products
+
+This file formalizes Section 5 of the paper, comparing the Demazure operations
+`⋆`, `◃`, and `▹` with ordinary multiplication on `AspPerm`. -/
+
+namespace ReducedProducts
+
+/-- The part of $s_\alpha(a,\ell)$ coming from indices above $\ell$ whose
+preimages under $\beta$ lie below $b$. -/
+noncomputable def star_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+  (α.se_finset a l).filter (fun n => β⁻¹ n < b)
+
+/-- The part of $s_\beta(\ell,b)$ coming from indices below $\ell$ whose
+images under $\alpha$ lie above $a$. -/
+noncomputable def star_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+  ((β⁻¹).nw_finset b l).filter (fun n => a ≤ α n)
+
+@[simp] lemma mem_star_hi_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ star_hi_error α β a b l ↔ l ≤ n ∧ α n < a ∧ β⁻¹ n < b := by
+  simp [star_hi_error, and_assoc]
+
+@[simp] lemma mem_star_lo_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ star_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ a ≤ α n := by
+  simp [star_lo_error, and_assoc]
+
+/-- The two nonnegative error terms in the product-counting formula for
+Lemma 5.1. This is the paper's partition of
+$s_\alpha(a,\ell) + s_\beta(\ell,b)$ into the ordinary-product count
+$s_{\alpha\beta}(a,b)$ and the two remaining quadrants.
+
+*Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
+    α.s a l + β.s l b =
+      (α * β).s a b
+        + (star_hi_error α β a b l).card
+        + (star_lo_error α β a b l).card := by
+  -- Proof written by Codex.
+  let A := α.se_finset a l
+  let B := (β⁻¹).nw_finset b l
+  let P := Finset.image β ((α * β).se_finset a b)
+  let P_hi := A.filter (fun n => b ≤ β⁻¹ n)
+  let P_lo := B.filter (fun n => α n < a)
+  have hβ_image : Finset.image β (β.se_finset l b) = B := by
+    ext n
+    simp only [Finset.mem_image, AspPerm.mem_se, AspPerm.mem_nw, ge_iff_le, B]
+    constructor
+    · rintro ⟨k, ⟨hbk, hβk⟩, rfl⟩
+      simpa only [AspPerm.inv_mul_cancel_eval] using ⟨hβk, hbk⟩
+    · intro hn
+      refine ⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩
+      simpa only [AspPerm.mul_inv_cancel_eval] using ⟨hn.2, hn.1⟩
+  have hβ_card : β.s l b = B.card := by
+    rw [β.s_eq_se_card]
+    have hcard :
+        (β.se_finset l b).card = B.card := calc
+      (β.se_finset l b).card = (Finset.image β (β.se_finset l b)).card := by
+        exact (Finset.card_image_of_injective _ β.injective).symm
+      _ = B.card := by rw [hβ_image]
+    exact_mod_cast hcard
+  have hmul_card : (α * β).s a b = P.card := by
+    rw [(α * β).s_eq_se_card]
+    exact_mod_cast (Finset.card_image_of_injective _ β.injective).symm
+  have hA_error : A.card = P_hi.card + (star_hi_error α β a b l).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := A) (p := fun n => b ≤ β⁻¹ n)
+    have herr :
+        A.filter (fun n => ¬ b ≤ β⁻¹ n) = star_hi_error α β a b l := by
+      ext n
+      simp [A, star_hi_error]
+    simpa only [P_hi, herr] using hsplit.symm
+  have hB_error : B.card = P_lo.card + (star_lo_error α β a b l).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := B) (p := fun n => α n < a)
+    have herr :
+        B.filter (fun n => ¬ α n < a) = star_lo_error α β a b l := by
+      ext n
+      simp [B, star_lo_error]
+    simpa only [P_lo, herr] using hsplit.symm
+  have hP_hi : P.filter (fun n => l ≤ n) = P_hi := by
+    ext n
+    simp only [Finset.mem_filter, Finset.mem_image, AspPerm.mem_se, ge_iff_le,
+      AspPerm.mul_apply, P, P_hi, A]
+    constructor
+    · rintro ⟨⟨k, ⟨hbk, hαβk⟩, rfl⟩, hlβk⟩
+      refine ⟨⟨hlβk, hαβk⟩, ?_⟩
+      simpa only [AspPerm.inv_mul_cancel_eval] using hbk
+    · rintro ⟨⟨hln, hαn⟩, hbn⟩
+      refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, hln⟩
+      simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
+  have hP_lo : P.filter (fun n => ¬ l ≤ n) = P_lo := by
+    ext n
+    simp only [Finset.mem_filter, Finset.mem_image, AspPerm.mem_se, ge_iff_le,
+      AspPerm.mem_nw, AspPerm.mul_apply, P, P_lo, B]
+    constructor
+    · rintro ⟨⟨k, ⟨hbk, hαβk⟩, rfl⟩, hlβk⟩
+      refine ⟨⟨by omega, ?_⟩, hαβk⟩
+      simpa only [AspPerm.inv_mul_cancel_eval] using hbk
+    · rintro ⟨⟨hnl, hbn⟩, hαn⟩
+      refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, by omega⟩
+      simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
+  have hP_split : P.card = P_hi.card + P_lo.card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := P) (p := fun n => l ≤ n)
+    simpa only [hP_hi, hP_lo] using hsplit.symm
+  have hcards :
+      A.card + B.card =
+        P.card
+          + (star_hi_error α β a b l).card
+          + (star_lo_error α β a b l).card := by
+    omega
+  rw [α.s_eq_se_card, hβ_card, hmul_card]
+  exact_mod_cast hcards
+
+/-- An ordinary product lies below the corresponding Demazure product in
+Bruhat order. *Lemma 5.1 (`lem:reducedStar`), part 1/2.* -/
+theorem mul_le_star (α β : AspPerm) : α * β ≤ α ⋆ β := by
+  rw [AspPerm.le_star_iff]
+  intro a b l
+  have hcount := star_sum_eq_mul_add_errors α β a b l
+  omega
+
+/-- If the Demazure product lies below the ordinary product, then the ordinary
+product is reduced. *Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α * β) :
+    AspPerm.ReducedProduct α β := by
+  -- Proof written by Codex.
+  apply Set.disjoint_left.mpr
+  rintro ⟨m, n⟩ hα hβ
+  obtain ⟨l, hl⟩ :=
+    (AspPerm.ge_star_iff (α * β) α β).mp hupper (α m) (β⁻¹ m)
+  have hcount := star_sum_eq_mul_add_errors α β (α m) (β⁻¹ m) l
+  by_cases hln : l ≤ n
+  · have hn : n ∈ star_hi_error α β (α m) (β⁻¹ m) l :=
+      (mem_star_hi_error α β (α m) (β⁻¹ m) l n).mpr ⟨hln, hα.2, hβ.2⟩
+    have hncard : 0 < (star_hi_error α β (α m) (β⁻¹ m) l).card :=
+      Finset.card_pos.mpr ⟨n, hn⟩
+    omega
+  · have hm : m ∈ star_lo_error α β (α m) (β⁻¹ m) l := by
+      apply (mem_star_lo_error α β (α m) (β⁻¹ m) l m).mpr
+      exact ⟨lt_of_lt_of_le hα.1 (le_of_lt (lt_of_not_ge hln)), le_refl _, le_refl _⟩
+    have hmcard : 0 < (star_lo_error α β (α m) (β⁻¹ m) l).card :=
+      Finset.card_pos.mpr ⟨m, hm⟩
+    omega
+
+/-- A reduced ordinary product is an upper bound for the Demazure product.
+*Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+lemma star_le_mul_of_reducedProduct (α β : AspPerm)
+    (h_reduced : AspPerm.ReducedProduct α β) : α ⋆ β ≤ α * β := by
+  -- Proof written by Codex.
+  apply (AspPerm.sf_le_iff (α ⋆ β) (α * β)).mp
+  rw [AspPerm.star_spec]
+  intro a b
+  change (α.sf ⋆ β.sf) a b ≤ (α * β).s a b
+  -- Contrapose and use the witnessing value of l to construct a common inversion.
+  by_contra hnot
+  have hstrict : (α * β).s a b < (α.sf ⋆ β.sf) a b := by
+    omega
+  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
+  have hse₀ : β.se_finset l₀ b = ∅ := by
+    apply Finset.card_eq_zero.mp
+    have hcard : ((β.se_finset l₀ b).card : ℤ) = 0 := by
+      rwa [← β.s_eq_se_card]
+    exact_mod_cast hcard
+  have hlo₀ : star_lo_error α β a b l₀ = ∅ := by
+    apply Finset.eq_empty_iff_forall_notMem.mpr
+    intro m hm
+    have hm' := (mem_star_lo_error α β a b l₀ m).mp hm
+    have hβm : β⁻¹ m ∈ β.se_finset l₀ b := by
+      simpa only [AspPerm.mem_se, ge_iff_le, AspPerm.mul_inv_cancel_eval] using
+        ⟨hm'.2.1, hm'.1⟩
+    rw [hse₀] at hβm
+    exact Finset.notMem_empty _ hβm
+  have hval₀ : (α.sf ⋆ β.sf) a b ≤ α.s a l₀ + β.s l₀ b := by
+    simpa only [AspPerm.sf_func_eq_s] using
+      SlipFace.star_val_le α.sf β.sf a b l₀
+  have hcount₀ := star_sum_eq_mul_add_errors α β a b l₀
+  simp only [hl₀, add_zero, hlo₀, Finset.card_empty, Nat.cast_zero] at hcount₀
+  have hhi₀ : 0 < (star_hi_error α β a b l₀).card := by
+    omega
+  let H := star_hi_error α β a b l₀
+  let n := H.max' (Finset.card_pos.mp hhi₀)
+  have hnH : n ∈ H := Finset.max'_mem H (Finset.card_pos.mp hhi₀)
+  have hn_data : l₀ ≤ n ∧ α n < a ∧ β⁻¹ n < b := by
+    exact (mem_star_hi_error α β a b l₀ n).mp hnH
+  have hhi_succ : star_hi_error α β a b (n + 1) = ∅ := by
+    apply Finset.eq_empty_iff_forall_notMem.mpr
+    intro n' hn'
+    have hn'_hi := (mem_star_hi_error α β a b (n + 1) n').mp hn'
+    have hn'H : n' ∈ H := by
+      apply (mem_star_hi_error α β a b l₀ n').mpr
+      have hnn' : n ≤ n' := by omega
+      exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
+    have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
+    omega
+  have hval_succ : (α.sf ⋆ β.sf) a b ≤ α.s a (n + 1) + β.s (n + 1) b := by
+    simpa only [AspPerm.sf_func_eq_s] using
+      SlipFace.star_val_le α.sf β.sf a b (n + 1)
+  have hcount_succ := star_sum_eq_mul_add_errors α β a b (n + 1)
+  simp only [hhi_succ, Finset.card_empty, Nat.cast_zero] at hcount_succ
+  have hlo_succ : 0 < (star_lo_error α β a b (n + 1)).card := by
+    omega
+  obtain ⟨m, hm⟩ := Finset.card_pos.mp hlo_succ
+  have hm' : m < n + 1 ∧ b ≤ β⁻¹ m ∧ a ≤ α m := by
+    exact (mem_star_lo_error α β a b (n + 1) m).mp hm
+  have hmn : m < n := by
+    have hmn_le : m ≤ n := by omega
+    apply lt_of_le_of_ne hmn_le
+    intro hmn_eq
+    subst m
+    omega
+  have hαmn : ⟨m, n⟩ ∈ inv_set α :=
+    ⟨hmn, lt_of_lt_of_le hn_data.2.1 hm'.2.2⟩
+  have hβmn : ⟨m, n⟩ ∈ inv_set (β⁻¹).func :=
+    ⟨hmn, lt_of_lt_of_le hn_data.2.2 hm'.2.1⟩
+  exact Set.disjoint_left.mp h_reduced hαmn hβmn
+
+/-- The Demazure product agrees with ordinary multiplication exactly for a
+reduced product. *Lemma 5.1 (`lem:reducedStar`), part 2/2.* -/
+theorem star_eq_mul_iff_reducedProduct (α β : AspPerm) :
+    α ⋆ β = α * β ↔ AspPerm.ReducedProduct α β := by
+  -- Proof written by Codex.
+  constructor
+  · intro h_eq
+    apply reducedProduct_of_star_le_mul α β
+    rw [h_eq]
+  · intro h_reduced
+    exact le_antisymm
+      (star_le_mul_of_reducedProduct α β h_reduced)
+      (mul_le_star α β)
+
+/-- The left-contraction error below the cutoff $\ell$: indices counted by
+$s_{\alpha\beta}(a,b)$ but omitted from the candidate
+$s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$. -/
+noncomputable def lc_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+  ((β⁻¹).nw_finset b l).filter (fun n => α n < a)
+
+/-- The left-contraction error above the cutoff $\ell$: indices subtracted by
+$s_{\beta^{-1}}(b,\ell)$ but not counted by $s_\alpha(a,\ell)$. -/
+noncomputable def lc_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+  ((β⁻¹).se_finset b l).filter (fun n => a ≤ α n)
+
+@[simp] lemma mem_lc_lo_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ lc_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ α n < a := by
+  simp only [lc_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
+
+@[simp] lemma mem_lc_hi_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ lc_hi_error α β a b l ↔ l ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
+  simp only [lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
+
+/-- The two nonnegative error terms in the left-contraction counting formula
+for Lemma 5.2. The paper's candidate
+$s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$ is the ordinary-product count
+$s_{\alpha\beta}(a,b)$ minus these two errors.
+
+*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
+    α.s a l - (β⁻¹).s b l =
+      (α * β).s a b
+        - (lc_lo_error α β a b l).card
+        - (lc_hi_error α β a b l).card := by
+  -- Proof written by Codex.
+  let A := α.se_finset a l
+  let B := (β⁻¹).se_finset b l
+  let P := Finset.image β ((α * β).se_finset a b)
+  let P_hi := A.filter (fun n => b ≤ β⁻¹ n)
+  let C := B.filter (fun n => α n < a)
+  have hmul_card : (α * β).s a b = P.card := by
+    rw [(α * β).s_eq_se_card]
+    exact_mod_cast (Finset.card_image_of_injective _ β.injective).symm
+  have hA_split : A.card = P_hi.card + C.card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := A) (p := fun n => b ≤ β⁻¹ n)
+    have hC :
+        A.filter (fun n => ¬ b ≤ β⁻¹ n) = C := by
+      ext n
+      simp only [A, B, C, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, not_le]
+      omega
+    simpa only [P_hi, hC] using hsplit.symm
+  have hB_split :
+      B.card = C.card + (lc_hi_error α β a b l).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := B) (p := fun n => α n < a)
+    have hhi :
+        B.filter (fun n => ¬ α n < a) = lc_hi_error α β a b l := by
+      ext n
+      simp only [B, lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, not_lt]
+    simpa only [C, hhi] using hsplit.symm
+  have hP_hi : P.filter (fun n => l ≤ n) = P_hi := by
+    ext n
+    simp only [Finset.mem_filter, Finset.mem_image, AspPerm.mem_se, ge_iff_le,
+      AspPerm.mul_apply, P, P_hi, A]
+    constructor
+    · rintro ⟨⟨k, ⟨hbk, hαβk⟩, rfl⟩, hlβk⟩
+      refine ⟨⟨hlβk, hαβk⟩, ?_⟩
+      simpa only [AspPerm.inv_mul_cancel_eval] using hbk
+    · rintro ⟨⟨hln, hαn⟩, hbn⟩
+      refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, hln⟩
+      simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
+  have hP_lo :
+      P.filter (fun n => ¬ l ≤ n) = lc_lo_error α β a b l := by
+    ext n
+    simp only [Finset.mem_filter, Finset.mem_image, AspPerm.mem_se, ge_iff_le,
+      AspPerm.mem_nw, AspPerm.mul_apply, P, lc_lo_error]
+    constructor
+    · rintro ⟨⟨k, ⟨hbk, hαβk⟩, rfl⟩, hlβk⟩
+      refine ⟨⟨by omega, ?_⟩, hαβk⟩
+      simpa only [AspPerm.inv_mul_cancel_eval] using hbk
+    · rintro ⟨⟨hnl, hbn⟩, hαn⟩
+      refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, by omega⟩
+      simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
+  have hP_split :
+      P.card = P_hi.card + (lc_lo_error α β a b l).card := by
+    have hsplit := Finset.card_filter_add_card_filter_not
+      (s := P) (p := fun n => l ≤ n)
+    simpa only [hP_hi, hP_lo] using hsplit.symm
+  have hcards :
+      (A.card : ℤ) - B.card =
+        (P.card : ℤ)
+          - (lc_lo_error α β a b l).card
+          - (lc_hi_error α β a b l).card := by
+    omega
+  rw [α.s_eq_se_card, (β⁻¹).s_eq_se_card, hmul_card]
+  exact hcards
+
+/-- Left contraction lies below ordinary multiplication in Bruhat order.
+*Lemma 5.2 (`lem:reducedTri`), part 1/4.* -/
+theorem left_contract_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
+  -- Proof written by Codex.
+  apply (AspPerm.sf_le_iff (α ◃ β) (α * β)).mp
+  rw [AspPerm.left_contract_spec]
+  intro a b
+  change (α.sf ◃ β.sf) a b ≤ (α * β).s a b
+  let l := SlipFace.lc_wit α.sf β.sf a b
+  have hcount := lc_diff_eq_mul_sub_errors α β a b l
+  dsimp only [l] at hcount
+  rw [SlipFace.lc_wit_spec, AspPerm.sf_dual]
+  simp only [AspPerm.sf_func_eq_s]
+  omega
+
+/-- If ordinary multiplication lies below left contraction, then the inverse
+of the right factor lies below the left factor in left weak order.
+*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
+    (hle : α * β ≤ α ◃ β) : β⁻¹ ≤L α := by
+  -- Proof written by Codex.
+  rintro ⟨m, n⟩ hβ
+  refine ⟨hβ.1, ?_⟩
+  by_contra hnot
+  have hα_le : α m ≤ α n := le_of_not_gt hnot
+  have hα_ne : α m ≠ α n := by
+    intro hα_eq
+    exact (ne_of_lt hβ.1) (α.injective hα_eq)
+  have hα_lt : α m < α n := lt_of_le_of_ne hα_le hα_ne
+  let a := α n
+  let b := β⁻¹ m
+  let l := SlipFace.lc_wit α.sf β.sf a b
+  have hcount := lc_diff_eq_mul_sub_errors α β a b l
+  have hlc :
+      (α ◃ β).s a b = α.s a l - (β⁻¹).s b l := by
+    dsimp only [l]
+    change (α ◃ β).sf a b =
+      α.sf a (SlipFace.lc_wit α.sf β.sf a b)
+        - (β⁻¹).sf b (SlipFace.lc_wit α.sf β.sf a b)
+    rw [AspPerm.left_contract_spec, SlipFace.lc_wit_spec, AspPerm.sf_dual]
+  have hcomp := hle a b
+  rw [hlc] at hcomp
+  by_cases hln : l ≤ n
+  · have hn : n ∈ lc_hi_error α β a b l :=
+      (mem_lc_hi_error α β a b l n).mpr ⟨hln, hβ.2, le_refl _⟩
+    have hncard : 0 < (lc_hi_error α β a b l).card :=
+      Finset.card_pos.mpr ⟨n, hn⟩
+    omega
+  · have hm : m ∈ lc_lo_error α β a b l := by
+      apply (mem_lc_lo_error α β a b l m).mpr
+      exact
+        ⟨lt_of_lt_of_le hβ.1 (le_of_lt (lt_of_not_ge hln)),
+          le_refl _, hα_lt⟩
+    have hmcard : 0 < (lc_lo_error α β a b l).card :=
+      Finset.card_pos.mpr ⟨m, hm⟩
+    omega
+
+/-- If the inverse of the right factor lies below the left factor in left weak
+order, then ordinary multiplication lies below left contraction.
+*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
+    (hweak : β⁻¹ ≤L α) : α * β ≤ α ◃ β := by
+  -- Proof written by Codex.
+  intro a b
+  have hle_of_errors_empty (l : ℤ)
+      (hlo : lc_lo_error α β a b l = ∅)
+      (hhi : lc_hi_error α β a b l = ∅) :
+      (α * β).s a b ≤ (α ◃ β).s a b := by
+    have hcount := lc_diff_eq_mul_sub_errors α β a b l
+    simp only [hlo, hhi, Finset.card_empty, Nat.cast_zero, sub_zero] at hcount
+    have hcand := Submodular.lc_candidate_le α β a b l
+    have hcand' : α.s a l - (β⁻¹).s b l ≤ (α ◃ β).s a b := by
+      simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hcand
+    rw [← hcount]
+    exact hcand'
+  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
+  have hse₀ : β.se_finset l₀ b = ∅ := by
+    apply Finset.card_eq_zero.mp
+    have hcard : ((β.se_finset l₀ b).card : ℤ) = 0 := by
+      rwa [← β.s_eq_se_card]
+    exact_mod_cast hcard
+  have hlo₀ : lc_lo_error α β a b l₀ = ∅ := by
+    apply Finset.eq_empty_iff_forall_notMem.mpr
+    intro m hm
+    have hm' := (mem_lc_lo_error α β a b l₀ m).mp hm
+    have hβm : β⁻¹ m ∈ β.se_finset l₀ b := by
+      simpa only [AspPerm.mem_se, ge_iff_le, AspPerm.mul_inv_cancel_eval] using
+        ⟨hm'.2.1, hm'.1⟩
+    rw [hse₀] at hβm
+    exact Finset.notMem_empty _ hβm
+  by_cases hhi₀_empty : lc_hi_error α β a b l₀ = ∅
+  · exact hle_of_errors_empty l₀ hlo₀ hhi₀_empty
+  · have hhi₀ : 0 < (lc_hi_error α β a b l₀).card := by
+      exact Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hhi₀_empty)
+    let H := lc_hi_error α β a b l₀
+    let n := H.max' (Finset.card_pos.mp hhi₀)
+    have hnH : n ∈ H := Finset.max'_mem H (Finset.card_pos.mp hhi₀)
+    have hn_data : l₀ ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
+      exact (mem_lc_hi_error α β a b l₀ n).mp hnH
+    have hhi_succ : lc_hi_error α β a b (n + 1) = ∅ := by
+      apply Finset.eq_empty_iff_forall_notMem.mpr
+      intro n' hn'
+      have hn'_hi := (mem_lc_hi_error α β a b (n + 1) n').mp hn'
+      have hn'H : n' ∈ H := by
+        apply (mem_lc_hi_error α β a b l₀ n').mpr
+        have hnn' : n ≤ n' := by omega
+        exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
+      have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
+      omega
+    have hlo_succ : lc_lo_error α β a b (n + 1) = ∅ := by
+      apply Finset.eq_empty_iff_forall_notMem.mpr
+      intro m hm
+      have hm' := (mem_lc_lo_error α β a b (n + 1) m).mp hm
+      have hmn : m < n := by
+        have hmn_le : m ≤ n := by omega
+        apply lt_of_le_of_ne hmn_le
+        intro hmn_eq
+        subst m
+        omega
+      have hβmn : ⟨m, n⟩ ∈ inv_set (β⁻¹).func :=
+        ⟨hmn, lt_of_lt_of_le hn_data.2.1 hm'.2.1⟩
+      have hαmn := hweak hβmn
+      have hα_bad : α n < α m := hαmn.2
+      omega
+    exact hle_of_errors_empty (n + 1) hlo_succ hhi_succ
+
+/-- Left contraction agrees with ordinary multiplication exactly when the
+inverse of the right factor is below the left factor in left weak order.
+*Lemma 5.2 (`lem:reducedTri`), part 2/4.* -/
+theorem left_contract_eq_mul_iff (α β : AspPerm) :
+    α ◃ β = α * β ↔ β⁻¹ ≤L α := by
+  -- Proof written by Codex.
+  constructor
+  · intro h_eq
+    apply le_weak_L_of_mul_le_left_contract α β
+    rw [h_eq]
+  · intro hweak
+    exact le_antisymm
+      (left_contract_le_mul α β)
+      (mul_le_left_contract_of_le_weak_L α β hweak)
+
+/-- Right contraction lies below ordinary multiplication in Bruhat order.
+*Lemma 5.2 (`lem:reducedTri`), part 3/4.* -/
+theorem right_contract_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
+  -- Proof written by Codex.
+  have hχ : (β⁻¹ ◃ α⁻¹).χ = (β⁻¹ * α⁻¹).χ := by
+    simp only [AspPerm.chi_left_contract, AspPerm.chi_mul]
+  have hleχ : β⁻¹ ◃ α⁻¹ ≤χ β⁻¹ * α⁻¹ :=
+    ⟨left_contract_le_mul β⁻¹ α⁻¹, hχ⟩
+  have hinv :=
+    (AspPerm.le_chi_inv_iff (β⁻¹ ◃ α⁻¹) (β⁻¹ * α⁻¹)).mp hleχ
+  simpa only [AspPerm.inverse_left_contract, inv_inv, mul_inv_rev] using hinv.1
+
+/-- Right contraction agrees with ordinary multiplication exactly when the
+inverse of the left factor is below the right factor in right weak order.
+*Lemma 5.2 (`lem:reducedTri`), part 4/4.* -/
+theorem right_contract_eq_mul_iff (α β : AspPerm) :
+    α ▹ β = α * β ↔ α⁻¹ ≤R β := by
+  -- Proof written by Codex.
+  have h_eq :
+      α ▹ β = α * β ↔ β⁻¹ ◃ α⁻¹ = β⁻¹ * α⁻¹ := by
+    constructor
+    · intro h
+      calc
+        β⁻¹ ◃ α⁻¹ = (α ▹ β)⁻¹ := by
+          have hdual := congrArg (fun τ : AspPerm => τ⁻¹)
+            (AspPerm.inverse_left_contract β⁻¹ α⁻¹)
+          simpa only [inv_inv] using hdual
+        _ = (α * β)⁻¹ := by rw [h]
+        _ = β⁻¹ * α⁻¹ := by rw [mul_inv_rev]
+    · intro h
+      calc
+        α ▹ β = (β⁻¹ ◃ α⁻¹)⁻¹ := by
+          simpa only [inv_inv] using (AspPerm.inverse_left_contract β⁻¹ α⁻¹).symm
+        _ = (β⁻¹ * α⁻¹)⁻¹ := by rw [h]
+        _ = α * β := by simp only [mul_inv_rev, inv_inv]
+  rw [h_eq, left_contract_eq_mul_iff]
+  constructor
+  · intro hweak
+    simpa only [inv_inv] using AspPerm.le_weak_R_of_L hweak
+  · intro hweak
+    exact AspPerm.le_weak_L_of_R hweak
+
+/-- Left weak order implies Bruhat order when the shifts are weakly ordered.
+*Corollary 5.3 (`cor:weakStrong`), part 1/2.* -/
+theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}
+    (hweak : α ≤L β) (hχ : α.χ ≤ β.χ) : α ≤ β := by
+  -- Proof written by Codex.
+  let γ := β ◃ α⁻¹
+  have hγ_eq : γ = β * α⁻¹ := by
+    apply (left_contract_eq_mul_iff β α⁻¹).mpr
+    simpa only [inv_inv] using hweak
+  have hγ_red : AspPerm.ReducedProduct γ α := by
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_left_contract β α⁻¹
+  have hγ_nonneg : 0 ≤ γ.χ := by
+    simp only [γ, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    omega
+  calc
+    α = AspPerm.id ⋆ α := (AspPerm.id_star α).symm
+    _ ≤ γ ⋆ α := AspPerm.star_mono
+      (AspPerm.id_le_of_chi_nonneg hγ_nonneg) (le_refl α)
+    _ = γ * α := (star_eq_mul_iff_reducedProduct γ α).mpr hγ_red
+    _ = β := by
+      rw [hγ_eq, mul_assoc, inv_mul_cancel, mul_one]
+
+/-- Right weak order implies Bruhat order when the shifts are weakly ordered.
+*Corollary 5.3 (`cor:weakStrong`), part 2/2.* -/
+theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
+    (hweak : α ≤R β) (hχ : α.χ ≤ β.χ) : α ≤ β := by
+  -- Proof written by Codex.
+  let γ := α⁻¹ ▹ β
+  have hγ_eq : γ = α⁻¹ * β := by
+    apply (right_contract_eq_mul_iff α⁻¹ β).mpr
+    simpa only [inv_inv] using hweak
+  have hγ_red : AspPerm.ReducedProduct α γ := by
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_right_contract α⁻¹ β
+  have hγ_nonneg : 0 ≤ γ.χ := by
+    simp only [γ, AspPerm.chi_right_contract, AspPerm.chi_dual]
+    omega
+  calc
+    α = α ⋆ AspPerm.id := (AspPerm.star_id α).symm
+    _ ≤ α ⋆ γ := AspPerm.star_mono
+      (le_refl α) (AspPerm.id_le_of_chi_nonneg hγ_nonneg)
+    _ = α * γ := (star_eq_mul_iff_reducedProduct α γ).mpr hγ_red
+    _ = β := by
+      rw [hγ_eq, ← mul_assoc, mul_inv_cancel, one_mul]
+
+end ReducedProducts

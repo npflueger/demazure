@@ -46,6 +46,29 @@ abbrev coclosed (asps : AspSet) := asps.prop.coclosed
 abbrev finite_outdegree (asps : AspSet) := asps.prop.finite_outdegree
 abbrev finite_indegree (asps : AspSet) := asps.prop.finite_indegree
 
+lemma not_mem_of_ge (asps : AspSet) {m n : ℤ} (n_le_m : n ≤ m) : ⟨m, n⟩ ∉ asps := by
+  intro h
+  exact (not_lt_of_ge n_le_m) (asps.directed m n h)
+
+@[simp] lemma not_mem_self (asps : AspSet) (n : ℤ) : ⟨n, n⟩ ∉ asps := by
+  exact asps.not_mem_of_ge (le_refl n)
+
+/-- The order on indices after the inversions in `asps` are applied. -/
+def post_lt (asps : AspSet) (m n : ℤ) : Prop :=
+  (m < n ∧ ⟨m, n⟩ ∉ asps) ∨ (n < m ∧ ⟨n, m⟩ ∈ asps)
+
+@[simp] lemma not_post_lt_self (asps : AspSet) (n : ℤ) : ¬ asps.post_lt n n := by
+  simp [post_lt]
+
+lemma post_lt_iff_not_mem (asps : AspSet) {m n : ℤ} (m_lt_n : m < n) :
+    asps.post_lt m n ↔ ⟨m, n⟩ ∉ asps := by
+  simp [post_lt, m_lt_n, not_lt_of_gt m_lt_n]
+
+lemma post_lt_swap_iff_mem (asps : AspSet) {m n : ℤ} (m_le_n : m ≤ n) :
+    asps.post_lt n m ↔ ⟨m, n⟩ ∈ asps := by
+  rcases lt_or_eq_of_le m_le_n with m_lt_n | rfl
+  · simp [post_lt, m_lt_n, not_lt_of_gt m_lt_n]
+  · exact iff_of_false (not_post_lt_self asps m) (not_mem_self asps m)
 
 lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
   constructor
@@ -345,133 +368,94 @@ lemma σ_dec (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) : asps.σ χ m > asps
     exact h_empty mn_I
   linarith [asps.directed n n this]
 
-lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ χ n < asps.σ χ m := by
+lemma post_lt_iff_σ_lt : asps.post_lt m n ↔ asps.σ χ m < asps.σ χ n := by
+  -- Proof written by Codex.
   constructor
-  · intro h
-    have m_lt_n : m < n := asps.directed m n h
-    exact σ_dec asps m n χ m_lt_n h
-  · intro h
-    contrapose! h
-    wlog m_lt_n : m < n
-    · have h_eq : m = n := by omega
-      rw [h_eq]
-    apply le_of_lt
-    exact σ_inc asps m n χ m_lt_n h
+  · rintro (⟨m_lt_n, mn_nI⟩ | ⟨n_lt_m, nm_I⟩)
+    · exact σ_inc asps m n χ m_lt_n mn_nI
+    · exact σ_dec asps n m χ n_lt_m nm_I
+  · intro hσ
+    rcases lt_trichotomy m n with m_lt_n | rfl | n_lt_m
+    · left
+      refine ⟨m_lt_n, ?_⟩
+      intro mn_I
+      have hdec := σ_dec asps m n χ m_lt_n mn_I
+      omega
+    · exact (lt_irrefl _ hσ).elim
+    · right
+      refine ⟨n_lt_m, ?_⟩
+      by_contra nm_nI
+      have hinc := σ_inc asps n m χ n_lt_m nm_nI
+      omega
+
+lemma not_post_lt_iff_σ_le :
+    ¬ asps.post_lt m n ↔ asps.σ χ n ≤ asps.σ χ m := by
+  rw [post_lt_iff_σ_lt]
+  exact not_lt
+
+lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ χ n < asps.σ χ m := by
+  rw [← post_lt_iff_σ_lt asps n m χ]
+  exact (post_lt_swap_iff_mem asps m_le_n).symm
+
+theorem post_lt_trans (asps : AspSet) {l m n : ℤ}
+    (hlm : asps.post_lt l m) (hmn : asps.post_lt m n) : asps.post_lt l n := by
+  rw [post_lt_iff_σ_lt asps l n 0]
+  exact lt_trans ((post_lt_iff_σ_lt asps l m 0).mp hlm)
+    ((post_lt_iff_σ_lt asps m n 0).mp hmn)
+
+theorem post_lt_trichotomous (asps : AspSet) : Std.Trichotomous asps.post_lt := by
+  -- Proof written by Codex.
+  exact Std.trichotomous_of_rel_or_eq_or_rel_swap fun {m n} => by
+    rcases lt_trichotomy m n with m_lt_n | rfl | n_lt_m
+    · by_cases mn_I : ⟨m, n⟩ ∈ asps
+      · exact Or.inr <| Or.inr <| (post_lt_swap_iff_mem asps (le_of_lt m_lt_n)).mpr mn_I
+      · exact Or.inl <| (post_lt_iff_not_mem asps m_lt_n).mpr mn_I
+    · exact Or.inr <| Or.inl rfl
+    · by_cases nm_I : ⟨n, m⟩ ∈ asps
+      · exact Or.inl <| (post_lt_swap_iff_mem asps (le_of_lt n_lt_m)).mpr nm_I
+      · exact Or.inr <| Or.inr <| (post_lt_iff_not_mem asps n_lt_m).mpr nm_I
+
+instance (asps : AspSet) : IsStrictTotalOrder ℤ asps.post_lt where
+  toTrichotomous := post_lt_trichotomous asps
+  irrefl := not_post_lt_self asps
+  trans _ _ _ := post_lt_trans asps
 
 theorem func_injective (asps : AspSet) : Function.Injective (asps.recon χ) := by
-  intro m n h
-  wlog m_le_n : m ≤ n generalizing m n
-  · specialize this (h.symm) (by omega)
-    rw [this]
-  contrapose! h
-  have m_lt_n : m < n := lt_of_le_of_ne m_le_n h
-  by_cases mn_I : ⟨m, n⟩ ∈ asps
-  · have := σ_dec asps m n χ m_lt_n mn_I
-    linarith
-  · have := σ_inc asps m n χ m_lt_n mn_I
-    linarith
+  -- Proof written by GPT 5.5.
+  intro m n hσ
+  rcases trichotomous_of asps.post_lt m n with hmn | rfl | hnm
+  · have hlt := (post_lt_iff_σ_lt asps m n χ).mp hmn
+    exact ((ne_of_lt hlt) hσ).elim
+  · rfl
+  · have hlt := (post_lt_iff_σ_lt asps n m χ).mp hnm
+    exact ((ne_of_gt hlt) hσ).elim
 
-lemma contiguity_helper (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
+lemma contiguity_helper (m_lt_n : m < n) :
   (asps.σ χ) ⁻¹' (Set.Ico (asps.σ χ m) (asps.σ χ n))
   = (lf_pos asps m n) ∪ (md_pos asps m n) ∪ (rt_pos asps m n) := by
-  have mn_nI : ⟨m, n⟩ ∉ asps := by
-    intro h
-    have := σ_dec asps m n χ m_lt_n h
-    linarith [σ_m_lt_n]
+  -- Proof written by Codex.
   ext k
-  simp only [Set.mem_preimage, Set.mem_Ico, Finset.union_assoc, Finset.coe_union,
-    Finset.coe_sdiff, Set.Finite.coe_toFinset, Finset.coe_Ico, Set.mem_union, Set.mem_diff,
-    Set.mem_setOf_eq, not_or]
-  by_cases k_lt_m : k < m
-  · have h0 : ¬ (m ≤ k) := not_le_of_gt k_lt_m
-    have h1 : ⟨m, k⟩ ∉ asps := by
-      intro h
-      have := asps.directed m k h
-      omega
-    have h2 : ⟨n, k⟩ ∉ asps := by
-      intro h
-      have := asps.directed n k h
-      omega
-    have h3 : asps.σ χ m ≤ asps.σ χ k ↔ ⟨k,m⟩ ∈ asps := by
-      rw [mem_iff_lt asps k m χ (le_of_lt k_lt_m)]
-      constructor
-      · intro h
-        by_contra! h'
-        have : m = k := func_injective χ asps (le_antisymm h h')
-        omega
-      · intro h; exact le_of_lt h
-    have h4 : asps.σ χ k < asps.σ χ n ↔ ⟨k,n⟩ ∉ asps := by
-      rw [mem_iff_lt asps k n χ (le_of_lt (lt_trans k_lt_m m_lt_n))]
-      have : k ≠ n := by
-        intro h_eq
-        rw [h_eq] at k_lt_m
-        omega
-      have : asps.σ χ k ≠ asps.σ χ n := by
-        contrapose! this
-        exact func_injective χ asps this
-      constructor
-      · intro h
-        push_neg
-        omega
-      · intro h
-        push_neg at h
-        exact lt_of_le_of_ne h this
-    simp at h0 h1 h2 h3 h4
-    simp [h0, h1, h2, h3, h4]
-  have m_le_k : m ≤ k := le_of_not_gt k_lt_m
-  clear k_lt_m
-  by_cases k_lt_n : k < n
-  · simp only [m_le_k, k_lt_n]
-    have h1 : asps.σ χ m ≤ asps.σ χ k ↔ ⟨m,k⟩ ∉ asps := by
-      rw [mem_iff_lt asps m k χ m_le_k]
-      push_neg; rfl
-    have h2 : asps.σ χ k < asps.σ χ n ↔ ⟨k,n⟩ ∉ asps := by
-      rw [mem_iff_lt asps k n χ (le_of_lt k_lt_n)]
-      push_neg; constructor
-      · apply le_of_lt
-      · intro h
-        by_contra!
-        have h_eq := le_antisymm h this
-        have h_eq : k = n := func_injective χ asps h_eq
-        omega
-    rw [h1, h2]
-    constructor
-    · intro h
-      obtain ⟨mk_I, kn_nI⟩ := h
-      simp at mk_I kn_nI
-      simp [mk_I, kn_nI]
-    · intro h
-      have km_nI : ⟨k, m⟩ ∉ asps := by
-        intro h
-        have := asps.directed k m h
-        omega
-      have nk_nI : ⟨n, k⟩ ∉ asps := by
-        intro h
-        have := asps.directed n k h
-        omega
-      simp at km_nI nk_nI
-      simp [km_nI, nk_nI] at h
-      simp [h]
-  have n_le_k : n ≤ k := le_of_not_gt k_lt_n
-  clear k_lt_n
-  have : ¬(k < n) := not_lt_of_ge n_le_k
-  simp only [m_le_k, this, and_false, false_and, false_or]
-  have : asps.σ χ m ≤ asps.σ χ k ↔ ⟨m, k⟩ ∉ asps := by
-    simp [mem_iff_lt asps m k χ m_le_k]
-  rw [this]
-  have : asps.σ χ k < asps.σ χ n ↔ ⟨n,k⟩ ∈ asps := by
-    simp [mem_iff_lt asps n k χ n_le_k]
-  rw [this]
-  constructor
-  · intro h
-    tauto
-  · intro h
-    rcases h with (h | h)
-    · absurd h.1
-      intro h'
-      have : k < m := asps.directed k m h'
-      omega
-    · tauto
+  simp only [Set.mem_preimage, Set.mem_Ico, Finset.mem_coe]
+  rw [← not_post_lt_iff_σ_le asps k m χ,
+    ← post_lt_iff_σ_lt asps k n χ]
+  rcases lt_or_ge k m with k_lt_m | m_le_k
+  · have k_lt_n : k < n := lt_trans k_lt_m m_lt_n
+    have mk_nI : ⟨m, k⟩ ∉ asps := asps.not_mem_of_ge (le_of_lt k_lt_m)
+    have nk_nI : ⟨n, k⟩ ∉ asps := asps.not_mem_of_ge (le_of_lt k_lt_n)
+    simp only [mem_AspSet] at mk_nI nk_nI
+    rw [post_lt_iff_not_mem asps k_lt_m, post_lt_iff_not_mem asps k_lt_n]
+    simp [not_le_of_gt k_lt_m, mk_nI, nk_nI]
+  · rcases lt_or_ge k n with k_lt_n | n_le_k
+    · have km_nI : ⟨k, m⟩ ∉ asps := asps.not_mem_of_ge m_le_k
+      have nk_nI : ⟨n, k⟩ ∉ asps := asps.not_mem_of_ge (le_of_lt k_lt_n)
+      simp only [mem_AspSet] at km_nI nk_nI
+      rw [post_lt_swap_iff_mem asps m_le_k, post_lt_iff_not_mem asps k_lt_n]
+      simp [m_le_k, k_lt_n, km_nI, nk_nI]
+    ·
+      have km_nI : ⟨k, m⟩ ∉ asps := asps.not_mem_of_ge m_le_k
+      simp only [mem_AspSet] at km_nI
+      rw [post_lt_swap_iff_mem asps m_le_k, post_lt_swap_iff_mem asps n_le_k]
+      simp [not_lt_of_ge n_le_k, km_nI, and_comm]
 
 lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
   ∀ k : ℤ, asps.recon χ m ≤ k → k < asps.recon χ n
@@ -482,7 +466,7 @@ lemma func_contiguous (m_lt_n : m < n) (σ_m_lt_n : asps.σ χ m < asps.σ χ n)
   let K := Finset.image σ J
   have inv_image : σ ⁻¹' I = ↑J:= by
     unfold I σ
-    have := contiguity_helper asps m n χ m_lt_n σ_m_lt_n
+    have := contiguity_helper asps m n χ m_lt_n
     rw [← this]
     simp
   have card_J : (J.card : ℤ) = (σ n - σ m) := by
@@ -593,12 +577,9 @@ theorem invSet_func : inv_set (asps.recon χ) = asps := by
       exact (h2 huv).elim
   constructor
   · intro h
-    contrapose! h
-    have : asps.recon χ u < asps.recon χ v := σ_inc asps u v χ u_lt_v h
-    intro huv
-    exact (lt_irrefl (asps.recon χ u)) (lt_trans this huv.2)
+    exact (mem_iff_lt asps u v χ (le_of_lt u_lt_v)).mpr h.2
   · intro h
-    exact ⟨u_lt_v, σ_dec asps u v χ u_lt_v h⟩
+    exact ⟨u_lt_v, (mem_iff_lt asps u v χ (le_of_lt u_lt_v)).mp h⟩
 
 lemma inset_eq_nw (n : ℤ) : ↑(asps.inset n)
    = northwest_set (asps.σ χ) ((asps.σ χ n) + 1) n := by
@@ -658,12 +639,7 @@ lemma surj_helper_up (m : ℤ) (n : ℕ) :
   constructor
   · omega
   · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_outset_x
-    have h_ineq : asps.recon χ x ≤ asps.recon χ y := by
-      rw [← not_lt, ← mem_iff_lt asps x y χ (le_of_lt y_gt_x)]
-      exact y_not_outset_x
-    have h_ne : asps.recon χ x ≠ asps.recon χ y :=
-      fun h => absurd (func_injective χ asps h) (by omega)
-    have hlt := lt_of_le_of_ne h_ineq h_ne
+    have hlt := σ_inc asps x y χ y_gt_x y_not_outset_x
     simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
 
 lemma surj_helper_down (m : ℤ) (n : ℕ) :
@@ -686,12 +662,7 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
   constructor
   · omega
   · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_inset_x
-    have h_ineq : asps.recon χ y ≤ asps.recon χ x := by
-      rw [← not_lt, ← mem_iff_lt asps y x χ (le_of_lt y_lt_x)]
-      exact y_not_inset_x
-    have h_ne : asps.recon χ y ≠ asps.recon χ x :=
-      fun h => absurd (func_injective χ asps h) (by omega)
-    have hlt := lt_of_le_of_ne h_ineq h_ne
+    have hlt := σ_inc asps y x χ y_lt_x y_not_inset_x
     simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
 
 

@@ -1155,23 +1155,56 @@ left/right duality to dual slipfaces.
 lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ⋆ t₁ ≤ s₂ ⋆ t₂ := by
-  sorry
+  -- Proof written by Codex.
+  intro a b
+  apply (le_star_val_iff (s₁ ⋆ t₁) s₂ t₂ a b).mpr
+  intro l
+  have hval : (s₁ ⋆ t₁) a b ≤ s₁ a l + t₁ l b := star_val_le s₁ t₁ a b l
+  have hsval : s₁ a l ≤ s₂ a l := hs a l
+  have htval : t₁ l b ≤ t₂ l b := ht l b
+  omega
 
 /-- The contraction `(s, t) ↦ s ◃ t.dual` is increasing in `s` and decreasing in
 `t`.
 *Lemma 3.8, part 2/3.* -/
-lemma left_contract_dual_mono_antitone {s₁ s₂ t₁ t₂ : SlipFace}
+lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ◃ t₂.dual ≤ s₂ ◃ t₁.dual := by
-  sorry
+  -- Proof written by Codex.
+  intro a b
+  let l := lc_wit s₁ t₂.dual a b
+  rw [lc_wit_spec]
+  change s₁ a l - (t₂.dual).dual b l ≤ (s₂ ◃ t₁.dual) a b
+  have hmax : s₂ a l - t₁ b l ≤ (s₂ ◃ t₁.dual) a b := by
+    rw [lc_func_eq]
+    have h := lc_val_ge s₂ t₁.dual a b l
+    rwa [SlipFace.dual_dual t₁] at h
+  have hsval : s₁ a l ≤ s₂ a l := hs a l
+  have htval : t₁ b l ≤ t₂ b l := ht b l
+  have htdd : (t₂.dual).dual b l = t₂ b l := by
+    rw [SlipFace.dual_dual t₂]
+  omega
 
 /-- The contraction `(s, t) ↦ t.dual ▹ s` is increasing in `s` and decreasing in
 `t`.
 *Lemma 3.8, part 3/3.* -/
-lemma right_contract_dual_mono_antitone {s₁ s₂ t₁ t₂ : SlipFace}
+lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     t₂.dual ▹ s₁ ≤ t₁.dual ▹ s₂ := by
-  sorry
+  -- Proof written by Codex.
+  intro a b
+  let l := rc_wit t₂.dual s₁ a b
+  rw [rc_wit_spec]
+  change s₁ l b - (t₂.dual).dual l a ≤ (t₁.dual ▹ s₂) a b
+  have hmax : s₂ l b - t₁ l a ≤ (t₁.dual ▹ s₂) a b := by
+    rw [rc_func_eq]
+    have h := rc_val_ge t₁.dual s₂ a b l
+    rwa [SlipFace.dual_dual t₁] at h
+  have hsval : s₁ l b ≤ s₂ l b := hs l b
+  have htval : t₁ l a ≤ t₂ l a := ht l a
+  have htdd : (t₂.dual).dual l a = t₂ l a := by
+    rw [SlipFace.dual_dual t₂]
+  omega
 
 /-- The left contraction $u \triangleleft t^∨$ as a Bruhat minimum: the minimum
 slipface such that $s \star t ≥ u$.
@@ -1229,13 +1262,49 @@ lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
 *Lemma 3.11, part 2/3.* -/
 lemma left_contract_assoc (s t u : SlipFace) :
     (s ◃ t) ◃ u = s ◃ (t ⋆ u) := by
-  sorry
+  -- Proof written by Codex.
+  have hmin (v : SlipFace) :
+      v ≥ (s ◃ t) ◃ u ↔ v ≥ s ◃ (t ⋆ u) := by
+    calc
+      v ≥ (s ◃ t) ◃ u ↔ v ⋆ u.dual ≥ s ◃ t := by
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_left_contract v u.dual (s ◃ t))
+      _ ↔ (v ⋆ u.dual) ⋆ t.dual ≥ s := by
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_left_contract (v ⋆ u.dual) t.dual s)
+      _ ↔ v ⋆ (t ⋆ u).dual ≥ s := by
+        rw [star_assoc, star_dual]
+      _ ↔ v ≥ s ◃ (t ⋆ u) := by
+        symm
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_left_contract v (t ⋆ u).dual s)
+  apply le_antisymm
+  · exact (hmin (s ◃ (t ⋆ u))).mpr (le_refl _)
+  · exact (hmin ((s ◃ t) ◃ u)).mp (le_refl _)
 
 /-- Right contraction associates with the product on the left.
 *Lemma 3.11, part 3/3.* -/
 lemma right_contract_assoc (s t u : SlipFace) :
     s ▹ (t ▹ u) = (s ⋆ t) ▹ u := by
-  sorry
+  -- Proof written by Codex.
+  have hmin (v : SlipFace) :
+      v ≥ s ▹ (t ▹ u) ↔ v ≥ (s ⋆ t) ▹ u := by
+    calc
+      v ≥ s ▹ (t ▹ u) ↔ s.dual ⋆ v ≥ t ▹ u := by
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_right_contract s.dual v (t ▹ u))
+      _ ↔ t.dual ⋆ (s.dual ⋆ v) ≥ u := by
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_right_contract t.dual (s.dual ⋆ v) u)
+      _ ↔ (s ⋆ t).dual ⋆ v ≥ u := by
+        rw [← star_assoc, star_dual]
+      _ ↔ v ≥ (s ⋆ t) ▹ u := by
+        symm
+        simpa only [SlipFace.dual_dual] using
+          (ge_star_iff_ge_right_contract (s ⋆ t).dual v u)
+  apply le_antisymm
+  · exact (hmin ((s ⋆ t) ▹ u)).mpr (le_refl _)
+  · exact (hmin (s ▹ (t ▹ u))).mp (le_refl _)
 
 /-! ### The Mixed Difference `Δ`
 

@@ -10,7 +10,7 @@ satisfying the paper's conditions (S1) to (S3):
 - each row and column eventually agrees with $\max\{0, \chi + a - b\}$
 
 Lean stores the function as `func` and the shift as `χ`; the paper would write
-this as $s \in \mathrm{SF}_\chi$. *Definition 3.1.* -/
+this as $s \in \mathrm{SF}_\chi$. *Definition 3.1 (`defn:slipface`).* -/
 structure SlipFace where
   func : ℤ → ℤ → ℤ
   χ : ℤ
@@ -59,7 +59,7 @@ s(a,b) - s^\vee(b,a) = \chi + a - b.
 $$
 
 In Lean the dual is `sf.dual`, and its value at `(b,a)` is written
-`sf.dual b a`. *Definition 3.4.* -/
+`sf.dual b a`. *Definition 3.4 (`defn:sdual`).* -/
 def dual : SlipFace := {
   func := fun b a => sf a b - a + b - sf.χ
   χ := -sf.χ,
@@ -165,7 +165,7 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
     exact h.b_step a (b + n)
 
 /-- Construct a slipface from a pair of functions satisfying `D_props` and the
-duality relation `s a b - t b a = a - b + χ`. *Lemma 3.6.* -/
+duality relation `s a b - t b a = a - b + χ`. *Lemma 3.6 (`lem:dualCrit`).* -/
 lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
     (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
@@ -310,7 +310,7 @@ $$
 $$
 
 In Lean, `star_func s t a b` is this integer value, while `s ⋆ t` is the
-resulting `SlipFace`. *Definition 3.7, part 1/3.* -/
+resulting `SlipFace`. *Definition 3.7 (`defn:sfAlgebra`), part 1/3.* -/
 noncomputable def star_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => (SlipValley s t a b).min
 
@@ -407,7 +407,7 @@ lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
     exact le_antisymm le_zero ge_zero
 
 /-- The product function `star_func s t` comes from a slipface of shift
-`s.χ + t.χ`. *Proposition 3.9, part 1/5.* -/
+`s.χ + t.χ`. *Proposition 3.9 (`prop:sfAlgebraDefined`), part 1/5.* -/
 lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
   ((p.func = star_func s t ∧ p.χ = s.χ + t.χ)
   ∧ p.dual.func = star_func t.dual s.dual) := by
@@ -440,7 +440,7 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.2
 
-/-- Duality reverses the product `⋆`. *Proposition 3.9, part 4/5.* -/
+/-- Duality reverses the product `⋆`. *Proposition 3.9 (`prop:sfAlgebraDefined`), part 4/5.* -/
 @[simp] lemma star_dual (s t : SlipFace) : (s ⋆ t).dual = t.dual ⋆ s.dual := by
   have h := star_exists s t
   have := (Classical.choose_spec h).2
@@ -524,7 +524,7 @@ lemma ge_star_val_iff (r s t : SlipFace) (a b : ℤ) :
 The product `⋆` is associative and has the positive-part function as identity,
 giving `SlipFace` a monoid structure. -/
 
-/-- Slipface product is associative. *Lemma 3.11, part 1/3.* -/
+/-- Slipface product is associative. *Lemma 3.11 (`lem:sfAlgebra`), part 1/3.* -/
 lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
   apply (SF_ext _ _).mpr
   intro a b
@@ -689,7 +689,7 @@ noncomputable def lc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
 $$
 (s \triangleleft t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[s(a,\ell) - t^\vee(b,\ell)\bigr].
 $$
-*Definition 3.7, part 2/3.* -/
+*Definition 3.7 (`defn:sfAlgebra`), part 2/3.* -/
 noncomputable def lc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
 
@@ -711,7 +711,7 @@ lemma lc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ lc_func s t a b := by
   omega
 
 /-- The left contraction function $s \triangleleft t$ satisfies `D_props`.
-*Proposition 3.9, proof component for part 2/5.* -/
+*Proposition 3.9 (`prop:sfAlgebraDefined`), proof component for part 2/5.* -/
 lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
@@ -895,7 +895,7 @@ noncomputable def rc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
 $$
 (s \triangleright t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[t(\ell,b) - s^\vee(\ell,a)\bigr].
 $$
-*Definition 3.7, part 3/3.* -/
+*Definition 3.7 (`defn:sfAlgebra`), part 3/3.* -/
 noncomputable def rc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => t (rc_wit s t a b) b - s.dual (rc_wit s t a b) a
 
@@ -917,7 +917,7 @@ lemma rc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ rc_func s t a b := by
   omega
 
 /-- The right contraction function $s \triangleright t$ satisfies `D_props`.
-*Proposition 3.9, proof component for part 3/5.* -/
+*Proposition 3.9 (`prop:sfAlgebraDefined`), proof component for part 3/5.* -/
 lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
@@ -1049,7 +1049,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
         omega
 
 /-- The left contraction is dual to the right contraction.
-*Proposition 3.9, proof component for part 5/5.* -/
+*Proposition 3.9 (`prop:sfAlgebraDefined`), proof component for part 5/5.* -/
 lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
     lc_func s t a b - rc_func t.dual s.dual b a = a - b + s.χ + t.χ := by
   -- Proof written by GPT 5.5.
@@ -1073,7 +1073,7 @@ lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
     linarith [s.s_eq a l, t.s'_eq b l, htdd, hmax]
 
 /-- The function `lc_func s t` satisfies the slipface axioms and therefore
-comes from a slipface. *Proposition 3.9, part 2/5.* -/
+comes from a slipface. *Proposition 3.9 (`prop:sfAlgebraDefined`), part 2/5.* -/
 lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
     ((p.func = lc_func s t ∧ p.χ = s.χ + t.χ)
     ∧ p.dual.func = rc_func t.dual s.dual) := by
@@ -1091,7 +1091,7 @@ lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
   exact ⟨D_props_of_lc_func s t, D_props_of_rc_func t.dual s.dual⟩
 
 /-- The left contraction of two slipfaces, obtained from the maximum formula
-`lc_func`. *Proposition 3.9, part 2/5.* -/
+`lc_func`. *Proposition 3.9 (`prop:sfAlgebraDefined`), part 2/5.* -/
 noncomputable def left_contract (s t : SlipFace) : SlipFace :=
   Classical.choose (lc_exists s t)
 
@@ -1111,7 +1111,7 @@ lemma lc_wit_spec (s t : SlipFace) (a b : ℤ) :
   exact (Classical.choose_spec h).1.2
 
 /-- The right contraction of two slipfaces, defined by duality from left
-contraction. *Proposition 3.9, part 3/5.* -/
+contraction. *Proposition 3.9 (`prop:sfAlgebraDefined`), part 3/5.* -/
 noncomputable def right_contract (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
@@ -1136,7 +1136,7 @@ lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
   omega
 
 /-- The stated left/right contraction duality.
-*Proposition 3.9, part 5/5.* -/
+*Proposition 3.9 (`prop:sfAlgebraDefined`), part 5/5.* -/
 @[simp] lemma left_contract_dual (s t : SlipFace) :
     (s ◃ t).dual = t.dual ▹ s.dual := by
   dsimp [right_contract]
@@ -1144,14 +1144,14 @@ lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
 
 /-- The corresponding right/left contraction duality, obtained by applying the
 left/right duality to dual slipfaces.
-*Consequence of Proposition 3.9, part 5/5.* -/
+*Consequence of Proposition 3.9 (`prop:sfAlgebraDefined`), part 5/5.* -/
 @[simp] lemma right_contract_dual (s t : SlipFace) :
     (s ▹ t).dual = t.dual ◃ s.dual := by
   dsimp [right_contract]
   rw [SlipFace.dual_dual]
 
 /-- The $\star$ operation is Bruhat-increasing in both arguments.
-*Lemma 3.8, part 1/3.* -/
+*Lemma 3.8 (`lem:compatLeq`), part 1/3.* -/
 lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ⋆ t₁ ≤ s₂ ⋆ t₂ := by
@@ -1166,7 +1166,7 @@ lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
 
 /-- The contraction `(s, t) ↦ s ◃ t.dual` is increasing in `s` and decreasing in
 `t`.
-*Lemma 3.8, part 2/3.* -/
+*Lemma 3.8 (`lem:compatLeq`), part 2/3.* -/
 lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ◃ t₂.dual ≤ s₂ ◃ t₁.dual := by
@@ -1187,7 +1187,7 @@ lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
 
 /-- The contraction `(s, t) ↦ t.dual ▹ s` is increasing in `s` and decreasing in
 `t`.
-*Lemma 3.8, part 3/3.* -/
+*Lemma 3.8 (`lem:compatLeq`), part 3/3.* -/
 lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     t₂.dual ▹ s₁ ≤ t₁.dual ▹ s₂ := by
@@ -1208,7 +1208,7 @@ lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
 
 /-- The left contraction $u \triangleleft t^∨$ as a Bruhat minimum: the minimum
 slipface such that $s \star t ≥ u$.
-*Lemma 3.10, part 1/2.* -/
+*Lemma 3.10 (`lem:sfOpChar`), part 1/2.* -/
 lemma ge_star_iff_ge_left_contract (s t u : SlipFace) :
     s ≥ u ◃ t.dual ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
@@ -1234,7 +1234,7 @@ lemma ge_star_iff_ge_left_contract (s t u : SlipFace) :
 
 /-- The right contraction $s^∨ \triangleright u$ as a Bruhat minimum: the minimum
 slipface such that $s \star t ≥ u$.
-*Lemma 3.10, part 2/2.* -/
+*Lemma 3.10 (`lem:sfOpChar`), part 2/2.* -/
 lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
     t ≥ s.dual ▹ u ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
@@ -1259,7 +1259,7 @@ lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
     omega
 
 /-- Left contraction associates with the product on the right.
-*Lemma 3.11, part 2/3.* -/
+*Lemma 3.11 (`lem:sfAlgebra`), part 2/3.* -/
 lemma left_contract_assoc (s t u : SlipFace) :
     (s ◃ t) ◃ u = s ◃ (t ⋆ u) := by
   -- Proof written by Codex.
@@ -1283,7 +1283,7 @@ lemma left_contract_assoc (s t u : SlipFace) :
   · exact (hmin ((s ◃ t) ◃ u)).mp (le_refl _)
 
 /-- Right contraction associates with the product on the left.
-*Lemma 3.11, part 3/3.* -/
+*Lemma 3.11 (`lem:sfAlgebra`), part 3/3.* -/
 lemma right_contract_assoc (s t u : SlipFace) :
     s ▹ (t ▹ u) = (s ⋆ t) ▹ u := by
   -- Proof written by Codex.
@@ -1414,7 +1414,7 @@ lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b�
     omega
 
 /-- A slipface is submodular if $\Delta s(a,b) \ge 0$ for all `a, b`.
-*Definition 4.2.* -/
+*Definition 4.2 (`defn:submodular`).* -/
 def submodular : Prop := ∀ a b : ℤ, sf.Δ a b ≥ 0
 
 /-- The set of boxes where the mixed difference `Δ` is equal to `1`. -/

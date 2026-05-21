@@ -337,7 +337,7 @@ some ASP permutation `α`.
 
 This is the paper's identification of $\mathrm{ASP}$ with the submodular slipfaces; in
 Lean the map $\alpha \mapsto s_\alpha$ is implemented as `α ↦ α.sf`.
-*Proposition 4.3.* -/
+*Proposition 4.3 (`prop:imageASP`).* -/
 theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
   constructor
   · intro hsub
@@ -356,7 +356,7 @@ submodular. -/
 
 Its minimum is $s_{\alpha \star \beta}(a,b)$, and its rightmost minimizer is
 the paper's $M_{\alpha \star \beta}(a,b)$. In Lean that rightmost minimizer is
-`(AspValley α β a b).M`. *Definition 4.5.* -/
+`(AspValley α β a b).M`. *Definition 4.5 (unlabeled in source).* -/
 noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
     f := fun l => α.s a l + β.s l b
     rises := by
@@ -401,7 +401,7 @@ lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b :
     simp
 
 /-- Compare the minima and rightmost minimizers of two valleys that differ by
-`1` below a cutoff and agree above it. *Lemma 4.6.* -/
+`1` below a cutoff and agree above it. *Lemma 4.6 (`lem:fg`).* -/
 lemma sediment (v w : Valley) {A : ℤ}
   (low : ∀ l : ℤ, l ≤ A → w.f l = v.f l + 1) (high : ∀ l : ℤ, l > A → w.f l = v.f l) :
   ((v.M ≤ A → w.min = v.min + 1)
@@ -476,7 +476,7 @@ lemma sediment (v w : Valley) {A : ℤ}
 
 /-- Incrementing the first coordinate changes the valley minimum by `1`
 exactly when the rightmost minimizer lies at or to the left of `α⁻¹ a`, and
-the rightmost minimizer can only move to the right. *Lemma 4.7, in slightly
+the rightmost minimizer can only move to the right. *Lemma 4.7 (`lem:Kstara+1`), in slightly
 different phrasing.* -/
 lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   let v := AspValley α β a b
@@ -504,7 +504,7 @@ lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
 
 /-- Incrementing the second coordinate changes the valley minimum according to
 the position of the rightmost minimizer relative to `β b`, and the rightmost
-minimizer can only move to the right. *Lemma 4.8, in slightly different
+minimizer can only move to the right. *Lemma 4.8 (`lem:Kstarb+1`), in slightly different
 phrasing.* -/
 lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
   let v := (AspValley α β a b)
@@ -596,7 +596,7 @@ lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
       exact le_trans h2 h1
 
 /-- The product of two submodular slipfaces is submodular.
-*Theorem 4.4, part 1/5.* -/
+*Theorem 4.4 (`thm:starExists1`), part 1/5.* -/
 theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.submodular) :
   (s.star t).submodular := by
   intro a b
@@ -921,7 +921,7 @@ lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
     simpa only [Nat.cast_succ, Nat.cast_add, Nat.cast_one, add_assoc] using hl'
 
 /-- The left contraction $s \triangleleft t$ of submodular slipfaces is
-submodular. *Theorem 4.10, part 1/8.* -/
+submodular. *Theorem 4.10 (`thm:tllExists`), part 1/8.* -/
 theorem submodular_of_left_contract {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ◃ t).submodular := by
@@ -944,7 +944,7 @@ theorem submodular_of_left_contract {s t : SlipFace}
   exact ((lc_b_step_eq_iff_exists_witness α β a b).mpr ⟨l', hl', hcut'⟩).symm
 
 /-- The right contraction $s \triangleright t$ of submodular slipfaces is
-submodular. *Theorem 4.10, part 1/8.* -/
+submodular. *Theorem 4.10 (`thm:tllExists`), part 1/8.* -/
 theorem submodular_of_right_contract {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ▹ t).submodular := by
@@ -980,7 +980,7 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   simp [neq]
 
 /-- The slipface product of two ASP permutations is represented by a unique ASP
-permutation. *Theorem 4.4, part 2/5.* -/
+permutation. *Theorem 4.4 (`thm:starExists1`), part 2/5.* -/
 lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
   intro α β
   have : (α.sf ⋆ β.sf).submodular := by
@@ -995,7 +995,7 @@ lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β
     rw [τ.eq_of_sf_eq hτ]
 
 /-- The slipface left contraction of two ASP permutations is represented by a
-unique ASP permutation. *Theorem 4.10, part 2/8.* -/
+unique ASP permutation. *Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
   intro α β
   have : (α.sf ◃ β.sf).submodular := by
@@ -1010,7 +1010,7 @@ lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.s
     rw [τ.eq_of_sf_eq hτ]
 
 /-- The slipface right contraction of two ASP permutations is represented by a
-unique ASP permutation. *Theorem 4.10, part 2/8.* -/
+unique ASP permutation. *Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 lemma rc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
   intro α β
   have : (α.sf ▹ β.sf).submodular := by
@@ -1043,12 +1043,12 @@ infixl:70 " ⋆ " => star
 $s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
 
 In Lean this operation is written `α ◃ β`.
-*Theorem 4.10, part 2/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 noncomputable def left_contract (α β : AspPerm) : AspPerm :=
   Classical.choose (lc_exists α β)
 
 /-- Left contraction on ASP permutations has the defining slipface.
-*Theorem 4.10, part 2/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 @[simp] lemma left_contract_spec (α β : AspPerm) :
     (left_contract α β).sf = α.sf ◃ β.sf :=
   (Classical.choose_spec (lc_exists α β)).1
@@ -1059,12 +1059,12 @@ infixl:70 " ◃ " => left_contract
 $s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
 
 In Lean this operation is written `α ▹ β`.
-*Theorem 4.10, part 2/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 noncomputable def right_contract (α β : AspPerm) : AspPerm :=
   Classical.choose (rc_exists α β)
 
 /-- Right contraction on ASP permutations has the defining slipface.
-*Theorem 4.10, part 2/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 2/8.* -/
 @[simp] lemma right_contract_spec (α β : AspPerm) :
     (right_contract α β).sf = α.sf ▹ β.sf :=
   (Classical.choose_spec (rc_exists α β)).1
@@ -1072,14 +1072,14 @@ noncomputable def right_contract (α β : AspPerm) : AspPerm :=
 infixr:70 " ▹ " => right_contract
 
 /-- Demazure product on ASP permutations is associative.
-*Theorem 4.4, part 3/5.* -/
+*Theorem 4.4 (`thm:starExists1`), part 3/5.* -/
 lemma star_assoc : ∀ α β γ : AspPerm, (α ⋆ β) ⋆ γ = α ⋆ (β ⋆ γ) := by
   intro α β γ
   apply AspPerm.eq_of_sf_eq
   simp only [star_spec, SlipFace.star_assoc]
 
 /-- Left contraction associates with Demazure product on ASP permutations.
-*Theorem 4.10, part 3/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 3/8.* -/
 lemma left_contract_assoc (α β γ : AspPerm) :
     (α ◃ β) ◃ γ = α ◃ (β ⋆ γ) := by
   -- Proof written by Codex.
@@ -1087,7 +1087,7 @@ lemma left_contract_assoc (α β γ : AspPerm) :
   simp only [left_contract_spec, star_spec, SlipFace.left_contract_assoc]
 
 /-- Right contraction associates with Demazure product on ASP permutations.
-*Theorem 4.10, part 4/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 4/8.* -/
 lemma right_contract_assoc (α β γ : AspPerm) :
     α ▹ (β ▹ γ) = (α ⋆ β) ▹ γ := by
   -- Proof written by Codex.
@@ -1095,7 +1095,7 @@ lemma right_contract_assoc (α β γ : AspPerm) :
   simp only [right_contract_spec, star_spec, SlipFace.right_contract_assoc]
 
 /-- Inversion swaps left contraction for right contraction.
-*Theorem 4.10, part 5/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 5/8.* -/
 lemma inverse_left_contract (α β : AspPerm) :
     (α ◃ β)⁻¹ = β⁻¹ ▹ α⁻¹ := by
   -- Proof written by Codex.
@@ -1105,13 +1105,13 @@ lemma inverse_left_contract (α β : AspPerm) :
     right_contract_spec]
 
 /-- The shift of left contraction is the sum of shifts.
-*Theorem 4.10, part 6/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 6/8.* -/
 lemma chi_left_contract (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [left_contract_spec, SlipFace.chi_lc]
 
 /-- The shift of right contraction is the sum of shifts.
-*Theorem 4.10, part 6/8.* -/
+*Theorem 4.10 (`thm:tllExists`), part 6/8.* -/
 lemma chi_right_contract (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [right_contract_spec, SlipFace.chi_rc]
@@ -1130,7 +1130,7 @@ lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
-/-- Inversion reverses Demazure products. *Theorem 4.4, part 4/5.* -/
+/-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`), part 4/5.* -/
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
   have ex := star_exists (β⁻¹) (α⁻¹)
   let τ := β⁻¹ ⋆ α⁻¹
@@ -1143,7 +1143,7 @@ lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ :=
 
 /-- The shift of a Demazure product satisfies
 `(α ⋆ β).χ = α.χ + β.χ`, i.e. $\chi_{\alpha \star \beta}
-= \chi_\alpha + \chi_\beta$. *Theorem 4.4, part 5/5.* -/
+= \chi_\alpha + \chi_\beta$. *Theorem 4.4 (`thm:starExists1`), part 5/5.* -/
 lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have ex := star_exists α β
   let τ := α ⋆ β
@@ -1283,7 +1283,7 @@ the factors of a Demazure product. -/
 namespace Submodular
 
 /-- In a Demazure product `α ⋆ β`, the factor `β` lies below the product in
-left weak order. *Lemma 4.9, part 1.* -/
+left weak order. *Lemma 4.9 (`lem:invStar`), part 1.* -/
 theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by
@@ -1322,7 +1322,7 @@ theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
   omega
 
 /-- In a Demazure product `α ⋆ β`, the factor `α` lies below the product in
-right weak order. *Lemma 4.9, part 2.* -/
+right weak order. *Lemma 4.9 (`lem:invStar`), part 2.* -/
 theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by
@@ -1338,7 +1338,7 @@ theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
 /-! ### Weak-Order Consequences of Contraction -/
 
 /-- Left contraction forms a reduced product with the inverse of its right
-factor. *Lemma 4.14, part 1/2.* -/
+factor. *Lemma 4.14 (`lem:invTri`), part 1/2.* -/
 theorem reducedProduct_of_left_contract (α β : AspPerm) :
     AspPerm.ReducedProduct (α ◃ β) β⁻¹ := by
   -- Proof written by Codex.
@@ -1365,7 +1365,7 @@ theorem reducedProduct_of_left_contract (α β : AspPerm) :
   exact (not_lt_of_ge (le_of_lt hβ.2)) this
 
 /-- Left contraction is below its left factor in right weak order.
-*Lemma 4.14, part 2/2.* -/
+*Lemma 4.14 (`lem:invTri`), part 2/2.* -/
 theorem ler_of_left_contract (α β : AspPerm) : α ◃ β ≤R α := by
   -- Proof written by Codex.
   rintro ⟨u, v⟩ huv
@@ -1389,7 +1389,7 @@ theorem ler_of_left_contract (α β : AspPerm) : α ◃ β ≤R α := by
   exact lt_of_lt_of_le (lt_of_lt_of_le hαv hll') (hu_wit l' hl')
 
 /-- Right contraction forms a reduced product with the inverse of its left
-factor. *Corollary 4.15, part 1/2.* -/
+factor. *Corollary 4.15 (`cor:reducedTlr`), part 1/2.* -/
 theorem reducedProduct_of_right_contract (α β : AspPerm) :
     AspPerm.ReducedProduct α⁻¹ (α ▹ β) := by
   -- Proof written by Codex.
@@ -1400,7 +1400,7 @@ theorem reducedProduct_of_right_contract (α β : AspPerm) :
   simpa only [AspPerm.inverse_left_contract, inv_inv] using hswap
 
 /-- Right contraction is below its right factor in left weak order.
-*Corollary 4.15, part 2/2.* -/
+*Corollary 4.15 (`cor:reducedTlr`), part 2/2.* -/
 theorem lel_of_right_contract (α β : AspPerm) : α ▹ β ≤L β := by
   -- Proof written by Codex.
   have h := AspPerm.le_weak_L_of_R (ler_of_left_contract β⁻¹ α⁻¹)

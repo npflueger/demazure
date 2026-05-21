@@ -1303,7 +1303,7 @@ This section introduces some infrastructure about inversion sets. -/
 $\operatorname{Inv}(\alpha) \cap \operatorname{Inv}(\beta^{-1})$ is empty.
 
 Lean keeps this reducedness condition separate from ordinary and Demazure
-multiplication. *Definition 2.8.* -/
+multiplication. *Definition 2.8 (`defn:reducedProduct`).* -/
 def ReducedProduct (α β : AspPerm) : Prop :=
   Disjoint (inv_set α) (inv_set (β⁻¹).func)
 
@@ -1324,7 +1324,7 @@ lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹
   exact h_L hx
 
 /-- A product `α β` is reduced exactly when `α` is below `α β` in right
-weak order. *Lemma 2.9, part 1/2.* -/
+weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`), part 1/2.* -/
 lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     ReducedProduct α β ↔ α ≤R α * β := by
   -- Proof written by Codex.
@@ -1364,7 +1364,7 @@ lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     exact (not_lt_of_ge (le_of_lt hβ.2)) hmul
 
 /-- A product `α β` is reduced exactly when `β` is below `α β` in left
-weak order. *Lemma 2.9, part 2/2.* -/
+weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`), part 2/2.* -/
 lemma reducedProduct_iff_le_weak_L_mul (α β : AspPerm) :
     ReducedProduct α β ↔ β ≤L α * β := by
   -- Proof written by Codex.

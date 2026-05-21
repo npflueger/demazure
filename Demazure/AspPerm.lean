@@ -275,6 +275,9 @@ noncomputable instance : Group AspPerm where
     change Function.invFun τ.func (τ.func n) = n
     exact Function.leftInverse_invFun τ.injective n
 
+/-- Ordinary multiplication of ASP permutations is function composition. -/
+@[simp] lemma mul_apply (σ τ : AspPerm) (n : ℤ) : (σ * τ) n = σ (τ n) := rfl
+
 @[simp] lemma inv_mul_cancel_eval (n : ℤ) : τ⁻¹ (τ n) = n := by
   change Function.invFun τ.func (τ.func n) = n
   exact Function.leftInverse_invFun τ.injective n
@@ -1292,11 +1295,17 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
 
 end RampWings
 
-/-! ### Weak Order and Demazure Comparison Data
+/-! ### Reduced products and weak orders
 
-This section introduces the left and right weak orders, the shifted-right map
-`sr`, and the comparison predicates used to express Demazure-product
-inequalities in terms of inversion sets and the functions `s` and `s'`. -/
+This section introduces some infrastructure about inversion sets. -/
+
+/-- A product $\alpha \beta$ is reduced if
+$\operatorname{Inv}(\alpha) \cap \operatorname{Inv}(\beta^{-1})$ is empty.
+
+Lean keeps this reducedness condition separate from ordinary and Demazure
+multiplication. *Definition 2.8.* -/
+def ReducedProduct (α β : AspPerm) : Prop :=
+  Disjoint (inv_set α) (inv_set (β⁻¹).func)
 
 /-- The left weak order: `σ ≤L τ` if and only if $\operatorname{Inv} \sigma \subseteq
 \operatorname{Inv} \tau$. -/
@@ -1313,6 +1322,90 @@ lemma le_weak_L_of_R {σ τ : AspPerm} (h_R : σ ≤R τ) : σ⁻¹ ≤L τ⁻¹
 lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹ := by
   intro x; simp only [inv_inv]; intro hx
   exact h_L hx
+
+/-- A product `α β` is reduced exactly when `α` is below `α β` in right
+weak order. *Lemma 2.9, part 1/2.* -/
+lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
+    ReducedProduct α β ↔ α ≤R α * β := by
+  -- Proof written by Codex.
+  constructor
+  · intro hred
+    rintro ⟨p, q⟩ hpq
+    obtain ⟨p_lt_q, hαpq⟩ := hpq
+    refine ⟨p_lt_q, ?_⟩
+    have hnot : ¬ β⁻¹ (α⁻¹ p) < β⁻¹ (α⁻¹ q) := by
+      intro hβ
+      have hα : ⟨α⁻¹ q, α⁻¹ p⟩ ∈ inv_set α := by
+        refine ⟨hαpq, ?_⟩
+        simp only [mul_inv_cancel_eval]
+        exact p_lt_q
+      have hβ' : ⟨α⁻¹ q, α⁻¹ p⟩ ∈ inv_set (β⁻¹).func :=
+        ⟨hαpq, hβ⟩
+      exact Set.disjoint_left.mp hred hα hβ'
+    have hne : β⁻¹ (α⁻¹ q) ≠ β⁻¹ (α⁻¹ p) := by
+      intro h
+      apply (β⁻¹).injective at h
+      omega
+    change (α * β)⁻¹ q < (α * β)⁻¹ p
+    rw [mul_inv_rev]
+    change β⁻¹ (α⁻¹ q) < β⁻¹ (α⁻¹ p)
+    exact lt_of_le_of_ne (le_of_not_gt hnot) hne
+  · intro hweak
+    apply Set.disjoint_left.mpr
+    rintro ⟨u, v⟩ huv hβ
+    have hαinv : ⟨α v, α u⟩ ∈ inv_set (α⁻¹).func :=
+      (α.inv_set_inverse u v).mp huv
+    have hmul := hweak hαinv
+    obtain ⟨-, hmul⟩ := hmul
+    change (α * β)⁻¹ (α u) < (α * β)⁻¹ (α v) at hmul
+    rw [mul_inv_rev] at hmul
+    change β⁻¹ (α⁻¹ (α u)) < β⁻¹ (α⁻¹ (α v)) at hmul
+    simp only [inv_mul_cancel_eval] at hmul
+    exact (not_lt_of_ge (le_of_lt hβ.2)) hmul
+
+/-- A product `α β` is reduced exactly when `β` is below `α β` in left
+weak order. *Lemma 2.9, part 2/2.* -/
+lemma reducedProduct_iff_le_weak_L_mul (α β : AspPerm) :
+    ReducedProduct α β ↔ β ≤L α * β := by
+  -- Proof written by Codex.
+  constructor
+  · intro hred
+    rintro ⟨p, q⟩ hpq
+    obtain ⟨p_lt_q, hβpq⟩ := hpq
+    refine ⟨p_lt_q, ?_⟩
+    have hnot : ¬ α (β p) < α (β q) := by
+      intro hα
+      have hα' : ⟨β q, β p⟩ ∈ inv_set α := ⟨hβpq, hα⟩
+      have hβ' : ⟨β q, β p⟩ ∈ inv_set (β⁻¹).func := by
+        refine ⟨hβpq, ?_⟩
+        simp only [inv_mul_cancel_eval]
+        exact p_lt_q
+      exact Set.disjoint_left.mp hred hα' hβ'
+    have hne : α (β q) ≠ α (β p) := by
+      intro h
+      apply α.injective at h
+      omega
+    change α (β q) < α (β p)
+    exact lt_of_le_of_ne (le_of_not_gt hnot) hne
+  · intro hweak
+    apply Set.disjoint_left.mpr
+    rintro ⟨u, v⟩ huv hβ
+    have hβinv : ⟨β⁻¹ v, β⁻¹ u⟩ ∈ inv_set β := by
+      refine ⟨hβ.2, ?_⟩
+      simp only [mul_inv_cancel_eval]
+      exact huv.1
+    have hmul := hweak hβinv
+    obtain ⟨-, hmul⟩ := hmul
+    change α (β (β⁻¹ u)) < α (β (β⁻¹ v)) at hmul
+    simp only [mul_inv_cancel_eval] at hmul
+    exact (not_lt_of_ge (le_of_lt huv.2)) hmul
+
+/-- Inversion reverses the factors in a reduced product. -/
+lemma reducedProduct_inv_swap (α β : AspPerm) :
+    ReducedProduct α β ↔ ReducedProduct β⁻¹ α⁻¹ := by
+  unfold ReducedProduct
+  simp only [inv_inv]
+  exact disjoint_comm
 
 -- "Slide right" inversions from α to inversions of τ.
 noncomputable def sr (τ α : AspPerm) : (ℤ × ℤ) → (ℤ × ℤ) := fun x =>

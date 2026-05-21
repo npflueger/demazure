@@ -4,6 +4,7 @@ import Demazure.SlipFace
 import Demazure.AspPerm
 import Demazure.Submodular
 import Demazure.ReducedProducts
+import Demazure.MainTheorems
 import Demazure.InvSet
 import Demazure.Avoiding321
 import Demazure.Tableaux

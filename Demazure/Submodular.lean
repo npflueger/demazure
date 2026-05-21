@@ -1151,6 +1151,40 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp [SlipFace.chi_star]
 
+/-- Demazure product of a list of ASP permutations. -/
+noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
+  List.foldr AspPerm.star AspPerm.id L
+
+/-- Ordinary product of a list of ASP permutations. -/
+noncomputable abbrev OrdProd (L : List AspPerm) : AspPerm :=
+  List.foldr (· * ·) AspPerm.id L
+
+@[simp] lemma DProd_nil : DProd [] = AspPerm.id := rfl
+
+@[simp] lemma DProd_cons (α : AspPerm) (L : List AspPerm) :
+    DProd (α :: L) = α ⋆ DProd L := rfl
+
+@[simp] lemma OrdProd_nil : OrdProd [] = AspPerm.id := rfl
+
+@[simp] lemma OrdProd_cons (α : AspPerm) (L : List AspPerm) :
+    OrdProd (α :: L) = α * OrdProd L := rfl
+
+/-- The shift of a Demazure list product is the sum of the shifts. -/
+lemma chi_DProd (L : List AspPerm) : (DProd L).χ = (L.map AspPerm.χ).sum := by
+  -- Proof written by GPT 5.5.
+  induction L with
+  | nil => simp only [DProd_nil, List.map_nil, List.sum_nil, id_chi]
+  | cons α L ih =>
+      simp only [DProd_cons, List.map_cons, List.sum_cons, chi_star, ih]
+
+/-- The shift of an ordinary list product is the sum of the shifts. -/
+lemma chi_OrdProd (L : List AspPerm) : (OrdProd L).χ = (L.map AspPerm.χ).sum := by
+  -- Proof written by GPT 5.5.
+  induction L with
+  | nil => simp only [OrdProd_nil, List.map_nil, List.sum_nil, id_chi]
+  | cons α L ih =>
+      simp only [OrdProd_cons, List.map_cons, List.sum_cons, chi_mul, ih]
+
 lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
   rw [AspPerm.s_eq_se_card]
   have hset : AspPerm.id.se_finset a b = Finset.Ico b a := by

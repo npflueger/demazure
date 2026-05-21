@@ -427,14 +427,7 @@ data whose union and total shift recover `τ`. -/
 
 section Chains
 variable {τ : AspPerm} (h_321a : is_321a τ)
-
-noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
-  List.foldr AspPerm.star AspPerm.id L
-
-lemma DProd_cons (α : AspPerm) (Q : List AspPerm) :
-  DProd (α :: Q) = α ⋆ DProd Q := by
-  unfold DProd
-  rw [List.foldr_cons]
+open AspPerm
 
 /-- A Hecke factorization of `τ`, represented as a list of ASP permutations
 whose Demazure product is `τ`. -/

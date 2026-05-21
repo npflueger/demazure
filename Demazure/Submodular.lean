@@ -867,6 +867,59 @@ lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
     rw [hstep]
     omega
 
+/-- Moving the first coordinate down through several steps transports a witness
+weakly to the right. -/
+lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
+    (hac : a ≤ c) (hl : l ∈ lc_witness_set α β c b) :
+    ∃ l' ∈ lc_witness_set α β a b, l ≤ l' := by
+  -- Proof written by Codex.
+  let n : ℕ := (c - a).toNat
+  have hc : c = a + n := by omega
+  rw [hc] at hl
+  suffices ∀ n : ℕ, ∀ l,
+      l ∈ lc_witness_set α β (a + n) b →
+        ∃ l' ∈ lc_witness_set α β a b, l ≤ l' by
+    exact this n l hl
+  intro n
+  induction n with
+  | zero =>
+    intro l hl
+    simp only [Nat.cast_zero, add_zero] at hl
+    exact ⟨l, hl, le_refl l⟩
+  | succ n ih =>
+    intro l hl
+    have hl_step : l ∈ lc_witness_set α β ((a + n) + 1) b := by
+      simpa only [Nat.cast_succ, Nat.cast_add, Nat.cast_one, add_assoc] using hl
+    obtain ⟨m, hm, hlm⟩ := lc_witness_move_a_down α β (a + n) b l hl_step
+    obtain ⟨l', hl', hml'⟩ := ih m hm
+    exact ⟨l', hl', le_trans hlm hml'⟩
+
+/-- Moving the second coordinate up through several steps transports a witness
+weakly to the right. -/
+lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
+    (hbc : b ≤ c) (hl : l ∈ lc_witness_set α β a b) :
+    ∃ l' ∈ lc_witness_set α β a c, l ≤ l' := by
+  -- Proof written by Codex.
+  let n : ℕ := (c - b).toNat
+  have hc : c = b + n := by omega
+  rw [hc]
+  suffices ∀ n : ℕ, ∀ l,
+      l ∈ lc_witness_set α β a b →
+        ∃ l' ∈ lc_witness_set α β a (b + n), l ≤ l' by
+    exact this n l hl
+  intro n
+  induction n with
+  | zero =>
+    intro l hl
+    simp only [Nat.cast_zero, add_zero]
+    exact ⟨l, hl, le_refl l⟩
+  | succ n ih =>
+    intro l hl
+    obtain ⟨m, hm, hlm⟩ := ih l hl
+    obtain ⟨l', hl', hml'⟩ := lc_witness_move_b_up α β a (b + n) m hm
+    refine ⟨l', ?_, le_trans hlm hml'⟩
+    simpa only [Nat.cast_succ, Nat.cast_add, Nat.cast_one, add_assoc] using hl'
+
 /-- The left contraction $s \triangleleft t$ of submodular slipfaces is
 submodular. *Theorem 4.10, part 1/8.* -/
 theorem submodular_of_left_contract {s t : SlipFace}
@@ -1281,5 +1334,76 @@ theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
   rw [← AspPerm.eq_star_iff] at this
   rw [this]
   exact lel_of_dprod β⁻¹ α⁻¹
+
+/-! ### Weak-Order Consequences of Contraction -/
+
+/-- Left contraction forms a reduced product with the inverse of its right
+factor. *Lemma 4.14, part 1/2.* -/
+theorem reducedProduct_of_left_contract (α β : AspPerm) :
+    AspPerm.ReducedProduct (α ◃ β) β⁻¹ := by
+  -- Proof written by Codex.
+  unfold AspPerm.ReducedProduct
+  simp only [inv_inv]
+  apply Set.disjoint_left.mpr
+  rintro ⟨u, v⟩ huv hβ
+  let a := (α ◃ β) u
+  have hdrop_s : (α ◃ β).s a (v + 1) = (α ◃ β).s a v - 1 := by
+    exact ((α ◃ β).b_step_one_iff a v).mpr huv.2
+  have hflat_s : (α ◃ β).s a (u + 1) = (α ◃ β).s a u := by
+    exact ((α ◃ β).b_step_eq_iff a u).mpr (by rfl)
+  have hdrop : (α.sf ◃ β.sf) a (v + 1) = (α.sf ◃ β.sf) a v - 1 := by
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hdrop_s
+  have hflat : (α.sf ◃ β.sf) a (u + 1) = (α.sf ◃ β.sf) a u := by
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hflat_s
+  have hv_wit := (lc_b_step_one_iff_forall_witness α β a v).mp hdrop
+  obtain ⟨l, hl, hβu⟩ :=
+    (lc_b_step_eq_iff_exists_witness α β a u).mp hflat
+  obtain ⟨l', hl', hll'⟩ :=
+    lc_witness_move_b_up_of_le α β a u v l (le_of_lt huv.1) hl
+  have hl'_le : l' ≤ β v := hv_wit l' hl'
+  have : β u < β v := lt_of_lt_of_le (lt_of_lt_of_le hβu hll') hl'_le
+  exact (not_lt_of_ge (le_of_lt hβ.2)) this
+
+/-- Left contraction is below its left factor in right weak order.
+*Lemma 4.14, part 2/2.* -/
+theorem ler_of_left_contract (α β : AspPerm) : α ◃ β ≤R α := by
+  -- Proof written by Codex.
+  rintro ⟨u, v⟩ huv
+  let b := (α ◃ β)⁻¹ u
+  have hflat_s : (α ◃ β).s (v + 1) b = (α ◃ β).s v b := by
+    exact ((α ◃ β).a_step_eq_iff v b).mpr huv.2
+  have hone_s : (α ◃ β).s (u + 1) b = (α ◃ β).s u b + 1 := by
+    exact ((α ◃ β).a_step_one_iff u b).mpr (by rfl)
+  have hflat : (α.sf ◃ β.sf) (v + 1) b = (α.sf ◃ β.sf) v b := by
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hflat_s
+  have hone : (α.sf ◃ β.sf) (u + 1) b = (α.sf ◃ β.sf) u b + 1 := by
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hone_s
+  obtain ⟨l, hl, hαv⟩ :=
+    (lc_a_step_eq_iff_exists_witness α β v b).mp hflat
+  have hu_wit := (lc_a_step_one_iff_forall_witness α β u b).mp hone
+  have huv_lt : u < v := huv.1
+  have huv_le : u + 1 ≤ v + 1 := by omega
+  obtain ⟨l', hl', hll'⟩ :=
+    lc_witness_move_a_down_of_le α β (u + 1) (v + 1) b l huv_le hl
+  refine ⟨huv.1, ?_⟩
+  exact lt_of_lt_of_le (lt_of_lt_of_le hαv hll') (hu_wit l' hl')
+
+/-- Right contraction forms a reduced product with the inverse of its left
+factor. *Corollary 4.15, part 1/2.* -/
+theorem reducedProduct_of_right_contract (α β : AspPerm) :
+    AspPerm.ReducedProduct α⁻¹ (α ▹ β) := by
+  -- Proof written by Codex.
+  have hred : AspPerm.ReducedProduct (β⁻¹ ◃ α⁻¹) α := by
+    simpa only [inv_inv] using reducedProduct_of_left_contract β⁻¹ α⁻¹
+  have hswap :=
+    (AspPerm.reducedProduct_inv_swap (β⁻¹ ◃ α⁻¹) α).mp hred
+  simpa only [AspPerm.inverse_left_contract, inv_inv] using hswap
+
+/-- Right contraction is below its right factor in left weak order.
+*Corollary 4.15, part 2/2.* -/
+theorem lel_of_right_contract (α β : AspPerm) : α ▹ β ≤L β := by
+  -- Proof written by Codex.
+  have h := AspPerm.le_weak_L_of_R (ler_of_left_contract β⁻¹ α⁻¹)
+  simpa only [AspPerm.inverse_left_contract, inv_inv] using h
 
 end Submodular

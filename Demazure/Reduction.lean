@@ -1,13 +1,13 @@
 import Demazure.ReducedProducts
 
-/-! ### Main theorems: greediness and the reduction theorem
+/-! ### Reduction theorems
 
 This file formalizes the main theorems from the introduction of the paper:
 Theorem B (`thm:starGreedy`) characterizes `α ⋆ β` as a greedy maximum, and
 Theorem C (`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of
 reduced products. -/
 
-namespace MainTheorems
+namespace Reduction
 
 open AspPerm
 
@@ -19,27 +19,17 @@ product with `β` (ordinary or Demazure) returns `α ⋆ β`. -/
 lemma star_left_witness (α β : AspPerm) :
     let α₁ := (α ⋆ β) * β⁻¹
     α₁ * β = α ⋆ β ∧ α₁ ⋆ β = α ⋆ β ∧ α₁ ≤χ α := by
-  -- Proof written by Claude Opus 4.7.
   set α₁ := (α ⋆ β) * β⁻¹ with hα₁_def
   have h_mul : α₁ * β = α ⋆ β := by
     rw [hα₁_def, mul_assoc, inv_mul_cancel, mul_one]
-  have hβL : β ≤L α ⋆ β := Submodular.lel_of_dprod α β
-  have h_lc_eq : (α ⋆ β) ◃ β⁻¹ = α₁ := by
-    rw [hα₁_def]
-    apply (ReducedProducts.left_contract_eq_mul_iff (α ⋆ β) β⁻¹).mpr
-    simpa using hβL
-  have h_alpha1_le : α₁ ≤ α := by
-    rw [← h_lc_eq]
+  have rf : ReducedFact α₁ β (α ⋆ β) :=
+    ReducedFact.of_mul_lel h_mul (Submodular.lel_of_dprod α β)
+  suffices α₁ ≤χ α by exact ⟨h_mul, rf.star_eq, this⟩
+  constructor
+  · rw [hα₁_def, ← rf.lc_eq]
     exact (ge_star_iff_ge_left_contract α β (α ⋆ β)).mpr (le_refl _)
-  have h_alpha1_star_ge : α₁ ⋆ β ≥ α ⋆ β := by
-    apply (ge_star_iff_ge_left_contract α₁ β (α ⋆ β)).mp
-    rw [h_lc_eq]
-  have h_star : α₁ ⋆ β = α ⋆ β :=
-    le_antisymm (star_mono h_alpha1_le (le_refl β)) h_alpha1_star_ge
-  have h_chi : α₁.χ = α.χ := by
-    rw [hα₁_def, AspPerm.chi_mul, AspPerm.chi_star, AspPerm.chi_dual]
-    ring
-  exact ⟨h_mul, h_star, h_alpha1_le, h_chi⟩
+  · rw [hα₁_def, AspPerm.chi_mul, AspPerm.chi_star, AspPerm.chi_dual]
+    rw [add_assoc, add_neg_cancel, add_zero]
 
 /-- Multiplying `α ⋆ β` on the left by `α⁻¹` recovers a permutation that lies
 weakly below `β` in Bruhat order, has the same shift as `β`, and whose
@@ -63,7 +53,6 @@ product of the original factors. This is the ASP form of the bound used in
 Equation \eqref{eq:astarbBound}. -/
 lemma mul_le_star_of_le {α₁ α₂ β₁ β₂ : AspPerm}
     (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ * β₁ ≤ α₂ ⋆ β₂ := by
-  -- Proof written by GPT 5.5.
   exact le_trans (ReducedProducts.mul_le_star α₁ β₁) (star_mono hα hβ)
 
 /-! ### Theorem B: greedy characterization of `⋆` -/
@@ -119,36 +108,16 @@ theorem reduce_witness (α β γ : AspPerm) (h : α ⋆ β ≥ γ) :
     let α₁ := γ ◃ β⁻¹
     let β₁ := α₁⁻¹ ▹ γ
     α₁ * β₁ = γ ∧ α₁ ⋆ β₁ = γ ∧ α₁ ≤ α ∧ β₁ ≤ β := by
-  -- Proof written by Claude Opus 4.7.
   set α₁ := γ ◃ β⁻¹
-  set β₁ := α₁⁻¹ ▹ γ with hβ₁_def
-  -- Universal property of `◃`: `α₁ ≤ α` since `α ⋆ β ≥ γ`.
-  have h_alpha1_le : α₁ ≤ α := (ge_star_iff_ge_left_contract α β γ).mpr h
-  -- Universal property again: `α₁ ⋆ β ≥ γ`.
+  have α₁_le : α₁ ≤ α := (ge_star_iff_ge_left_contract α β γ).mpr h
   have h_alpha1_star_ge : α₁ ⋆ β ≥ γ :=
     (ge_star_iff_ge_left_contract α₁ β γ).mp (le_refl _)
-  -- Universal property of `▹`: `β₁ ≤ β`.
-  have h_beta1_le : β₁ ≤ β :=
+  have : α₁ ≤R γ := Submodular.ler_of_left_contract γ β⁻¹
+  set β₁ := α₁⁻¹ ▹ γ with hβ₁_def
+  have β₁_le : β₁ ≤ β :=
     (ge_star_iff_ge_right_contract α₁ β γ).mpr h_alpha1_star_ge
-  -- `α₁ ≤R γ` (Lemma 4.14 / Cor 4.15), so by Lemma 5.2 right contraction
-  -- collapses to the ordinary product `α₁⁻¹ * γ`.
-  have h_alpha1_R : α₁ ≤R γ := Submodular.ler_of_left_contract γ β⁻¹
-  have h_rc_eq : β₁ = α₁⁻¹ * γ := by
-    rw [hβ₁_def]
-    apply (ReducedProducts.right_contract_eq_mul_iff α₁⁻¹ γ).mpr
-    simpa using h_alpha1_R
-  -- Ordinary product collapses.
-  have h_mul : α₁ * β₁ = γ := by
-    rw [h_rc_eq, ← mul_assoc, mul_inv_cancel, one_mul]
-  -- The pair `(α₁, β₁)` is reduced (Lemma 2.9), so `⋆` agrees with `*`.
-  have h_reduced : AspPerm.ReducedProduct α₁ β₁ := by
-    apply (AspPerm.reducedProduct_iff_le_weak_R_mul α₁ β₁).mpr
-    rw [h_mul]
-    exact h_alpha1_R
-  have h_star_eq_mul : α₁ ⋆ β₁ = α₁ * β₁ :=
-    (ReducedProducts.star_eq_mul_iff_reducedProduct α₁ β₁).mpr h_reduced
-  have h_star : α₁ ⋆ β₁ = γ := h_star_eq_mul.trans h_mul
-  exact ⟨h_mul, h_star, h_alpha1_le, h_beta1_le⟩
+  have rf := ReducedFact.of_ler_lc this hβ₁_def
+  exact ⟨rf.mul_eq, rf.star_eq, α₁_le, β₁_le⟩
 
 /-- *Theorem C (`thm:reduce`)*, second paragraph, including the shift
 identities. Under the additional hypothesis $\chi_\alpha + \chi_\beta =
@@ -228,27 +197,22 @@ lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
 $\{\alpha_1 \beta^{-1}: \alpha_1 \geq_\chi \alpha\}$. -/
 theorem tllStingy_alpha (α β : AspPerm) :
     IsLeast { α₁ * β⁻¹ | (α₁ : AspPerm) (_ : α ≤χ α₁) } (α ◃ β⁻¹) := by
-  -- Proof written by Claude Opus 4.7.
+  -- Proof written by GPT 5.5.
   -- Membership: take α₁ = (α ◃ β⁻¹) * β.
   set α₁ := (α ◃ β⁻¹) * β with hα₁_def
-  -- The pair `(α ◃ β⁻¹, β)` is reduced (Lemma 4.14 applied to β⁻¹).
   have h_red : AspPerm.ReducedProduct (α ◃ β⁻¹) β := by
     have := Submodular.reducedProduct_of_left_contract α β⁻¹
     simpa using this
-  have h_star_eq_mul : (α ◃ β⁻¹) ⋆ β = (α ◃ β⁻¹) * β :=
-    (ReducedProducts.star_eq_mul_iff_reducedProduct _ _).mpr h_red
-  have h_alpha1_star : α₁ = (α ◃ β⁻¹) ⋆ β := h_star_eq_mul.symm
-  -- The universal property of `◃` gives `α₁ ≥ α`.
+  have rf : ReducedFact (α ◃ β⁻¹) β α₁ :=
+    ReducedFact.of_mul_reduced hα₁_def.symm h_red
   have h_alpha_le_alpha1 : α ≤ α₁ := by
-    rw [h_alpha1_star]
+    rw [← rf.star_eq]
     exact (ge_star_iff_ge_left_contract (α ◃ β⁻¹) β α).mp (le_refl _)
-  -- Shift: χ_{α₁} = χ_{α ◃ β⁻¹} + χ_β = (χ_α - χ_β) + χ_β = χ_α.
   have h_chi : α.χ = α₁.χ := by
-    rw [hα₁_def, AspPerm.chi_mul, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    rw [← rf.mul_eq, AspPerm.chi_mul, AspPerm.chi_left_contract, AspPerm.chi_dual]
     ring
-  -- And α₁ * β⁻¹ = α ◃ β⁻¹ by cancellation.
   have h_α₁β_eq : α₁ * β⁻¹ = α ◃ β⁻¹ := by
-    rw [hα₁_def, mul_assoc, mul_inv_cancel, mul_one]
+    rw [← rf.mul_eq, mul_assoc, mul_inv_cancel, mul_one]
   refine ⟨⟨α₁, ⟨h_alpha_le_alpha1, h_chi⟩, h_α₁β_eq⟩, ?_⟩
   -- Lower bound: any candidate is ≥ α ◃ β⁻¹.
   rintro τ ⟨α₂, hα₂_le, rfl⟩
@@ -260,36 +224,26 @@ theorem tllStingy_alpha (α β : AspPerm) :
 $\{\alpha \beta_1^{-1}: \beta_1 \leq_\chi \beta\}$. -/
 theorem tllStingy_beta (α β : AspPerm) :
     IsLeast { α * β₁⁻¹ | (β₁ : AspPerm) (_ : β₁ ≤χ β) } (α ◃ β⁻¹) := by
-  -- Proof written by Claude Opus 4.7.
-  set β₁ := (β ▹ α⁻¹) * α with hβ₁_def
-  -- Useful identity from `inverse_left_contract`.
-  have h_lc_inv : (α ◃ β⁻¹)⁻¹ = β ▹ α⁻¹ := by
-    simpa using AspPerm.inverse_left_contract α β⁻¹
-  -- `(α ◃ β⁻¹) ≤R α` (Lemma 4.14), so `(β ▹ α⁻¹)⁻¹ ≤R α`, i.e. Lemma 5.2
-  -- collapses `(β ▹ α⁻¹) ▹ α` to the ordinary product `β₁`.
-  have h_le_R : (β ▹ α⁻¹)⁻¹ ≤R α := by
-    rw [← h_lc_inv, inv_inv]
+  -- Proof written by GPT 5.5.
+  set δ := α ◃ β⁻¹ with hδ_def
+  set β₁ := δ⁻¹ ▹ α with hβ₁_def
+  have h_ler : δ ≤R α := by
+    rw [hδ_def]
     exact Submodular.ler_of_left_contract α β⁻¹
-  have h_rc_eq : (β ▹ α⁻¹) ▹ α = β₁ := by
-    rw [hβ₁_def]
-    exact (ReducedProducts.right_contract_eq_mul_iff (β ▹ α⁻¹) α).mpr h_le_R
-  -- `α * β₁⁻¹ = α * α⁻¹ * (α ◃ β⁻¹) = α ◃ β⁻¹`.
-  have h_mul : α * β₁⁻¹ = α ◃ β⁻¹ := by
-    rw [hβ₁_def, mul_inv_rev, ← h_lc_inv, inv_inv, ← mul_assoc,
-      mul_inv_cancel, one_mul]
-  -- Shift: $\chi_{\beta_1} = (\chi_\beta + \chi_{\alpha^{-1}}) + \chi_\alpha = \chi_\beta$.
+  have rf : ReducedFact δ β₁ α :=
+    ReducedFact.of_ler_lc h_ler hβ₁_def.symm
+  have h_mul : α * β₁⁻¹ = δ := by
+    rw [← rf.mul_eq, mul_assoc, mul_inv_cancel, mul_one]
   have h_chi : β₁.χ = β.χ := by
-    rw [hβ₁_def, AspPerm.chi_mul, AspPerm.chi_right_contract, AspPerm.chi_dual]
+    rw [hβ₁_def, AspPerm.chi_right_contract, AspPerm.chi_dual,
+      hδ_def, AspPerm.chi_left_contract, AspPerm.chi_dual]
     ring
-  -- `β₁ ≤ β` via the universal property of `▹` applied to the witness `β`.
   have h_β1_le : β₁ ≤ β := by
-    rw [← h_rc_eq]
-    have hstar_ge : (α ◃ β⁻¹) ⋆ β ≥ α :=
-      (ge_star_iff_ge_left_contract (α ◃ β⁻¹) β α).mp (le_refl _)
-    have hβ_ge_rc : β ≥ (α ◃ β⁻¹)⁻¹ ▹ α :=
-      (ge_star_iff_ge_right_contract (α ◃ β⁻¹) β α).mpr hstar_ge
-    rwa [h_lc_inv] at hβ_ge_rc
-  refine ⟨⟨β₁, ⟨h_β1_le, h_chi⟩, h_mul⟩, ?_⟩
+    rw [hβ₁_def]
+    apply (ge_star_iff_ge_right_contract δ β α).mpr
+    apply (ge_star_iff_ge_left_contract δ β α).mp
+    rw [hδ_def]
+  refine ⟨⟨β₁, ⟨h_β1_le, h_chi⟩, by simpa [hδ_def] using h_mul⟩, ?_⟩
   -- Lower bound.
   rintro τ ⟨β₂, hβ₂_le, rfl⟩
   exact left_contract_inv_le_mul (le_refl α) hβ₂_le.1
@@ -363,4 +317,4 @@ theorem reduceList :
       · simp only [DProd_cons, hβs_star, h_star]
       · simp only [OrdProd_cons, hβs_mul, h_mul]
 
-end MainTheorems
+end Reduction

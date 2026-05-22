@@ -507,6 +507,120 @@ theorem right_contract_eq_mul_iff (α β : AspPerm) :
   · intro hweak
     exact AspPerm.le_weak_L_of_R hweak
 
+/-! ### Reduced Facts -/
+
+/-- A reduced factorization of `γ` into the ordinary product of `α` and `β`.
+
+This bundles the ordinary-product equality with reducedness so that the other
+equivalent descriptions from Section 5 can be recovered from one object. -/
+structure ReducedFact (α β γ : AspPerm) where
+  reduced : AspPerm.ReducedProduct α β
+  mul_eq : α * β = γ
+
+namespace ReducedFact
+
+/-- Construct a reduced fact from its defining two properties. -/
+def of_mul_reduced {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_reduced : AspPerm.ReducedProduct α β) : ReducedFact α β γ := by
+  exact ReducedFact.mk h_reduced h_mul
+
+/-- Construct a reduced fact when ordinary and Demazure multiplication have
+the same value. -/
+def of_mul_star {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
+  apply of_mul_reduced h_mul
+  rw [← star_eq_mul_iff_reducedProduct α β, h_star, h_mul]
+
+/-- Construct a reduced fact from an ordinary product and the right weak-order
+inequality for its left factor. -/
+def of_mul_le_weak_R {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_weak : α ≤R γ) : ReducedFact α β γ := by
+  apply of_mul_reduced h_mul
+  rwa [AspPerm.reducedProduct_iff_le_weak_R_mul, h_mul]
+
+/-- Construct a reduced fact from an ordinary product and the left weak-order
+inequality for its right factor. -/
+def of_mul_le_weak_L {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_weak : β ≤L γ) : ReducedFact α β γ := by
+  apply of_mul_reduced h_mul
+  rwa [AspPerm.reducedProduct_iff_le_weak_L_mul, h_mul]
+
+/-- Construct a reduced fact when the right contraction by the inverse left
+factor collapses to ordinary multiplication. -/
+def of_mul_right_contract {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_contract : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
+  apply of_mul_reduced h_mul
+  rw [right_contract_eq_mul_iff, inv_inv, ← h_mul] at h_contract
+  rwa [AspPerm.reducedProduct_iff_le_weak_R_mul]
+
+/-- Construct a reduced fact when the left contraction by the inverse right
+factor collapses to ordinary multiplication. -/
+def of_mul_left_contract {α β γ : AspPerm} (h_mul : α * β = γ)
+    (h_contract : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
+  apply of_mul_reduced h_mul
+  rw [left_contract_eq_mul_iff, inv_inv, ← h_mul] at h_contract
+  rwa [AspPerm.reducedProduct_iff_le_weak_L_mul]
+
+def of_reduced_star {α β γ : AspPerm}
+  (h_red : α.ReducedProduct β) (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
+  apply of_mul_reduced _ h_red
+  rwa [← (star_eq_mul_iff_reducedProduct α β).mpr h_red]
+
+def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ β⁻¹ = α) : ReducedFact α β γ := by
+  have eq_α : γ * β⁻¹ = α := by
+    have := left_contract_eq_mul_iff γ β⁻¹
+    rw [inv_inv, h_lc] at this
+    rw [this.mpr h_lel]
+  have h_mul : α * β = γ := by
+    rw [← eq_α, mul_assoc, inv_mul_cancel, mul_one]
+  rw [← h_mul] at h_lel
+  exact ReducedFact.mk ((α.reducedProduct_iff_le_weak_L_mul β).mpr h_lel) h_mul
+
+def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
+  have eq_β : α⁻¹ * γ = β := by
+    have := right_contract_eq_mul_iff α⁻¹ γ
+    rw [inv_inv, h_rc] at this
+    rw [this.mpr h_ler]
+  have h_mul : α * β = γ := by
+    rw [← eq_β, ← mul_assoc, mul_inv_cancel, one_mul]
+  rw [← h_mul] at h_ler
+  exact ReducedFact.mk ((α.reducedProduct_iff_le_weak_R_mul β).mpr h_ler) h_mul
+
+/-- The Demazure product in a reduced fact has the same value as its ordinary
+product. -/
+lemma star_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α ⋆ β = γ := by
+  rw [(star_eq_mul_iff_reducedProduct α β).mpr h.reduced, h.mul_eq]
+
+/-- The left factor of a reduced fact is below the product in right weak
+order. -/
+lemma ler {α β γ : AspPerm} (h : ReducedFact α β γ) : α ≤R γ := by
+  convert (AspPerm.reducedProduct_iff_le_weak_R_mul α β).mp h.reduced
+  rw [h.mul_eq]
+
+/-- The right factor of a reduced fact is below the product in left weak
+order. -/
+lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ := by
+  convert (AspPerm.reducedProduct_iff_le_weak_L_mul α β).mp h.reduced
+  rw [h.mul_eq]
+
+/-- Right contraction by the inverse left factor collapses to ordinary
+multiplication in a reduced fact. -/
+lemma rc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
+  apply (right_contract_eq_mul_iff α⁻¹ γ).mpr
+  rw [inv_inv]
+  exact h.ler
+
+/-- Left contraction by the inverse right factor collapses to ordinary
+multiplication in a reduced fact. -/
+lemma lc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : γ ◃ β⁻¹ = γ * β⁻¹ := by
+  apply (left_contract_eq_mul_iff γ β⁻¹).mpr
+  rw [inv_inv]
+  exact h.lel
+
+end ReducedFact
+
+/-! ### Weak order implies strong order -/
+
 /-- Left weak order implies Bruhat order when the shifts are weakly ordered.
 *Corollary 5.3 (`cor:weakStrong`), part 1/2.* -/
 theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}

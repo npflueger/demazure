@@ -195,7 +195,7 @@ lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta^{-1}: \alpha_1 \geq_\chi \alpha\}$. -/
-theorem tllStingy_alpha (α β : AspPerm) :
+theorem left_contract_stingy_alpha (α β : AspPerm) :
     IsLeast { α₁ * β⁻¹ | (α₁ : AspPerm) (_ : α ≤χ α₁) } (α ◃ β⁻¹) := by
   -- Proof written by GPT 5.5.
   -- Membership: take α₁ = (α ◃ β⁻¹) * β.
@@ -222,7 +222,7 @@ theorem tllStingy_alpha (α β : AspPerm) :
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha \beta_1^{-1}: \beta_1 \leq_\chi \beta\}$. -/
-theorem tllStingy_beta (α β : AspPerm) :
+theorem left_contract_stingy_beta (α β : AspPerm) :
     IsLeast { α * β₁⁻¹ | (β₁ : AspPerm) (_ : β₁ ≤χ β) } (α ◃ β⁻¹) := by
   -- Proof written by GPT 5.5.
   set δ := α ◃ β⁻¹ with hδ_def
@@ -252,12 +252,12 @@ theorem tllStingy_beta (α β : AspPerm) :
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta_1^{-1}: \alpha_1 \geq \alpha,\, \beta_1 \leq \beta\}$. -/
-theorem tllStingy (α β : AspPerm) :
+theorem left_contract_stingy (α β : AspPerm) :
     IsLeast
       { α₁ * β₁⁻¹ | (α₁ : AspPerm) (_ : α ≤ α₁) (β₁ : AspPerm) (_ : β₁ ≤ β) }
       (α ◃ β⁻¹) := by
   -- Proof written by Claude Opus 4.7.
-  obtain ⟨⟨α₁, ⟨hα₁_le, _⟩, h_α₁β_eq⟩, _⟩ := tllStingy_alpha α β
+  obtain ⟨⟨α₁, ⟨hα₁_le, _⟩, h_α₁β_eq⟩, _⟩ := left_contract_stingy_alpha α β
   refine ⟨⟨α₁, hα₁_le, β, le_refl β, h_α₁β_eq⟩, ?_⟩
   rintro τ ⟨α₂, hα₂_ge, β₂, hβ₂_le, rfl⟩
   exact left_contract_inv_le_mul hα₂_ge hβ₂_le

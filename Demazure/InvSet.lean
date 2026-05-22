@@ -451,8 +451,7 @@ lemma contiguity_helper (m_lt_n : m < n) :
       simp only [mem_AspSet] at km_nI nk_nI
       rw [post_lt_swap_iff_mem asps m_le_k, post_lt_iff_not_mem asps k_lt_n]
       simp [m_le_k, k_lt_n, km_nI, nk_nI]
-    ·
-      have km_nI : ⟨k, m⟩ ∉ asps := asps.not_mem_of_ge m_le_k
+    · have km_nI : ⟨k, m⟩ ∉ asps := asps.not_mem_of_ge m_le_k
       simp only [mem_AspSet] at km_nI
       rw [post_lt_swap_iff_mem asps m_le_k, post_lt_swap_iff_mem asps n_le_k]
       simp [not_lt_of_ge n_le_k, km_nI, and_comm]

@@ -70,6 +70,45 @@ lemma post_lt_swap_iff_mem (asps : AspSet) {m n : ℤ} (m_le_n : m ≤ n) :
   · simp [post_lt, m_lt_n, not_lt_of_gt m_lt_n]
   · exact iff_of_false (not_post_lt_self asps m) (not_mem_self asps m)
 
+lemma post_lt_trans (asps : AspSet) {l m n : ℤ} (hlm : asps.post_lt l m) (hmn : asps.post_lt m n) :
+  asps.post_lt l n := by
+  rcases hlm with (⟨l_lt_m, lm_nI⟩ | ⟨m_lt_l, ml_I⟩)
+  · rcases hmn with (⟨m_lt_n, mn_nI⟩ | ⟨n_lt_m, nm_I⟩)
+    · left
+      refine ⟨lt_trans l_lt_m m_lt_n, ?_⟩
+      apply asps.coclosed l m n <;> assumption
+    · by_cases hl : l < n
+      · left
+        refine ⟨hl, ?_⟩
+        contrapose! lm_nI with hln
+        apply asps.closed l n m <;> assumption
+      · right
+        have n_lt_l : n < l := by
+          refine lt_of_le_of_ne (le_of_not_gt hl) ?_
+          intro n_eq_l
+          exact lm_nI (by simpa [n_eq_l] using nm_I)
+        refine ⟨n_lt_l, ?_⟩
+        contrapose! nm_I with nl_nI
+        apply asps.coclosed n l m <;> assumption
+  · rcases hmn with (⟨m_lt_n, mn_nI⟩ | ⟨n_lt_m, nm_I⟩)
+    · by_cases hl : l < n
+      · left
+        refine ⟨hl, ?_⟩
+        contrapose! mn_nI with ln_I
+        apply asps.closed m l n <;> assumption
+      · right
+        have n_lt_l : n < l := by
+          refine lt_of_le_of_ne (le_of_not_gt hl) ?_
+          intro n_eq_l
+          exact mn_nI (by simpa [n_eq_l] using ml_I)
+        refine ⟨n_lt_l, ?_⟩
+        contrapose! ml_I with nl_nI
+        apply asps.coclosed m n l <;> assumption
+    · right
+      refine ⟨lt_trans n_lt_m m_lt_l, ?_⟩
+      apply asps.closed n m l <;> assumption
+
+
 lemma AspSet_InvSet_of_AspPerm (τ : AspPerm) : AspSet_prop (inv_set τ) := by
   constructor
   · intro u v uv_inv
@@ -396,12 +435,6 @@ lemma not_post_lt_iff_σ_le :
 lemma mem_iff_lt (m_le_n : m ≤ n) : ⟨m, n⟩ ∈ asps ↔ asps.σ χ n < asps.σ χ m := by
   rw [← post_lt_iff_σ_lt asps n m χ]
   exact (post_lt_swap_iff_mem asps m_le_n).symm
-
-theorem post_lt_trans (asps : AspSet) {l m n : ℤ}
-    (hlm : asps.post_lt l m) (hmn : asps.post_lt m n) : asps.post_lt l n := by
-  rw [post_lt_iff_σ_lt asps l n 0]
-  exact lt_trans ((post_lt_iff_σ_lt asps l m 0).mp hlm)
-    ((post_lt_iff_σ_lt asps m n 0).mp hmn)
 
 theorem post_lt_trichotomous (asps : AspSet) : Std.Trichotomous asps.post_lt := by
   -- Proof written by Codex.

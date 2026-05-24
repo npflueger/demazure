@@ -1,4 +1,5 @@
 import Demazure.AspPerm
+import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Order.Interval.Set.Infinite
 
 /-- The axioms characterizing inversion sets of ASP permutations: directedness,
@@ -218,295 +219,255 @@ section σ_diff
 variable (asps : AspSet) (m n χ : ℤ)
 noncomputable abbrev σ := asps.recon χ
 
-noncomputable abbrev lf_pos : Finset ℤ := asps.inset m \ asps.inset n
-@[simp] lemma mem_lf_pos (x : ℤ) : x ∈ lf_pos asps m n
-    ↔ x < m ∧ ⟨x, m⟩ ∈ asps ∧ ⟨x, n⟩ ∉ asps := by
-  simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq, mem_AspSet,
-    iff_and_self, and_imp]
-  intro hm hn
-  exact asps.directed x m hm
+private noncomputable def oneIf (P : Prop) : ℤ :=
+  haveI := Classical.propDecidable P
+  if P then 1 else 0
 
-noncomputable abbrev md_pos : Finset ℤ := (Finset.Ico m n) \ (asps.outset m ∪ asps.inset n)
-@[simp] lemma mem_md_pos (x : ℤ) : x ∈ md_pos asps m n
-    ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∉ asps ∧ ⟨x, n⟩ ∉ asps := by
-  simp only [Finset.mem_sdiff, Finset.mem_Ico, Finset.mem_union, Set.Finite.mem_toFinset,
-    Set.mem_setOf_eq, not_or, mem_AspSet]
-  constructor
-  · intro h
-    obtain ⟨x_ge_m, x_lt_n⟩ := h.1
-    simp [x_ge_m, x_lt_n, h]
-  · intro h
-    obtain ⟨x_ge_m, x_lt_n, x_outm, x_inn⟩ := h
-    simp [x_ge_m, x_lt_n, x_outm, x_inn]
-
-noncomputable abbrev rt_pos : Finset ℤ := asps.outset n \ asps.outset m
-@[simp] lemma mem_rt_pos (x : ℤ) : x ∈ rt_pos asps m n
-    ↔ x ≥ n ∧ ⟨m,x⟩ ∉ asps ∧ ⟨n,x⟩ ∈ asps := by
-  simp only [Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq, ge_iff_le,
-    mem_AspSet]
-  constructor
-  · intro h
-    simp only [h, not_false_eq_true, and_self, and_true]
-    exact le_of_lt (asps.directed n x h.1)
-  · intro h
-    simp [h]
-
-noncomputable abbrev lf_neg : Finset ℤ := (asps.inset n \ asps.inset m).filter (· < m)
-@[simp] lemma mem_lf_neg (x : ℤ) : x ∈ lf_neg asps m n
-    ↔ x < m ∧ ⟨x, m⟩ ∉ asps ∧ ⟨x, n⟩ ∈ asps := by
-  simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
-    mem_AspSet]
-  constructor <;> (intro h; simp [h])
-
-noncomputable abbrev md_neg : Finset ℤ := (Finset.Ico m n) ∩ (asps.outset m ∩ asps.inset n)
-@[simp] lemma mem_md_neg (x : ℤ) : x ∈ md_neg asps m n
-    ↔ m ≤ x ∧ x < n ∧ ⟨m, x⟩ ∈ asps ∧ ⟨x, n⟩ ∈ asps := by
-  simp only [Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
-    mem_AspSet]
-  constructor <;> (intro h; simp [h])
-
-noncomputable abbrev rt_neg : Finset ℤ := (asps.outset m \ asps.outset n).filter (· ≥  n)
-@[simp] lemma mem_rt_neg (x : ℤ) : x ∈ rt_neg asps m n
-    ↔ x ≥ n ∧ ⟨m,x⟩ ∈ asps ∧ ⟨n,x⟩ ∉ asps := by
-  simp only [Finset.mem_filter, Finset.mem_sdiff, Set.Finite.mem_toFinset, Set.mem_setOf_eq,
-    ge_iff_le, mem_AspSet]
-  constructor <;> (intro h; simp [h])
-
-lemma post_Ico_eq_pos_regions (m_le_n : m ≤ n) :
-    asps.post_Ico m n = asps.lf_pos m n ∪ (asps.md_pos m n ∪ asps.rt_pos m n) := by
+private lemma oneIf_congr {P Q : Prop} (h : P ↔ Q) :
+    oneIf P = oneIf Q := by
   -- Proof written by GPT 5.5.
-  ext l
-  simp only [mem_post_Ico, Finset.mem_union, mem_lf_pos, mem_md_pos, mem_rt_pos]
-  rcases lt_or_ge l m with l_lt_m | m_le_l
-  · have l_lt_n : l < n := lt_of_lt_of_le l_lt_m m_le_n
-    rw [post_lt_iff_not_mem asps l_lt_n, post_lt_iff_not_mem asps l_lt_m]
-    simp [l_lt_m, l_lt_n, not_le_of_gt l_lt_m, not_le_of_gt l_lt_n, ge_iff_le,
-      and_comm]
-  · rcases lt_or_ge l n with l_lt_n | n_le_l
-    · rw [post_lt_iff_not_mem asps l_lt_n, post_lt_swap_iff_mem asps m_le_l]
-      simp [m_le_l, l_lt_n, not_lt_of_ge m_le_l, not_le_of_gt l_lt_n, ge_iff_le,
-        and_comm]
-    · have m_le_l' : m ≤ l := le_trans m_le_n n_le_l
-      rw [post_lt_swap_iff_mem asps n_le_l, post_lt_swap_iff_mem asps m_le_l']
-      simp [m_le_l, not_lt_of_ge m_le_l, not_lt_of_ge n_le_l, ge_iff_le, n_le_l,
-        and_comm]
+  classical
+  by_cases hP : P
+  · have hQ : Q := h.mp hP
+    simp [oneIf, hP, hQ]
+  · have hQ : ¬ Q := fun hQ => hP (h.mpr hQ)
+    simp [oneIf, hP, hQ]
 
-lemma post_Ico_swap_eq_neg_regions (m_le_n : m ≤ n) :
-    asps.post_Ico n m = asps.lf_neg m n ∪ (asps.md_neg m n ∪ asps.rt_neg m n) := by
+private lemma oneIf_of_true {P : Prop} (hP : P) : oneIf P = 1 := by
   -- Proof written by GPT 5.5.
-  ext l
-  simp only [mem_post_Ico, Finset.mem_union, mem_lf_neg, mem_md_neg, mem_rt_neg]
-  rcases lt_or_ge l m with l_lt_m | m_le_l
-  · have l_lt_n : l < n := lt_of_lt_of_le l_lt_m m_le_n
-    rw [post_lt_iff_not_mem asps l_lt_m, post_lt_iff_not_mem asps l_lt_n]
-    simp [l_lt_m, l_lt_n, not_le_of_gt l_lt_m, not_le_of_gt l_lt_n, ge_iff_le]
-  · rcases lt_or_ge l n with l_lt_n | n_le_l
-    · rw [post_lt_swap_iff_mem asps m_le_l, post_lt_iff_not_mem asps l_lt_n]
-      simp [m_le_l, l_lt_n, not_lt_of_ge m_le_l, not_le_of_gt l_lt_n, ge_iff_le]
-    · have m_le_l' : m ≤ l := le_trans m_le_n n_le_l
-      rw [post_lt_swap_iff_mem asps m_le_l', post_lt_swap_iff_mem asps n_le_l]
-      simp [m_le_l, not_lt_of_ge m_le_l, not_lt_of_ge n_le_l, ge_iff_le, n_le_l,
-        and_comm]
+  classical
+  simp [oneIf, hP]
 
-lemma σ_diff (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
-  ((lf_pos asps m n).card + (md_pos asps m n).card + (rt_pos asps m n).card)
-  - ((lf_neg asps m n).card + (md_neg asps m n).card + (rt_neg asps m n).card) := by
-  have : asps.σ χ n - asps.σ χ m =
-    (Finset.Ico m n).card
-    + ( (asps.outset n) \ (asps.outset m)).card  - ( (asps.outset m) \ (asps.outset n)).card
-    + ( (asps.inset m) \ (asps.inset n)).card - ( (asps.inset n) \ (asps.inset m)).card := by
-    unfold σ recon
-    have h1 := Utils.sub_card_eq_sub_card_diff (asps.outset n) (asps.outset m)
-    have h2 := Utils.sub_card_eq_sub_card_diff (asps.inset m) (asps.inset n)
-    have h3 : (Finset.Ico m n).card = n-m := by
-      simp [m_le_n]
-    linarith [h1,h2,h3]
-  rw [this]
-  have rp : (asps.outset n \ asps.outset m) = rt_pos asps m n := rfl
-  have lp : (asps.inset m \ asps.inset n) = lf_pos asps m n := rfl
-  have rn :
-    (asps.outset m \ asps.outset n).card
-    = ( (Finset.Ico m n) ∩ (asps.outset m) ).card + (rt_neg asps m n).card := by
-    let A := (Finset.Ico m n) ∩ (asps.outset m)
-    let B := rt_neg asps m n
-    have : Disjoint A B := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      unfold A at ha; simp at ha
-      unfold B at hb; simp at hb
-      omega
-    rw [← Finset.card_union_of_disjoint this]
-    suffices (A ∪ B) = (asps.outset m \ asps.outset n) by
-      rw [this]
-    ext x
-    unfold A B
-    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
-      Set.mem_setOf_eq, Finset.mem_filter, Finset.mem_sdiff, ge_iff_le]
-    constructor
-    · intro hx
-      rcases hx with (hA | hB)
-      · simp only [hA, true_and]
-        intro h
-        have : n < x := asps.directed n x h
-        omega
-      · exact hB.1
-    · intro h
-      simp only [le_of_lt (asps.directed m x h.1), true_and, h, and_true, not_false_eq_true,
-        and_self]
-      exact lt_or_ge x n
-  have ln : (asps.inset n \ asps.inset m).card
-    = ( (Finset.Ico m n) ∩ (asps.inset n) ).card + (lf_neg asps m n).card := by
-    let A := (Finset.Ico m n) ∩ (asps.inset n)
-    let B := lf_neg asps m n
-    have : Disjoint A B := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      unfold A at ha; simp at ha
-      unfold B at hb; simp at hb
-      intro a_eq_b
-      omega
-    have := Finset.card_union_of_disjoint this
-    rw [← this]
-    suffices (A ∪ B) = (asps.inset n \ asps.inset m) by
-      rw [this]
-    ext x
-    unfold A B
-    simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
-      Set.mem_setOf_eq, Finset.mem_filter, Finset.mem_sdiff]
-    constructor
-    · intro hx
-      rcases hx with (hA | hB)
-      · suffices ⟨x, m⟩ ∉ asps by tauto
-        intro xm_I
-        apply asps.directed x m at xm_I
-        omega
-      · exact hB.1
-    · intro h
-      have x_lt_n : x < n := asps.directed x n h.1
-      simp only [x_lt_n, and_true, h, not_false_eq_true, and_self, true_and]
-      exact le_or_gt m x
-  suffices ((Finset.Ico m n).card : ℤ)
-    - ↑(md_pos asps m n).card
-    = ( (Finset.Ico m n) ∩ (asps.outset m) ).card
-    + ( (Finset.Ico m n) ∩ (asps.inset n) ).card
-    - ↑(md_neg asps m n).card
-    by
-    rw [rp, lp, rn, ln]
-    simp only [Nat.cast_add]
-    linarith [this]
-  unfold md_pos md_neg
-  let U := (Finset.Ico m n)
-  let A := U ∩ asps.outset m
-  let B := U ∩ asps.inset n
-  have h_diff : (U \ (A ∪ B)) = (Finset.Ico m n \ (asps.outset m ∪ asps.inset n)) := by
-    ext x
-    unfold A B U
-    simp; tauto
-  have h_inter : (A ∩ B) = (Finset.Ico m n ∩ (asps.outset m ∩ asps.inset n)) := by
-    ext x
-    unfold A B U; simp; tauto
-  suffices (U.card : ℤ) = (U \ (A ∪ B)).card + A.card + B.card - (A ∩ B).card by
-    rw [h_diff, h_inter] at this
-    unfold U A B at this
-    linarith [this]
-  have h_union : (A.card : ℤ) + (B.card : ℤ) - (A ∩ B).card = (A ∪ B).card := by
-    simp only [Finset.card_union A B]
-    suffices A.card + B.card ≥ (A ∩ B).card by
-      simp [this]
-    have : A ∩ B ⊆ A := by apply Finset.inter_subset_left
-    have : (A ∩ B).card ≤ A.card := Finset.card_le_card this
-    linarith [this]
-  have h_diff : ((U \ (A ∪ B)).card : ℤ) = U.card - (A ∪ B).card := by
-    have : A ∪ B ⊆ U := by
-      unfold A B U
-      intro x hx
-      simp only [Finset.mem_union, Finset.mem_inter, Finset.mem_Ico, Set.Finite.mem_toFinset,
-        Set.mem_setOf_eq] at hx ⊢
-      tauto
-    simp only [Finset.card_sdiff_of_subset this]
-    suffices A ∪ B ⊆ U by
-      simp [Finset.card_le_card this]
-    intro x hx
-    unfold A B at hx
-    simp only [Finset.mem_union, Finset.mem_inter, Set.Finite.mem_toFinset,
-      Set.mem_setOf_eq] at hx
-    tauto
-  linarith [h_diff, h_union]
+private lemma oneIf_of_false {P : Prop} (hP : ¬ P) : oneIf P = 0 := by
+  -- Proof written by GPT 5.5.
+  classical
+  simp [oneIf, hP]
+
+private lemma oneIf_sub_oneIf_eq (P Q : Prop) :
+    oneIf P - oneIf Q = oneIf (P ∧ ¬ Q) - oneIf (Q ∧ ¬ P) := by
+  -- Proof written by GPT 5.5.
+  classical
+  by_cases hP : P <;> by_cases hQ : Q <;> simp [oneIf, hP, hQ]
+
+private lemma one_sub_oneIf_eq (P : Prop) :
+    1 - oneIf P = oneIf (¬ P) := by
+  -- Proof written by GPT 5.5.
+  classical
+  by_cases hP : P <;> simp [oneIf, hP]
+
+private lemma oneIf_Ico_eq_sub (m_le_n : m ≤ n) (k : ℤ) :
+    oneIf (k ∈ Finset.Ico m n) = oneIf (k < n) - oneIf (k < m) := by
+  -- Proof written by GPT 5.5.
+  by_cases k_lt_m : k < m
+  · have k_lt_n : k < n := lt_of_lt_of_le k_lt_m m_le_n
+    simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, not_le_of_gt k_lt_m]
+  · have m_le_k : m ≤ k := le_of_not_gt k_lt_m
+    by_cases k_lt_n : k < n
+    · simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, m_le_k]
+    · simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, m_le_k]
+
+private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
+    oneIf (k < a) - oneIf (k ∈ asps.inset a) + oneIf (k ∈ asps.outset a) =
+      oneIf (asps.post_lt k a) := by
+  -- Proof written by GPT 5.5.
+  classical
+  rcases lt_trichotomy k a with k_lt_a | rfl | a_lt_k
+  · have not_out : k ∉ asps.outset a := by
+      intro hk
+      exact (not_lt_of_ge (le_of_lt k_lt_a))
+        (asps.directed a k ((mem_outset asps a k).mp hk))
+    have hpost : oneIf (asps.post_lt k a) = oneIf (k ∉ asps.inset a) := by
+      apply oneIf_congr
+      rw [post_lt_iff_not_mem asps k_lt_a]
+      simp only [mem_inset]
+    rw [hpost, oneIf_of_true k_lt_a, oneIf_of_false not_out]
+    simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using
+      one_sub_oneIf_eq (k ∈ asps.inset a)
+  · have not_in : k ∉ asps.inset k := by
+      simpa using asps.not_mem_self k
+    have not_out : k ∉ asps.outset k := by
+      simpa using asps.not_mem_self k
+    rw [oneIf_of_false (lt_irrefl k), oneIf_of_false not_in, oneIf_of_false not_out,
+      oneIf_of_false (not_post_lt_self asps k)]
+    ring
+  · have not_k_lt_a : ¬ k < a := not_lt_of_ge (le_of_lt a_lt_k)
+    have not_in : k ∉ asps.inset a := by
+      intro hk
+      exact (not_lt_of_ge (le_of_lt a_lt_k))
+        (asps.directed k a ((mem_inset asps a k).mp hk))
+    have hpost : oneIf (asps.post_lt k a) = oneIf (k ∈ asps.outset a) := by
+      apply oneIf_congr
+      rw [post_lt_swap_iff_mem asps (le_of_lt a_lt_k)]
+      simp only [mem_outset]
+    rw [hpost, oneIf_of_false not_k_lt_a, oneIf_of_false not_in]
+    ring
+
+private lemma sum_oneIf_mem_of_subset {A U : Finset ℤ} (hAU : A ⊆ U) :
+    (∑ k ∈ U, oneIf (k ∈ A)) = (A.card : ℤ) := by
+  -- Proof written by GPT 5.5.
+  have hfilter : U.filter (fun k => k ∈ A) = A := by
+    ext k
+    simp only [Finset.mem_filter]
+    exact ⟨fun hk => hk.2, fun hk => ⟨hAU hk, hk⟩⟩
+  have hsum_eq :
+      (∑ k ∈ U, oneIf (k ∈ A)) = ∑ k ∈ U, if k ∈ A then (1 : ℤ) else 0 := by
+    apply Finset.sum_congr rfl
+    intro k _
+    by_cases hkA : k ∈ A <;> simp [oneIf, hkA]
+  rw [hsum_eq, Finset.sum_boole, hfilter]
+
+private noncomputable def sigmaIndicator (asps : AspSet) (m n k : ℤ) : ℤ :=
+  oneIf (k ∈ Finset.Ico m n)
+    + oneIf (k ∈ asps.inset m)
+    - oneIf (k ∈ asps.outset m)
+    - oneIf (k ∈ asps.inset n)
+    + oneIf (k ∈ asps.outset n)
+
+private noncomputable def postIndicator (asps : AspSet) (m n k : ℤ) : ℤ :=
+  oneIf (k ∈ asps.post_Ico m n) - oneIf (k ∈ asps.post_Ico n m)
+
+private lemma sigmaIndicator_support_subset :
+    Function.support (sigmaIndicator asps m n) ⊆
+      (Finset.Ico m n ∪
+        (asps.inset m ∪ (asps.outset m ∪ (asps.inset n ∪ asps.outset n)))) := by
+  -- Proof written by GPT 5.5.
+  intro k hk
+  by_contra hkU
+  simp only [Set.mem_union, not_or] at hkU
+  have hIco : k ∉ Finset.Ico m n := hkU.1
+  have hin_m : k ∉ asps.inset m := hkU.2.1
+  have hout_m : k ∉ asps.outset m := hkU.2.2.1
+  have hin_n : k ∉ asps.inset n := hkU.2.2.2.1
+  have hout_n : k ∉ asps.outset n := hkU.2.2.2.2
+  have hk_zero : sigmaIndicator asps m n k = 0 := by
+    simp [sigmaIndicator, oneIf, hIco, hin_m, hout_m, hin_n, hout_n]
+  exact hk hk_zero
+
+private lemma postIndicator_support_subset :
+    Function.support (postIndicator asps m n) ⊆
+      (asps.post_Ico m n ∪ asps.post_Ico n m) := by
+  -- Proof written by GPT 5.5.
+  intro k hk
+  by_contra hkU
+  simp only [Set.mem_union, not_or] at hkU
+  have hmn : k ∉ asps.post_Ico m n := hkU.1
+  have hnm : k ∉ asps.post_Ico n m := hkU.2
+  have hk_zero : postIndicator asps m n k = 0 := by
+    simp [postIndicator, oneIf, hmn, hnm]
+  exact hk hk_zero
+
+private lemma finsum_sigmaIndicator (m_le_n : m ≤ n) :
+    (∑ᶠ k : ℤ, sigmaIndicator asps m n k) = asps.σ χ n - asps.σ χ m := by
+  -- Proof written by GPT 5.5.
+  let U := Finset.Ico m n ∪
+    (asps.inset m ∪ (asps.outset m ∪ (asps.inset n ∪ asps.outset n)))
+  have hIco : Finset.Ico m n ⊆ U := by
+    intro k hk
+    simp [U, hk]
+  have hin_m : asps.inset m ⊆ U := by
+    intro k hk
+    simp [U, hk]
+  have hout_m : asps.outset m ⊆ U := by
+    intro k hk
+    simp [U, hk]
+  have hin_n : asps.inset n ⊆ U := by
+    intro k hk
+    simp [U, hk]
+  have hout_n : asps.outset n ⊆ U := by
+    intro k hk
+    simp [U, hk]
+  rw [finsum_eq_sum_of_support_subset
+    (f := fun k : ℤ => sigmaIndicator asps m n k) (s := U)]
+  · calc
+      (∑ k ∈ U, sigmaIndicator asps m n k)
+          = (∑ k ∈ U, oneIf (k ∈ Finset.Ico m n))
+            + (∑ k ∈ U, oneIf (k ∈ asps.inset m))
+            - (∑ k ∈ U, oneIf (k ∈ asps.outset m))
+            - (∑ k ∈ U, oneIf (k ∈ asps.inset n))
+            + (∑ k ∈ U, oneIf (k ∈ asps.outset n)) := by
+              simp only [sigmaIndicator, Finset.sum_add_distrib, Finset.sum_sub_distrib]
+      _ = asps.σ χ n - asps.σ χ m := by
+        rw [sum_oneIf_mem_of_subset hIco, sum_oneIf_mem_of_subset hin_m,
+          sum_oneIf_mem_of_subset hout_m, sum_oneIf_mem_of_subset hin_n,
+          sum_oneIf_mem_of_subset hout_n]
+        unfold σ recon
+        have hIco_card : ((Finset.Ico m n).card : ℤ) = n - m := by
+          simp [m_le_n]
+        linarith
+  · simpa [U] using sigmaIndicator_support_subset asps m n
+
+private lemma finsum_postIndicator :
+    (∑ᶠ k : ℤ, postIndicator asps m n k) =
+      ((asps.post_Ico m n).card : ℤ) - (asps.post_Ico n m).card := by
+  -- Proof written by GPT 5.5.
+  let U := asps.post_Ico m n ∪ asps.post_Ico n m
+  have hmn : asps.post_Ico m n ⊆ U := by
+    intro k hk
+    simp only [U, Finset.mem_union, hk, true_or]
+  have hnm : asps.post_Ico n m ⊆ U := by
+    intro k hk
+    simp only [U, Finset.mem_union, hk, or_true]
+  rw [finsum_eq_sum_of_support_subset
+    (f := fun k : ℤ => postIndicator asps m n k) (s := U)]
+  · calc
+      (∑ k ∈ U, postIndicator asps m n k)
+          = (∑ k ∈ U, oneIf (k ∈ asps.post_Ico m n))
+            - (∑ k ∈ U, oneIf (k ∈ asps.post_Ico n m)) := by
+              simp only [postIndicator, Finset.sum_sub_distrib]
+      _ = ((asps.post_Ico m n).card : ℤ) - (asps.post_Ico n m).card := by
+        rw [sum_oneIf_mem_of_subset hmn, sum_oneIf_mem_of_subset hnm]
+  · simpa [U] using postIndicator_support_subset asps m n
+
+private lemma sigmaIndicator_eq_post_lt_sub (m_le_n : m ≤ n) (k : ℤ) :
+    sigmaIndicator asps m n k = oneIf (asps.post_lt k n) - oneIf (asps.post_lt k m) := by
+  -- Proof written by GPT 5.5.
+  classical
+  calc
+    sigmaIndicator asps m n k
+        = (oneIf (k < n) - oneIf (k < m))
+          + oneIf (k ∈ asps.inset m)
+          - oneIf (k ∈ asps.outset m)
+          - oneIf (k ∈ asps.inset n)
+          + oneIf (k ∈ asps.outset n) := by
+            rw [sigmaIndicator, oneIf_Ico_eq_sub m n m_le_n k]
+    _ = (oneIf (k < n) - oneIf (k ∈ asps.inset n) + oneIf (k ∈ asps.outset n))
+          - (oneIf (k < m) - oneIf (k ∈ asps.inset m) + oneIf (k ∈ asps.outset m)) := by
+            ring
+    _ = oneIf (asps.post_lt k n) - oneIf (asps.post_lt k m) := by
+      rw [endpointIndicator_eq_post_lt asps n k, endpointIndicator_eq_post_lt asps m k]
+
+private lemma postIndicator_eq_post_lt_sub (k : ℤ) :
+    postIndicator asps m n k = oneIf (asps.post_lt k n) - oneIf (asps.post_lt k m) := by
+  -- Proof written by GPT 5.5.
+  classical
+  have hmn : oneIf (k ∈ asps.post_Ico m n) =
+      oneIf (asps.post_lt k n ∧ ¬ asps.post_lt k m) := by
+    apply oneIf_congr
+    simp
+  have hnm : oneIf (k ∈ asps.post_Ico n m) =
+      oneIf (asps.post_lt k m ∧ ¬ asps.post_lt k n) := by
+    apply oneIf_congr
+    simp
+  rw [postIndicator, hmn, hnm]
+  exact (oneIf_sub_oneIf_eq (asps.post_lt k n) (asps.post_lt k m)).symm
+
+private lemma sigmaIndicator_eq_postIndicator (m_le_n : m ≤ n) (k : ℤ) :
+    sigmaIndicator asps m n k = postIndicator asps m n k := by
+  -- Proof written by GPT 5.5.
+  rw [sigmaIndicator_eq_post_lt_sub asps m n m_le_n k, postIndicator_eq_post_lt_sub asps m n k]
 
 lemma σ_diff_post (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     ((asps.post_Ico m n).card : ℤ) - (asps.post_Ico n m).card := by
   -- Proof written by GPT 5.5.
-  let Lp := asps.lf_pos m n
-  let Mp := asps.md_pos m n
-  let Rp := asps.rt_pos m n
-  let Ln := asps.lf_neg m n
-  let Mn := asps.md_neg m n
-  let Rn := asps.rt_neg m n
-  have h_post_pos : asps.post_Ico m n = Lp ∪ (Mp ∪ Rp) := by
-    simpa [Lp, Mp, Rp] using post_Ico_eq_pos_regions asps m n m_le_n
-  have h_post_neg : asps.post_Ico n m = Ln ∪ (Mn ∪ Rn) := by
-    simpa [Ln, Mn, Rn] using post_Ico_swap_eq_neg_regions asps m n m_le_n
-  have h_pos_card : ((asps.post_Ico m n).card : ℤ) =
-      Lp.card + Mp.card + Rp.card := by
-    rw [h_post_pos]
-    have hL : Disjoint Lp (Mp ∪ Rp) := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      have a_lt_m : a < m := by
-        unfold Lp at ha
-        exact ((mem_lf_pos asps m n a).mp ha).1
-      have m_le_b : m ≤ b := by
-        unfold Mp Rp at hb
-        simp only [Finset.mem_union, mem_md_pos, mem_rt_pos, ge_iff_le] at hb
-        rcases hb with hb | hb
-        · exact hb.1
-        · exact le_trans m_le_n hb.1
-      omega
-    rw [Finset.card_union_of_disjoint hL]
-    have hMR : Disjoint Mp Rp := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      have a_lt_n : a < n := by
-        unfold Mp at ha
-        exact ((mem_md_pos asps m n a).mp ha).2.1
-      have n_le_b : n ≤ b := by
-        unfold Rp at hb
-        exact ((mem_rt_pos asps m n b).mp hb).1
-      omega
-    rw [Finset.card_union_of_disjoint hMR]
-    simp only [Nat.cast_add]
-    ring
-  have h_neg_card : ((asps.post_Ico n m).card : ℤ) =
-      Ln.card + Mn.card + Rn.card := by
-    rw [h_post_neg]
-    have hL : Disjoint Ln (Mn ∪ Rn) := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      have a_lt_m : a < m := by
-        unfold Ln at ha
-        exact ((mem_lf_neg asps m n a).mp ha).1
-      have m_le_b : m ≤ b := by
-        unfold Mn Rn at hb
-        simp only [Finset.mem_union, mem_md_neg, mem_rt_neg, ge_iff_le] at hb
-        rcases hb with hb | hb
-        · exact hb.1
-        · exact le_trans m_le_n hb.1
-      omega
-    rw [Finset.card_union_of_disjoint hL]
-    have hMR : Disjoint Mn Rn := by
-      rw [Finset.disjoint_iff_ne]
-      rintro a ha b hb
-      have a_lt_n : a < n := by
-        unfold Mn at ha
-        exact ((mem_md_neg asps m n a).mp ha).2.1
-      have n_le_b : n ≤ b := by
-        unfold Rn at hb
-        exact ((mem_rt_neg asps m n b).mp hb).1
-      omega
-    rw [Finset.card_union_of_disjoint hMR]
-    simp only [Nat.cast_add]
-    ring
-  rw [σ_diff asps m n χ m_le_n, h_pos_card, h_neg_card]
+  calc
+    asps.σ χ n - asps.σ χ m
+        = ∑ᶠ k : ℤ, sigmaIndicator asps m n k :=
+          (finsum_sigmaIndicator asps m n χ m_le_n).symm
+    _ = ∑ᶠ k : ℤ, postIndicator asps m n k := by
+      apply finsum_congr
+      exact sigmaIndicator_eq_postIndicator asps m n m_le_n
+    _ = ((asps.post_Ico m n).card : ℤ) - (asps.post_Ico n m).card :=
+      finsum_postIndicator asps m n
 
 lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   asps.σ χ n - asps.σ χ m

@@ -189,7 +189,6 @@ noncomputable def post_Ico (asps : AspSet) (m n : ℤ) : Finset ℤ :=
 
 @[simp] lemma mem_post_Ico (asps : AspSet) (m n l : ℤ) :
     l ∈ asps.post_Ico m n ↔ asps.post_lt l n ∧ ¬ asps.post_lt l m := by
-  -- Proof written by GPT 5.5.
   simp [post_Ico]
 
 lemma post_Ico_swap_eq_empty_of_post_lt (asps : AspSet) {m n : ℤ} (hmn : asps.post_lt m n) :
@@ -200,16 +199,6 @@ lemma post_Ico_swap_eq_empty_of_post_lt (asps : AspSet) {m n : ℤ} (hmn : asps.
   have hx' := (mem_post_Ico asps n m x).mp hx
   exact hx'.2 (post_lt_trans asps hx'.1 hmn)
 
-@[simp] lemma self_mem_post_Ico (asps : AspSet) (m n : ℤ) :
-    m ∈ asps.post_Ico m n ↔ asps.post_lt m n := by
-  -- Proof written by GPT 5.5.
-  simp
-
-lemma post_Ico_card_pos_of_post_lt (asps : AspSet) {m n : ℤ} (hmn : asps.post_lt m n) :
-    0 < (asps.post_Ico m n).card := by
-  -- Proof written by GPT 5.5.
-  exact Finset.card_pos.mpr ⟨m, (self_mem_post_Ico asps m n).mpr hmn⟩
-
 /-- Reconstruct a function `ℤ → ℤ` from an abstract ASP inversion set and a
 shift parameter `χ`. -/
 noncomputable def recon (asps : AspSet) (χ : ℤ) : ℤ → ℤ :=
@@ -219,52 +208,13 @@ section σ_diff
 variable (asps : AspSet) (m n χ : ℤ)
 noncomputable abbrev σ := asps.recon χ
 
-private noncomputable def oneIf (P : Prop) : ℤ :=
-  haveI := Classical.propDecidable P
-  if P then 1 else 0
-
-private lemma oneIf_congr {P Q : Prop} (h : P ↔ Q) :
-    oneIf P = oneIf Q := by
-  -- Proof written by GPT 5.5.
-  classical
-  by_cases hP : P
-  · have hQ : Q := h.mp hP
-    simp [oneIf, hP, hQ]
-  · have hQ : ¬ Q := fun hQ => hP (h.mpr hQ)
-    simp [oneIf, hP, hQ]
-
-private lemma oneIf_of_true {P : Prop} (hP : P) : oneIf P = 1 := by
-  -- Proof written by GPT 5.5.
-  classical
-  simp [oneIf, hP]
-
-private lemma oneIf_of_false {P : Prop} (hP : ¬ P) : oneIf P = 0 := by
-  -- Proof written by GPT 5.5.
-  classical
-  simp [oneIf, hP]
-
-private lemma oneIf_sub_oneIf_eq (P Q : Prop) :
-    oneIf P - oneIf Q = oneIf (P ∧ ¬ Q) - oneIf (Q ∧ ¬ P) := by
-  -- Proof written by GPT 5.5.
-  classical
-  by_cases hP : P <;> by_cases hQ : Q <;> simp [oneIf, hP, hQ]
-
-private lemma one_sub_oneIf_eq (P : Prop) :
-    1 - oneIf P = oneIf (¬ P) := by
-  -- Proof written by GPT 5.5.
-  classical
-  by_cases hP : P <;> simp [oneIf, hP]
+open Classical in
+private noncomputable abbrev oneIf (P : Prop) : ℤ := if P then 1 else 0
 
 private lemma oneIf_Ico_eq_sub (m_le_n : m ≤ n) (k : ℤ) :
     oneIf (k ∈ Finset.Ico m n) = oneIf (k < n) - oneIf (k < m) := by
-  -- Proof written by GPT 5.5.
-  by_cases k_lt_m : k < m
-  · have k_lt_n : k < n := lt_of_lt_of_le k_lt_m m_le_n
-    simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, not_le_of_gt k_lt_m]
-  · have m_le_k : m ≤ k := le_of_not_gt k_lt_m
-    by_cases k_lt_n : k < n
-    · simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, m_le_k]
-    · simp [oneIf, Finset.mem_Ico, k_lt_m, k_lt_n, m_le_k]
+  by_cases k_lt_m : k < m <;> by_cases k_lt_n : k < n
+  <;> simp [oneIf, k_lt_m, k_lt_n]; omega
 
 private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
     oneIf (k < a) - oneIf (k ∈ asps.inset a) + oneIf (k ∈ asps.outset a) =
@@ -277,30 +227,25 @@ private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
       exact (not_lt_of_ge (le_of_lt k_lt_a))
         (asps.directed a k ((mem_outset asps a k).mp hk))
     have hpost : oneIf (asps.post_lt k a) = oneIf (k ∉ asps.inset a) := by
-      apply oneIf_congr
       rw [post_lt_iff_not_mem asps k_lt_a]
       simp only [mem_inset]
-    rw [hpost, oneIf_of_true k_lt_a, oneIf_of_false not_out]
-    simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using
-      one_sub_oneIf_eq (k ∈ asps.inset a)
+    rw [hpost]
+    by_cases hin : k ∈ asps.inset a <;> simp [oneIf, k_lt_a, not_out, hin]
   · have not_in : k ∉ asps.inset k := by
       simpa using asps.not_mem_self k
     have not_out : k ∉ asps.outset k := by
       simpa using asps.not_mem_self k
-    rw [oneIf_of_false (lt_irrefl k), oneIf_of_false not_in, oneIf_of_false not_out,
-      oneIf_of_false (not_post_lt_self asps k)]
-    ring
+    simp [oneIf, not_in, not_out]
   · have not_k_lt_a : ¬ k < a := not_lt_of_ge (le_of_lt a_lt_k)
     have not_in : k ∉ asps.inset a := by
       intro hk
       exact (not_lt_of_ge (le_of_lt a_lt_k))
         (asps.directed k a ((mem_inset asps a k).mp hk))
     have hpost : oneIf (asps.post_lt k a) = oneIf (k ∈ asps.outset a) := by
-      apply oneIf_congr
       rw [post_lt_swap_iff_mem asps (le_of_lt a_lt_k)]
       simp only [mem_outset]
-    rw [hpost, oneIf_of_false not_k_lt_a, oneIf_of_false not_in]
-    ring
+    rw [hpost]
+    simp [oneIf, not_k_lt_a, not_in]
 
 private lemma sum_oneIf_mem_of_subset {A U : Finset ℤ} (hAU : A ⊆ U) :
     (∑ k ∈ U, oneIf (k ∈ A)) = (A.card : ℤ) := by
@@ -440,16 +385,8 @@ private lemma postIndicator_eq_post_lt_sub (k : ℤ) :
     postIndicator asps m n k = oneIf (asps.post_lt k n) - oneIf (asps.post_lt k m) := by
   -- Proof written by GPT 5.5.
   classical
-  have hmn : oneIf (k ∈ asps.post_Ico m n) =
-      oneIf (asps.post_lt k n ∧ ¬ asps.post_lt k m) := by
-    apply oneIf_congr
-    simp
-  have hnm : oneIf (k ∈ asps.post_Ico n m) =
-      oneIf (asps.post_lt k m ∧ ¬ asps.post_lt k n) := by
-    apply oneIf_congr
-    simp
-  rw [postIndicator, hmn, hnm]
-  exact (oneIf_sub_oneIf_eq (asps.post_lt k n) (asps.post_lt k m)).symm
+  by_cases hn : asps.post_lt k n <;> by_cases hm : asps.post_lt k m <;>
+    simp [postIndicator, mem_post_Ico, oneIf, hn, hm]
 
 private lemma sigmaIndicator_eq_postIndicator (m_le_n : m ≤ n) (k : ℤ) :
     sigmaIndicator asps m n k = postIndicator asps m n k := by
@@ -473,11 +410,9 @@ lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
   asps.σ χ n - asps.σ χ m
   = (asps.post_Ico m n).card := by
   -- Proof written by GPT 5.5.
-  have diff := σ_diff_post asps m n χ (le_of_lt m_lt_n)
   have hmn : asps.post_lt m n := (post_lt_iff_not_mem asps m_lt_n).mpr mn_I
-  rw [post_Ico_swap_eq_empty_of_post_lt asps hmn] at diff
-  simp only [Finset.card_empty, Nat.cast_zero, sub_zero] at diff
-  exact diff
+  simpa [post_Ico_swap_eq_empty_of_post_lt asps hmn] using
+    σ_diff_post asps m n χ (le_of_lt m_lt_n)
 
 lemma σ_diff_neg (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) :
   asps.σ χ m - asps.σ χ n
@@ -499,8 +434,10 @@ lemma σ_diff_of_post_lt (hmn : asps.post_lt m n) :
 lemma σ_lt_of_post_lt (hmn : asps.post_lt m n) : asps.σ χ m < asps.σ χ n := by
   -- Proof written by GPT 5.5.
   have diff := σ_diff_of_post_lt asps m n χ hmn
-  have hcard := post_Ico_card_pos_of_post_lt asps hmn
-  omega
+  suffices (asps.post_Ico m n).card > 0 by linarith
+  apply Finset.card_pos.mpr
+  use m
+  simpa
 
 lemma σ_inc (m_lt_n : m < n) (mn_nI : ⟨m, n⟩ ∉ asps) : asps.σ χ m < asps.σ χ n := by
   -- Proof written by GPT 5.5.

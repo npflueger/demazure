@@ -84,10 +84,7 @@ lemma post_lt_trans (asps : AspSet) {l m n : ℤ} (hlm : asps.post_lt l m) (hmn 
         contrapose! lm_nI with hln
         apply asps.closed l n m <;> assumption
       · right
-        have n_lt_l : n < l := by
-          refine lt_of_le_of_ne (le_of_not_gt hl) ?_
-          intro n_eq_l
-          exact lm_nI (by simpa [n_eq_l] using nm_I)
+        have n_lt_l : n < l := lt_of_le_of_ne (le_of_not_gt hl) fun h => lm_nI (h ▸ nm_I)
         refine ⟨n_lt_l, ?_⟩
         contrapose! nm_I with nl_nI
         apply asps.coclosed n l m <;> assumption
@@ -98,10 +95,7 @@ lemma post_lt_trans (asps : AspSet) {l m n : ℤ} (hlm : asps.post_lt l m) (hmn 
         contrapose! mn_nI with ln_I
         apply asps.closed m l n <;> assumption
       · right
-        have n_lt_l : n < l := by
-          refine lt_of_le_of_ne (le_of_not_gt hl) ?_
-          intro n_eq_l
-          exact mn_nI (by simpa [n_eq_l] using ml_I)
+        have n_lt_l : n < l := lt_of_le_of_ne (le_of_not_gt hl) fun h => mn_nI (h ▸ ml_I)
         refine ⟨n_lt_l, ?_⟩
         contrapose! ml_I with nl_nI
         apply asps.coclosed m n l <;> assumption
@@ -219,32 +213,17 @@ private lemma oneIf_Ico_eq_sub (m_le_n : m ≤ n) (k : ℤ) :
 private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
     oneIf (k < a) - oneIf (k ∈ asps.inset a) + oneIf (k ∈ asps.outset a) =
       oneIf (asps.post_lt k a) := by
-  -- Proof written by GPT 5.5.
   classical
   rcases lt_trichotomy k a with k_lt_a | rfl | a_lt_k
-  · have not_out : k ∉ asps.outset a := by
-      intro hk
-      exact (not_lt_of_ge (le_of_lt k_lt_a))
-        (asps.directed a k ((mem_outset asps a k).mp hk))
-    have hpost : oneIf (asps.post_lt k a) = oneIf (k ∉ asps.inset a) := by
-      rw [post_lt_iff_not_mem asps k_lt_a]
-      simp only [mem_inset]
-    rw [hpost]
+  · have not_out : k ∉ asps.outset a := fun hk =>
+      absurd (asps.directed a k ((mem_outset asps a k).mp hk)) (not_lt_of_ge k_lt_a.le)
+    rw [post_lt_iff_not_mem asps k_lt_a]; simp only [← mem_inset]
     by_cases hin : k ∈ asps.inset a <;> simp [oneIf, k_lt_a, not_out, hin]
-  · have not_in : k ∉ asps.inset k := by
-      simpa using asps.not_mem_self k
-    have not_out : k ∉ asps.outset k := by
-      simpa using asps.not_mem_self k
-    simp [oneIf, not_in, not_out]
-  · have not_k_lt_a : ¬ k < a := not_lt_of_ge (le_of_lt a_lt_k)
-    have not_in : k ∉ asps.inset a := by
-      intro hk
-      exact (not_lt_of_ge (le_of_lt a_lt_k))
-        (asps.directed k a ((mem_inset asps a k).mp hk))
-    have hpost : oneIf (asps.post_lt k a) = oneIf (k ∈ asps.outset a) := by
-      rw [post_lt_swap_iff_mem asps (le_of_lt a_lt_k)]
-      simp only [mem_outset]
-    rw [hpost]
+  · simp [oneIf]
+  · have not_k_lt_a : ¬ k < a := not_lt_of_ge a_lt_k.le
+    have not_in : k ∉ asps.inset a := fun hk =>
+      absurd (asps.directed k a ((mem_inset asps a k).mp hk)) (not_lt_of_ge a_lt_k.le)
+    rw [post_lt_swap_iff_mem asps a_lt_k.le]; simp only [← mem_outset]
     simp [oneIf, not_k_lt_a, not_in]
 
 private lemma sum_oneIf_mem_of_subset {A U : Finset ℤ} (hAU : A ⊆ U) :
@@ -406,30 +385,15 @@ lemma σ_diff_post (m_le_n : m ≤ n) : asps.σ χ n - asps.σ χ m =
     _ = ((asps.post_Ico m n).card : ℤ) - (asps.post_Ico n m).card :=
       finsum_postIndicator asps m n
 
-lemma σ_diff_pos (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∉ asps) :
-  asps.σ χ n - asps.σ χ m
-  = (asps.post_Ico m n).card := by
-  -- Proof written by GPT 5.5.
-  have hmn : asps.post_lt m n := (post_lt_iff_not_mem asps m_lt_n).mpr mn_I
-  simpa [post_Ico_swap_eq_empty_of_post_lt asps hmn] using
-    σ_diff_post asps m n χ (le_of_lt m_lt_n)
-
-lemma σ_diff_neg (m_lt_n : m < n) (mn_I : ⟨m, n⟩ ∈ asps) :
-  asps.σ χ m - asps.σ χ n
-  = (asps.post_Ico n m).card := by
-  -- Proof written by GPT 5.5.
-  have diff := σ_diff_post asps m n χ (le_of_lt m_lt_n)
-  have hnm : asps.post_lt n m := (post_lt_swap_iff_mem asps (le_of_lt m_lt_n)).mpr mn_I
-  rw [post_Ico_swap_eq_empty_of_post_lt asps hnm] at diff
-  simp only [Finset.card_empty, Nat.cast_zero, zero_sub] at diff
-  omega
-
 lemma σ_diff_of_post_lt (hmn : asps.post_lt m n) :
     asps.σ χ n - asps.σ χ m = (asps.post_Ico m n).card := by
-  -- Proof written by GPT 5.5.
   rcases hmn with ⟨m_lt_n, mn_nI⟩ | ⟨n_lt_m, nm_I⟩
-  · exact σ_diff_pos asps m n χ m_lt_n mn_nI
-  · exact σ_diff_neg asps n m χ n_lt_m nm_I
+  · simpa [post_Ico_swap_eq_empty_of_post_lt asps ((post_lt_iff_not_mem asps m_lt_n).mpr mn_nI)]
+      using σ_diff_post asps m n χ m_lt_n.le
+  · have key := σ_diff_post asps n m χ n_lt_m.le
+    simp [post_Ico_swap_eq_empty_of_post_lt asps
+            ((post_lt_swap_iff_mem asps n_lt_m.le).mpr nm_I)] at key
+    omega
 
 lemma σ_lt_of_post_lt (hmn : asps.post_lt m n) : asps.σ χ m < asps.σ χ n := by
   -- Proof written by GPT 5.5.
@@ -499,40 +463,20 @@ lemma func_contiguous (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
     have hmn := (post_lt_iff_σ_lt asps m n χ).mpr σ_m_lt_n
     simpa [J] using (σ_diff_of_post_lt asps m n χ hmn).symm
   have card_K : (K.card : ℤ) = (σ n - σ m) := by
-    rw [← card_J]
-    have : Function.Injective σ := func_injective χ asps
-    have := Finset.card_image_of_injective J this
-    rw [← this]
+    rw [← card_J, Finset.card_image_of_injective J (func_injective χ asps)]
   have K_eq_I : K = I := by
     apply Finset.eq_of_subset_of_card_le
-    · show K ⊆ I
-      intro k hk
-      unfold K at hk
-      rw [Finset.mem_image] at hk
-      rcases hk with ⟨j, j_in_J, rfl⟩
-      have : j ∈ (J : Set ℤ) := by
-        simp [j_in_J]
-      rw [← inv_image] at this
-      exact this
-    suffices I.card = K.card by
-      rw [this]
-    suffices (I.card : ℤ) = (K.card : ℤ) by
-      rw [Nat.cast_inj] at this
-      exact this
-    unfold I
-    rw [card_K]
-    suffices σ m ≤ σ n by simp [this]
-    exact le_of_lt σ_m_lt_n
+    · intro k hk
+      rcases Finset.mem_image.mp hk with ⟨j, j_in_J, rfl⟩
+      have : j ∈ (J : Set ℤ) := Finset.mem_coe.mpr j_in_J
+      rw [← inv_image] at this; exact this
+    · have hIcard : (I.card : ℤ) = σ n - σ m := by unfold I; simp; omega
+      exact_mod_cast (hIcard.trans card_K.symm).le
   intro k σm_le_k k_lt_σn
-  have k_in_I : k ∈ I := by
-    simp only [Finset.mem_Ico, I]
-    exact ⟨σm_le_k, k_lt_σn⟩
-  rw [← K_eq_I] at k_in_I
-  unfold K at k_in_I
-  rw [Finset.mem_image] at k_in_I
-  rcases k_in_I with ⟨l, l_in_J, hl⟩
-  use l
-  rw [← hl]
+  have hk : k ∈ I := Finset.mem_Ico.mpr ⟨σm_le_k, k_lt_σn⟩
+  rw [← K_eq_I] at hk
+  rcases Finset.mem_image.mp hk with ⟨l, _, hl⟩
+  exact ⟨l, hl.symm⟩
 
 end σ_diff
 
@@ -549,18 +493,7 @@ variable (asps : AspSet) (χ : ℤ)
 theorem invSet_func : inv_set (asps.recon χ) = asps := by
   ext ⟨u, v⟩
   wlog u_lt_v : u < v
-  · have h1 : ⟨u, v⟩ ∉ inv_set (asps.recon χ) := by
-      intro huv
-      exact u_lt_v huv.1
-    have h2 : ⟨u, v⟩ ∉ asps := by
-      intro h
-      have := asps.directed u v h
-      contradiction
-    constructor
-    · intro huv
-      exact (h1 huv).elim
-    · intro huv
-      exact (h2 huv).elim
+  · exact iff_of_false (fun h => u_lt_v h.1) (fun h => u_lt_v (asps.directed u v h))
   constructor
   · intro h
     exact (mem_iff_lt asps u v χ (le_of_lt u_lt_v)).mpr h.2
@@ -571,38 +504,31 @@ lemma inset_eq_nw (n : ℤ) : ↑(asps.inset n)
    = northwest_set (asps.σ χ) ((asps.σ χ n) + 1) n := by
   ext x
   unfold northwest_set
-  have := Set.ext_iff.mp <| invSet_func asps χ
-  specialize this ⟨x, n⟩
+  have hmem : ⟨x, n⟩ ∈ asps ↔ ⟨x, n⟩ ∈ inv_set (asps.σ χ) :=
+    (Set.ext_iff.mp (invSet_func asps χ) ⟨x, n⟩).symm
+  simp only [Finset.mem_coe, mem_inset, Set.mem_setOf_eq]
   constructor
   · intro hx
-    have hx' : ⟨x, n⟩ ∈ asps := by simpa using hx
-    have h_inv : ⟨x, n⟩ ∈ inv_set (asps.σ χ) := by simpa [this] using hx'
-    rcases h_inv with ⟨hxn, hσ⟩
+    rcases hmem.mp hx with ⟨hxn, hσ⟩
     exact ⟨hxn, by omega⟩
-  · intro hx
-    rcases hx with ⟨hxn, hσ⟩
-    have h_inv : ⟨x, n⟩ ∈ inv_set (asps.σ χ) := ⟨hxn, by omega⟩
-    have hx' : ⟨x, n⟩ ∈ asps := by simpa [this] using h_inv
-    simpa using hx'
+  · rintro ⟨hxn, hσ⟩
+    exact hmem.mpr ⟨hxn, by omega⟩
 
 lemma outset_eq_se (n : ℤ) : ↑(asps.outset n)
    = southeast_set (asps.σ χ) (asps.σ χ n) (n+1) := by
   ext x
-  have := Set.ext_iff.mp <| invSet_func asps χ
-  specialize this ⟨n, x⟩
+  unfold southeast_set
+  have hmem : ⟨n, x⟩ ∈ asps ↔ ⟨n, x⟩ ∈ inv_set (asps.σ χ) :=
+    (Set.ext_iff.mp (invSet_func asps χ) ⟨n, x⟩).symm
+  simp only [Finset.mem_coe, mem_outset, Set.mem_setOf_eq]
   constructor
   · intro hx
-    have hx' : ⟨n, x⟩ ∈ asps := by simpa using hx
-    have h_inv : ⟨n, x⟩ ∈ inv_set (asps.σ χ) := by simpa [this] using hx'
-    rcases h_inv with ⟨hnx, hσ⟩
+    rcases hmem.mp hx with ⟨hnx, hσ⟩
     exact ⟨by omega, hσ⟩
-  · intro hx
-    rcases hx with ⟨hnx, hσ⟩
-    have h_inv : ⟨n, x⟩ ∈ inv_set (asps.σ χ) := ⟨by omega, hσ⟩
-    have hx' : ⟨n, x⟩ ∈ asps := by simpa [this] using h_inv
-    simpa using hx'
+  · rintro ⟨hnx, hσ⟩
+    exact hmem.mpr ⟨by omega, hσ⟩
 
--- This lemma is equivalent to the function being bounded above,
+-- This lemma is equivalent to the function being unbounded above on every tail,
 -- but it is stated in a strange way. This is just for convenience
 -- in the proof of surjectivity.
 lemma surj_helper_up (m : ℤ) (n : ℕ) :
@@ -658,32 +584,18 @@ theorem func_surjective : Function.Surjective (asps.recon χ) := by
   have : ∃ m : ℤ, m ≤ 0 ∧ asps.recon χ m ≤ y := by
     by_cases h0 : asps.recon χ 0 ≤ y
     · use 0
-    rcases surj_helper_down asps χ 0 (asps.recon χ 0 - y).toNat with
-      ⟨m, m_le_0, fm_le⟩
-    use m
-    simp only [Int.ofNat_toNat] at fm_le
-    simp only [m_le_0, true_and]
-    apply le_trans fm_le
-    rw [max_eq_left (by omega)]
-    simp
-  rcases this with ⟨m, m_le_0, fm_le_y⟩
+    rcases surj_helper_down asps χ 0 (asps.recon χ 0 - y).toNat with ⟨m, m_le_0, fm_le⟩
+    exact ⟨m, m_le_0, by omega⟩
+  rcases this with ⟨m, _, fm_le_y⟩
   have : ∃ n : ℤ, n ≥ 1 ∧ asps.recon χ n ≥ y + 1 := by
     by_cases h1 : asps.recon χ 1 ≥ y + 1
     · use 1
-    rcases surj_helper_up asps χ 1 (y + 1 - asps.recon χ 1).toNat with
-      ⟨n, n_ge_1, fn_ge⟩
-    use n
-    simp only [Int.ofNat_toNat, ge_iff_le] at fn_ge
-    rw [max_eq_left (by omega)] at fn_ge
-    simp [n_ge_1]
-    omega
-  rcases this with ⟨n, n_ge_1, fn_ge_y1⟩
-  have m_le_n : m ≤ n := by omega
-  have contig := func_contiguous asps m n χ (lt_of_le_of_lt fm_le_y fn_ge_y1)
-  specialize contig y fm_le_y fn_ge_y1
-  rcases contig with ⟨l, hl⟩
-  use l
-  rw [hl]
+    rcases surj_helper_up asps χ 1 (y + 1 - asps.recon χ 1).toNat with ⟨n, n_ge_1, fn_ge⟩
+    exact ⟨n, n_ge_1, by omega⟩
+  rcases this with ⟨n, _, fn_ge_y1⟩
+  rcases func_contiguous asps m n χ (lt_of_le_of_lt fm_le_y fn_ge_y1) y fm_le_y fn_ge_y1
+    with ⟨l, hl⟩
+  exact ⟨l, hl.symm⟩
 
 theorem func_bijective : Function.Bijective (asps.recon χ) :=
   ⟨func_injective χ asps, func_surjective asps χ⟩

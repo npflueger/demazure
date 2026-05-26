@@ -471,7 +471,7 @@ lemma LSet_chiSum (A : HeckeFactorization τ) :
   rcases A with ⟨AL, dprodA⟩
   induction AL generalizing τ with
   | nil =>
-      simp [LSet_of_LPerm, chiSum, ← dprodA]
+      simp only [LSet_of_LPerm, chiSum, ← dprodA, List.foldr_nil, id_chi]
   | cons α L ih =>
       let β := DProd L
       have h_L : β ≤L τ := by
@@ -492,7 +492,7 @@ lemma LSet_boxUnion (A : HeckeFactorization τ) :
   rcases A with ⟨AL, dprodA⟩
   induction AL generalizing τ with
   | nil =>
-      simp [LSet_of_LPerm, boxUnion, ← dprodA]
+      simp only [LSet_of_LPerm, boxUnion, ← dprodA, List.foldr_nil, inv_set_id]
   | cons α L ih =>
       let β := DProd L
       have h_L : β ≤L τ := by
@@ -520,7 +520,7 @@ lemma LSet_isChain (A : HeckeFactorization τ) :
   rcases A with ⟨AL, dprodA⟩
   induction AL generalizing τ with
   | nil =>
-      simp [LSet_of_LPerm, isChain]
+      simp only [LSet_of_LPerm, isChain]
   | cons α L ih =>
       let β := DProd L
       have h_L : β ≤L τ := by
@@ -597,7 +597,7 @@ lemma LSet_of_LPerm_of_Chain :
   ∀ (C : List (Set (ℤ × ℤ) × ℤ)) (hC : isChain C) (htfas : set_321a_prop (boxUnion C)),
     LSet_of_LPerm (LPerm_of_Chain C hC htfas) = C
   | [], _, _ => by
-      simp [LPerm_of_Chain, LSet_of_LPerm]
+      simp only [LPerm_of_Chain, LSet_of_LPerm]
   | ⟨A, χ⟩ :: Q, hC, htfas => by
       let L := link_of_sets hC.1 htfas χ (chiSum Q)
       have htfasQ : set_321a_prop (boxUnion Q) := by
@@ -672,7 +672,7 @@ lemma HF_of_PChain_of_HF (A : HeckeFactorization τ) :
       have hLink : Lnk = Link_of_dprod h_321a τ_eq := by
         have hA : Lnk.A = (Link_of_dprod h_321a τ_eq).A := by
           change (DProd (α :: T)).sr α '' inv_set α = τ.sr α '' inv_set α
-          simp [dprodA]
+          simp only [dprodA]
         have hB : Lnk.B = (Link_of_dprod h_321a τ_eq).B := by
           change boxUnion (LSet_of_LPerm T) = inv_set β
           simpa [Lnk, Link_of_dprod] using (LSet_boxUnion h_321a_β ⟨T, rfl⟩)
@@ -696,7 +696,7 @@ lemma HF_of_PChain_of_HF (A : HeckeFactorization τ) :
               (LSet_isChain h_321a ⟨α :: T, dprodA⟩).2 htfasT := by
                 simpa using congrArg (fun γ => γ :: LPerm_of_Chain (LSet_of_LPerm T)
                   (LSet_isChain h_321a ⟨α :: T, dprodA⟩).2 htfasT) hα
-        _ = α :: T := by simp [hTail]
+        _ = α :: T := by simp only [hTail]
 
 /-- Hecke factorizations of a 321-avoiding ASP permutation are equivalent to
 chains of box sets with shifts. -/
@@ -779,7 +779,7 @@ noncomputable def tableauOfLabelChain (C : LabelChain τ n) :
   refine ⟨?_, ?_⟩
   · intro p
     rcases (C.2.cover p.1).mp p.2 with ⟨i, hi⟩
-    exact ⟨i, by simp [hi]⟩
+    exact ⟨i, by simp only [Finset.mem_filter, Finset.mem_univ, hi, and_self]⟩
   · intro p q i j hi hj hpq hneq
     have hpC : p.1 ∈ C.1 i := by simpa using hi
     have hqC : q.1 ∈ C.1 j := by simpa using hj
@@ -811,7 +811,8 @@ lemma mem_labelChainOfTableau_tableauOfLabelChain_iff (C : LabelChain τ n)
     simpa [tableauOfLabelChain] using hi
   · intro hp
     have hpτ : p ∈ inv_set τ := (C.2.cover p).mpr ⟨i, hp⟩
-    exact ⟨hpτ, by simp [tableauOfLabelChain, hp]⟩
+    exact ⟨hpτ, by simp only [tableauOfLabelChain, Finset.mem_filter,
+      Finset.mem_univ, hp, and_self]⟩
 
 /-- The tableau reconstructed from the label-chain of `T` is `T` itself. -/
 lemma tableauOfLabelChain_labelChainOfTableau (T : SetValuedTableau τ n) :
@@ -823,7 +824,7 @@ lemma tableauOfLabelChain_labelChainOfTableau (T : SetValuedTableau τ n) :
     calc
       i ∈ (tableauOfLabelChain (labelChainOfTableau T)).1 p
         ↔ p.1 ∈ (labelChainOfTableau T).1 i := by
-            simp [tableauOfLabelChain]
+            simp only [tableauOfLabelChain, Finset.mem_filter, Finset.mem_univ, true_and]
       _ ↔ i ∈ T.1 p := mem_labelChainOfTableau_iff T p i)
 
 /-- The label-chain reconstructed from the tableau of `C` is `C` itself. -/
@@ -874,17 +875,18 @@ lemma chiSum_eq_sum_map_snd (L : List (Set (ℤ × ℤ) × ℤ)) :
     chiSum L = (L.map Prod.snd).sum := by
   induction L with
   | nil =>
-      simp [chiSum]
+      simp only [chiSum, List.map_nil, List.sum_nil]
   | cons head tail ih =>
-      simp [chiSum, ih]
+      simp only [chiSum, ih, List.map_cons, List.sum_cons]
 
 lemma mem_boxUnion_iff_exists_mem {L : List (Set (ℤ × ℤ) × ℤ)} {p : ℤ × ℤ} :
     p ∈ boxUnion L ↔ ∃ x ∈ L, p ∈ x.1 := by
   induction L with
   | nil =>
-      simp [boxUnion]
+      simp only [boxUnion, Set.mem_empty_iff_false, List.not_mem_nil, false_and, exists_const]
   | cons head tail ih =>
-      simp [boxUnion, ih]
+      simp only [boxUnion, Set.mem_union, ih, Prod.exists, exists_and_right,
+        List.mem_cons, exists_eq_or_imp]
 
 lemma mem_boxUnion_iff_exists_index {L : List (Set (ℤ × ℤ) × ℤ)} {p : ℤ × ℤ} :
     p ∈ boxUnion L ↔ ∃ i, ∃ h : i < L.length, p ∈ (L[i]'h).1 := by
@@ -900,7 +902,7 @@ lemma isChain_of_sep_ofFn (A : Fin n → Set (ℤ × ℤ)) (χs : Fin n → ℤ)
     (hsep : ∀ {i j : Fin n}, i < j → ∀ p ∈ A i, ∀ q ∈ A j, p ≼ q → p = q) :
     isChain (List.ofFn fun i => (A i, χs i)) := by
   induction n with
-  | zero => simp [isChain]
+  | zero => simp only [List.ofFn_zero, isChain]
   | succ n ih =>
       have hfun :
           (fun i : Fin (n + 1) => (A i, χs i)) =
@@ -970,7 +972,7 @@ noncomputable def pChainOfLabelChain (χs : Fin n → ℤ)
             simpa using chiSum_eq_sum_map_snd (List.ofFn fun i => (C.1 i, χs i))
       _ = (List.ofFn χs).sum := by
             rw [List.map_ofFn]
-            simp [Function.comp_def]
+            simp only [Function.comp_def]
       _ = τ.χ := hχs
 
 noncomputable def fixedChiPChainOfLabelChain (χs : Fin n → ℤ)
@@ -978,9 +980,9 @@ noncomputable def fixedChiPChainOfLabelChain (χs : Fin n → ℤ)
     FixedChiPChain τ n χs :=
   ⟨pChainOfLabelChain χs hχs C, by
     constructor
-    · simp [pChainOfLabelChain]
+    · simp only [pChainOfLabelChain, List.length_ofFn]
     · rw [chainChiList, pChainOfLabelChain, List.map_ofFn]
-      simp [Function.comp_def]⟩
+      simp only [Function.comp_def]⟩
 
 noncomputable def labelChainOfFixedChiPChain {χs : Fin n → ℤ}
     (C : FixedChiPChain τ n χs) :
@@ -1011,15 +1013,15 @@ noncomputable def labelChainEquivFixedChiPChain (χs : Fin n → ℤ)
     apply Subtype.ext
     funext i
     ext p
-    simp [labelChainOfFixedChiPChain, fixedChiPChainOfLabelChain,
-      pChainOfLabelChain, List.getElem_ofFn]
+    simp only [labelChainOfFixedChiPChain, fixedChiPChainOfLabelChain,
+      pChainOfLabelChain, List.getElem_ofFn, Fin.eta, Subtype.coe_eta]
   right_inv C := by
     apply Subtype.ext
     apply Subtype.ext
     apply List.ext_getElem
     · calc
         (fixedChiPChainOfLabelChain χs hχs (labelChainOfFixedChiPChain C)).1.val.length = n := by
-          simp [fixedChiPChainOfLabelChain, pChainOfLabelChain]
+          simp only [fixedChiPChainOfLabelChain, pChainOfLabelChain, List.length_ofFn]
         _ = C.1.val.length := C.2.1.symm
     · intro i hi1 hi2
       have hχi : (C.1.val[i]'hi2).2 = χs ⟨i, by simpa [C.2.1] using hi2⟩ := by
@@ -1027,7 +1029,7 @@ noncomputable def labelChainEquivFixedChiPChain (χs : Fin n → ℤ)
         have hi : i < n := by simpa [C.2.1] using hi2
         simpa [chainChiList, hi2, hi] using h
       apply Prod.ext
-      · simp [fixedChiPChainOfLabelChain, pChainOfLabelChain,
+      · simp only [fixedChiPChainOfLabelChain, pChainOfLabelChain,
           labelChainOfFixedChiPChain, List.getElem_ofFn]
       · simpa [fixedChiPChainOfLabelChain, pChainOfLabelChain,
           labelChainOfFixedChiPChain, List.getElem_ofFn, C.2.1] using hχi.symm
@@ -1036,17 +1038,17 @@ lemma length_LSet_of_LPerm (L : List AspPerm) :
     (LSet_of_LPerm L).length = L.length := by
   induction L with
   | nil =>
-      simp [LSet_of_LPerm]
+      simp only [LSet_of_LPerm, List.length_nil]
   | cons α tail ih =>
-      simp [LSet_of_LPerm, ih]
+      simp only [LSet_of_LPerm, List.foldr_cons, List.length_cons, ih]
 
 lemma chainChiList_LSet_of_LPerm (L : List AspPerm) :
     (LSet_of_LPerm L).map Prod.snd = L.map AspPerm.χ := by
   induction L with
   | nil =>
-      simp [LSet_of_LPerm]
+      simp only [LSet_of_LPerm, List.map_nil]
   | cons α tail ih =>
-      simp [LSet_of_LPerm, ih]
+      simp only [LSet_of_LPerm, List.foldr_cons, List.map_cons, ih]
 
 lemma length_PChain_of_HF (h_321a : is_321a τ) (A : HeckeFactorization τ) :
     (PChain_of_HF h_321a A).val.length = A.val.length := by
@@ -1066,7 +1068,7 @@ noncomputable def fixedChiHeckeFactorizationEquivFixedChiPChain
     change (A.val.length = n ∧ chiList A = List.ofFn χs) ↔
       ((PChain_of_HF h_321a A).val.length = n ∧
         chainChiList (PChain_of_HF h_321a A) = List.ofFn χs)
-    simp [length_PChain_of_HF h_321a A, chainChiList_PChain_of_HF h_321a A])
+    simp only [length_PChain_of_HF h_321a A, chainChiList_PChain_of_HF h_321a A])
 
 /-- A label chain is equivalent to a Hecke factorization with prescribed
 ordered shift data. -/
@@ -1094,7 +1096,7 @@ noncomputable def setValuedTableauEquivHeckeFactorization
   let χf : Fin n → ℤ := fun i => χs[i.1]'(by omega)
   have h_ofFn : List.ofFn χf = χs := by
     apply List.ext_getElem
-    · simp [List.length_ofFn, h_len]
+    · simp only [List.length_ofFn, h_len]
     · intro i hi1 hi2
       rw [List.getElem_ofFn]
   have h_sum' : (List.ofFn χf).sum = τ.χ := by

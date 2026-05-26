@@ -63,7 +63,7 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
       linarith
     have := h_snk (lt_of_le_of_ne v_le_n this)
     linarith
-  have se_finite : (southeast_set τ (τ v) v).Finite := by simp [se_empty]
+  have se_finite : (southeast_set τ (τ v) v).Finite := by simp only [se_empty, Set.finite_empty]
   have nw_empty : (northwest_set τ (τ u + 1) (u+1)) = ∅ := by
     apply Set.eq_empty_of_forall_notMem
     intro n hn
@@ -82,7 +82,8 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     have n_lt_u : n < u := lt_of_le_of_ne n_le_u this
     have := h_src n_lt_u
     linarith
-  have nw_finite : (northwest_set τ (τ u + 1) (u+1)).Finite := by simp [nw_empty]
+  have nw_finite : (northwest_set τ (τ u + 1) (u+1)).Finite := by
+    simp only [nw_empty, Set.finite_empty]
   exact asp_of_finite_quadrants h_bij.injective se_finite nw_finite
 
 lemma tfree_of_is_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
@@ -399,7 +400,8 @@ lemma uv_duality {u : ℤ} {a b : ℤ}
   let b_le_v : b ≤ τ.v b m_pos := τ.v_ge b m_pos
   let τv_lt_a : τ (τ.v b m_pos) < a := τ.τv_lt b m_pos s_ge_m
   constructor
-  · suffices τ.s a (τ.v b m_pos) = m' by simp [τ⁻¹.dual_inverse, this]
+  · suffices τ.s a (τ.v b m_pos) = m' by
+      simp only [AspPerm.inv_mul_cancel_eval, τ⁻¹.dual_inverse, inv_inv, this]
     have split := split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a
     have : τ.s (τ (τ.v b m_pos)) b = m - 1 := by
       exact ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).1
@@ -505,7 +507,7 @@ lemma uv_duality_lt (a b : ℤ) {m m' : ℤ} (m_pos : m > 0) (m'_pos : m' > 0)
   -- Collect a bunch of inequalities
   have τv_le_w : τ v ≤ w := by
     by_cases h : v = τ⁻¹ w
-    · simp [h]
+    · simp only [h, AspPerm.mul_inv_cancel_eval, le_refl]
     have v_lt_iw : v < τ⁻¹ w := lt_of_le_of_ne v_le_iw h
     simpa using le_of_lt <| snk_lt h_321a v_snk v_lt_iw
   have b_le_v : b ≤ v := τ.v_ge b m_pos
@@ -742,7 +744,8 @@ lemma set_321a_prop_of_func (avset : tfas) (χ : ℤ) :
   · show AspSet_prop (inv_set (avset.recon χ))
     rw [avset.invSet_func χ]
     refine avset.prop
-  · simp [avset.prop_321a.tfree, avset.invSet_func χ]
+  · simp only [avset.invSet_func χ, SetLike.mem_coe, mem_AspSet,
+      avset.prop_321a.tfree, implies_true]
 
 theorem eq_s_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (u_lt_b : u < b) :
@@ -860,7 +863,7 @@ theorem lel_lamp {α : AspPerm} (h_R : α ≤R τ)
   have := lel_ramp (τ := τ⁻¹) (β := α⁻¹)
     (inv_is_321a h_321a) h_R a n_pos m_pos
   rw [this]
-  simp [α⁻¹.ramp_lamp_dual a]
+  simp only [α⁻¹.ramp_lamp_dual a, inv_inv]
 
 theorem inv_of_lel_iff_ramp
   {u b v : ℤ} (u_lt_b : u < b) (b_le_v : b ≤ v) :
@@ -938,7 +941,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
           constructor <;> (simp only [AspPerm.inv_mul_cancel_eval, ge_iff_le]; assumption)
         have := split_s (τ := τ⁻¹) (inv_is_321a h_321a)
           τv_lt_a τu_ge_a this.1 this.2
-        simp [τ.inv_mul_cancel_eval] at this
+        simp only [τ.inv_mul_cancel_eval] at this
         linarith [this]
       · linarith [split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a]
     rw [this.1, this.2] at h
@@ -1223,7 +1226,7 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
         rw [τ.chi_dual]
         linarith [hMN, h_χ]
       simpa [hba] using (τ⁻¹.mem_ramp_iff_s_ge a N M).mp mem_ramp_τi
-    have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp [N, this]
+    have : τ⁻¹.s b a ≥ τ⁻¹.s b a + 1 := by simp only [ge_iff_le, this, N]
     linarith
   have corner_lamp: ⟨1, 1⟩ ∈ α.lamp a := by
     have icc : M ∈ Set.Icc 1 M := ⟨M_pos, le_refl M⟩

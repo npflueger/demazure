@@ -26,7 +26,7 @@ vertical shifts. -/
 noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m)
 
 @[simp] lemma mem_floor (m n : ℤ) : n ∈ v.floor m ↔ v.f n ≤ m := by
-  simp [Valley.floor]
+  simp only [floor, Set.Finite.mem_toFinset, Set.mem_setOf_eq]
 
 lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Nonempty := by
   refine ⟨v.f n, ?_⟩
@@ -54,7 +54,7 @@ lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
 
 lemma argmin_set_nonempty : (v.floor v.min).Nonempty := by
   rcases v.min_mem with ⟨m, -, hm⟩
-  exact ⟨m, by simp [hm]⟩
+  exact ⟨m, by simp only [mem_floor, hm, le_refl]⟩
 
 /-- The largest index at which the minimum of the valley is attained. -/
 noncomputable def M : ℤ := Finset.max' (v.floor v.min) v.argmin_set_nonempty

@@ -19,11 +19,11 @@ noncomputable def star_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
 
 @[simp] lemma mem_star_hi_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ star_hi_error α β a b l ↔ l ≤ n ∧ α n < a ∧ β⁻¹ n < b := by
-  simp [star_hi_error, and_assoc]
+  simp only [star_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
 
 @[simp] lemma mem_star_lo_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ star_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ a ≤ α n := by
-  simp [star_lo_error, and_assoc]
+  simp only [star_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
 
 /-- The two nonnegative error terms in the product-counting formula for
 Lemma 5.1. This is the paper's partition of
@@ -68,7 +68,7 @@ lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
     have herr :
         A.filter (fun n => ¬ b ≤ β⁻¹ n) = star_hi_error α β a b l := by
       ext n
-      simp [A, star_hi_error]
+      simp only [not_le, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, star_hi_error, A]
     simpa only [P_hi, herr] using hsplit.symm
   have hB_error : B.card = P_lo.card + (star_lo_error α β a b l).card := by
     have hsplit := Finset.card_filter_add_card_filter_not
@@ -76,7 +76,7 @@ lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
     have herr :
         B.filter (fun n => ¬ α n < a) = star_lo_error α β a b l := by
       ext n
-      simp [B, star_lo_error]
+      simp only [not_lt, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, star_lo_error, B]
     simpa only [P_lo, herr] using hsplit.symm
   have hP_hi : P.filter (fun n => l ≤ n) = P_hi := by
     ext n

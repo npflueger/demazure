@@ -239,7 +239,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
       intro b hb
       have lt := b_lt b hb
       have ge := b_ge b hb
-      simp [lt, ge]
+      simp only [Set.mem_Ico, ge, lt, and_self]
     apply Set.Finite.subset _ this
     apply Set.finite_Ico
 
@@ -302,12 +302,12 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
   simp only [τ.mem_se, Finset.mem_filter, Finset.mem_Ico]
   by_cases h : b' < b
   · have : ¬ (b' ≥ b) := by linarith
-    simp [this]
+    simp only [ge_iff_le, this, false_and]
   have b_le_b' : b ≤ b' := by linarith
   simp only [ge_iff_le, b_le_b', true_and]
   by_cases h : τ b' ≥ a
   · have : ¬ (τ b' < a) := by linarith
-    simp [this]
+    simp only [this, and_false]
   have τb'_lt_a : τ b' < a := by linarith
   simp only [τb'_lt_a, and_true, true_iff]
   clear h
@@ -494,7 +494,7 @@ lemma AspValley_step_a (α β : AspPerm) (a b : ℤ) :
   have high : (∀ n : ℤ, n > α⁻¹ a → w.f n = v.f n) := by
     intro n hn
     rw [this n]
-    simp [hn]
+    simp only [add_eq_left, ite_eq_right_iff, one_ne_zero, imp_false, not_le, hn]
   have sed := sediment v w low high
   by_cases h : v.M ≤ α⁻¹ a
   · simp only [h, ↓reduceIte]
@@ -530,8 +530,9 @@ lemma AspValley_step_b (α β : AspPerm) (a b : ℤ) :
     rw [β.b_step n b]
     unfold Valley.shift_down
     by_cases h : n ≤ β b
-    · simp [h]
-    · simp [not_le.mp h]
+    · simp only [h, ↓reduceIte, sub_add_cancel, add_right_inj, sub_eq_self,
+        ite_eq_right_iff, one_ne_zero, imp_false, not_lt]
+    · simp only [not_le.mp h, ↓reduceIte]
       omega
   have low : (∀ n : ℤ, n ≤ β b → w.f n = v.f n + 1) := by
     intro n hn
@@ -631,7 +632,7 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
   have M_le_βb : M ≤ β b := le_trans M_le_M' M'_ge_b
   rw [(AspValley_step_b α β a b).1]
   subst M
-  simp [M_le_βb]
+  simp only [M_le_βb, ↓reduceIte, sub_add_cancel]
 
 /-! ### Closure of Submodularity Under Contraction
 
@@ -977,7 +978,7 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   rw [← eq_sf] at this
   rw [α.Δ_eq (β n) n] at this
   contrapose! this with neq
-  simp [neq]
+  simp only [neq, ↓reduceIte, ne_eq, zero_ne_one, not_false_eq_true]
 
 /-- The slipface product of two ASP permutations is represented by a unique ASP
 permutation. *Theorem 4.4 (`thm:starExists1`), part 2/5.* -/
@@ -1149,7 +1150,7 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   let τ := α ⋆ β
   have τ_eq : τ.sf = α.sf ⋆ β.sf  := (ex.choose_spec).1
   repeat rw [← AspPerm.sf_chi_eq]
-  simp [SlipFace.chi_star]
+  simp only [star_spec, SlipFace.chi_star, sf_chi_eq]
 
 /-- Demazure product of a list of ASP permutations. -/
 noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
@@ -1199,14 +1200,14 @@ lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
       exact (AspPerm.id.mem_se a b k).2 hk'
   rw [hset]
   have hcard : (Finset.Ico b a).card = (a - b).toNat := by
-    simp [Int.card_Ico b a]
+    simp only [Int.card_Ico b a]
   rw [hcard]
   by_cases h : a - b ≥ 0
   · rw [max_eq_left h, Int.toNat_of_nonneg h]
   · have h' : a - b < 0 := lt_of_not_ge h
     rw [max_eq_right (le_of_lt h')]
     have : (a - b).toNat = 0 := Int.toNat_of_nonpos (le_of_lt h')
-    simp [this]
+    simp only [this, Nat.cast_zero]
 
 lemma id_sf : AspPerm.id.sf = SlipFace.id := by
   apply (SF_ext _ _).mpr

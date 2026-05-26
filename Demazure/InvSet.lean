@@ -59,16 +59,16 @@ def post_lt (asps : AspSet) (m n : ℤ) : Prop :=
   (m < n ∧ ⟨m, n⟩ ∉ asps) ∨ (n < m ∧ ⟨n, m⟩ ∈ asps)
 
 @[simp] lemma not_post_lt_self (asps : AspSet) (n : ℤ) : ¬ asps.post_lt n n := by
-  simp [post_lt]
+  simp only [post_lt, lt_self_iff_false, mem_AspSet, false_and, or_self, not_false_eq_true]
 
 lemma post_lt_iff_not_mem (asps : AspSet) {m n : ℤ} (m_lt_n : m < n) :
     asps.post_lt m n ↔ ⟨m, n⟩ ∉ asps := by
-  simp [post_lt, m_lt_n, not_lt_of_gt m_lt_n]
+  simp only [post_lt, m_lt_n, mem_AspSet, true_and, not_lt_of_gt m_lt_n, false_and, or_false]
 
 lemma post_lt_swap_iff_mem (asps : AspSet) {m n : ℤ} (m_le_n : m ≤ n) :
     asps.post_lt n m ↔ ⟨m, n⟩ ∈ asps := by
   rcases lt_or_eq_of_le m_le_n with m_lt_n | rfl
-  · simp [post_lt, m_lt_n, not_lt_of_gt m_lt_n]
+  · simp only [post_lt, not_lt_of_gt m_lt_n, mem_AspSet, false_and, m_lt_n, true_and, false_or]
   · exact iff_of_false (not_post_lt_self asps m) (not_mem_self asps m)
 
 lemma post_lt_trans (asps : AspSet) {l m n : ℤ} (hlm : asps.post_lt l m) (hmn : asps.post_lt m n) :
@@ -153,11 +153,11 @@ noncomputable abbrev outset (asps : AspSet) (n : ℤ) : Finset ℤ :=
 
 @[simp] lemma mem_inset (asps : AspSet) (n x : ℤ) :
     x ∈ asps.inset n ↔ ⟨x, n⟩ ∈ asps := by
-  simp [inset]
+  simp only [inset, Set.Finite.mem_toFinset, Set.mem_setOf_eq, mem_AspSet]
 
 @[simp] lemma mem_outset (asps : AspSet) (n x : ℤ) :
     x ∈ asps.outset n ↔ ⟨n, x⟩ ∈ asps := by
-  simp [outset]
+  simp only [outset, Set.Finite.mem_toFinset, Set.mem_setOf_eq, mem_AspSet]
 
 /-- The half-open interval for the order `post_lt`. These are the elements
 `l` with `m ≤ l < n` in the post-inversion order. -/
@@ -183,7 +183,7 @@ noncomputable def post_Ico (asps : AspSet) (m n : ℤ) : Finset ℤ :=
 
 @[simp] lemma mem_post_Ico (asps : AspSet) (m n l : ℤ) :
     l ∈ asps.post_Ico m n ↔ asps.post_lt l n ∧ ¬ asps.post_lt l m := by
-  simp [post_Ico]
+  simp only [post_Ico, Set.Finite.mem_toFinset, Set.mem_setOf_eq]
 
 lemma post_Ico_swap_eq_empty_of_post_lt (asps : AspSet) {m n : ℤ} (hmn : asps.post_lt m n) :
     asps.post_Ico n m = ∅ := by
@@ -208,7 +208,7 @@ private noncomputable abbrev oneIf (P : Prop) : ℤ := if P then 1 else 0
 private lemma oneIf_Ico_eq_sub (m_le_n : m ≤ n) (k : ℤ) :
     oneIf (k ∈ Finset.Ico m n) = oneIf (k < n) - oneIf (k < m) := by
   by_cases k_lt_m : k < m <;> by_cases k_lt_n : k < n
-  <;> simp [oneIf, k_lt_m, k_lt_n]; omega
+  <;> simp only [oneIf, Finset.mem_Ico] <;> split_ifs <;> omega
 
 private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
     oneIf (k < a) - oneIf (k ∈ asps.inset a) + oneIf (k ∈ asps.outset a) =
@@ -219,12 +219,14 @@ private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
       absurd (asps.directed a k ((mem_outset asps a k).mp hk)) (not_lt_of_ge k_lt_a.le)
     rw [post_lt_iff_not_mem asps k_lt_a]; simp only [← mem_inset]
     by_cases hin : k ∈ asps.inset a <;> simp [oneIf, k_lt_a, not_out, hin]
-  · simp [oneIf]
+  · simp only [oneIf, lt_self_iff_false, ↓reduceIte, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, zero_sub, neg_add_cancel, not_post_lt_self]
   · have not_k_lt_a : ¬ k < a := not_lt_of_ge a_lt_k.le
     have not_in : k ∉ asps.inset a := fun hk =>
       absurd (asps.directed k a ((mem_inset asps a k).mp hk)) (not_lt_of_ge a_lt_k.le)
     rw [post_lt_swap_iff_mem asps a_lt_k.le]; simp only [← mem_outset]
-    simp [oneIf, not_k_lt_a, not_in]
+    simp only [oneIf, not_k_lt_a, ↓reduceIte, not_in, sub_self,
+      Set.Finite.mem_toFinset, Set.mem_setOf_eq, zero_add]
 
 private lemma sum_oneIf_mem_of_subset {A U : Finset ℤ} (hAU : A ⊆ U) :
     (∑ k ∈ U, oneIf (k ∈ A)) = (A.card : ℤ) := by
@@ -264,7 +266,8 @@ private lemma sigmaIndicator_support_subset :
   have hin_n : k ∉ asps.inset n := hkU.2.2.2.1
   have hout_n : k ∉ asps.outset n := hkU.2.2.2.2
   have hk_zero : sigmaIndicator asps m n k = 0 := by
-    simp [sigmaIndicator, oneIf, hIco, hin_m, hout_m, hin_n, hout_n]
+    simp only [sigmaIndicator, oneIf, hIco, ↓reduceIte, hin_m, add_zero,
+      hout_m, sub_self, hin_n, hout_n]
   exact hk hk_zero
 
 private lemma postIndicator_support_subset :
@@ -277,7 +280,7 @@ private lemma postIndicator_support_subset :
   have hmn : k ∉ asps.post_Ico m n := hkU.1
   have hnm : k ∉ asps.post_Ico n m := hkU.2
   have hk_zero : postIndicator asps m n k = 0 := by
-    simp [postIndicator, oneIf, hmn, hnm]
+    simp only [postIndicator, oneIf, hmn, ↓reduceIte, hnm, sub_self]
   exact hk hk_zero
 
 private lemma finsum_sigmaIndicator (m_le_n : m ≤ n) :
@@ -287,19 +290,23 @@ private lemma finsum_sigmaIndicator (m_le_n : m ≤ n) :
     (asps.inset m ∪ (asps.outset m ∪ (asps.inset n ∪ asps.outset n)))
   have hIco : Finset.Ico m n ⊆ U := by
     intro k hk
-    simp [U, hk]
+    simp only [Finset.mem_union, hk, Set.Finite.mem_toFinset, Set.mem_setOf_eq, true_or, U]
   have hin_m : asps.inset m ⊆ U := by
     intro k hk
-    simp [U, hk]
+    simp only [Finset.mem_union, Finset.mem_Ico, hk, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, true_or, or_true, U]
   have hout_m : asps.outset m ⊆ U := by
     intro k hk
-    simp [U, hk]
+    simp only [Finset.mem_union, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, hk, true_or, or_true, U]
   have hin_n : asps.inset n ⊆ U := by
     intro k hk
-    simp [U, hk]
+    simp only [Finset.mem_union, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, hk, true_or, or_true, U]
   have hout_n : asps.outset n ⊆ U := by
     intro k hk
-    simp [U, hk]
+    simp only [Finset.mem_union, Finset.mem_Ico, Set.Finite.mem_toFinset,
+      Set.mem_setOf_eq, hk, or_true, U]
   rw [finsum_eq_sum_of_support_subset
     (f := fun k : ℤ => sigmaIndicator asps m n k) (s := U)]
   · calc
@@ -316,7 +323,7 @@ private lemma finsum_sigmaIndicator (m_le_n : m ≤ n) :
           sum_oneIf_mem_of_subset hout_n]
         unfold σ recon
         have hIco_card : ((Finset.Ico m n).card : ℤ) = n - m := by
-          simp [m_le_n]
+          simp only [Int.card_Ico, Int.ofNat_toNat, Int.sub_nonneg, m_le_n, sup_of_le_left]
         linarith
   · simpa [U] using sigmaIndicator_support_subset asps m n
 
@@ -391,8 +398,9 @@ lemma σ_diff_of_post_lt (hmn : asps.post_lt m n) :
   · simpa [post_Ico_swap_eq_empty_of_post_lt asps ((post_lt_iff_not_mem asps m_lt_n).mpr mn_nI)]
       using σ_diff_post asps m n χ m_lt_n.le
   · have key := σ_diff_post asps n m χ n_lt_m.le
-    simp [post_Ico_swap_eq_empty_of_post_lt asps
-            ((post_lt_swap_iff_mem asps n_lt_m.le).mpr nm_I)] at key
+    have h_swap := post_Ico_swap_eq_empty_of_post_lt asps
+      ((post_lt_swap_iff_mem asps n_lt_m.le).mpr nm_I)
+    simp only [h_swap, Finset.card_empty, Nat.cast_zero, zero_sub] at key
     omega
 
 lemma σ_lt_of_post_lt (hmn : asps.post_lt m n) : asps.σ χ m < asps.σ χ n := by
@@ -552,7 +560,7 @@ lemma surj_helper_up (m : ℤ) (n : ℕ) :
   · omega
   · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_outset_x
     have hlt := σ_inc asps x y χ y_gt_x y_not_outset_x
-    simp [Nat.cast_add]; linarith [lt_of_le_of_lt fx_ge hlt]
+    simp only [Nat.cast_add, Nat.cast_one]; linarith [lt_of_le_of_lt fx_ge hlt]
 
 lemma surj_helper_down (m : ℤ) (n : ℕ) :
   ∃ x : ℤ, x ≤ m ∧ asps.recon χ x ≤ asps.recon χ m - n := by
@@ -575,7 +583,7 @@ lemma surj_helper_down (m : ℤ) (n : ℕ) :
   · omega
   · simp only [Set.Finite.mem_toFinset, Set.mem_setOf_eq] at y_not_inset_x
     have hlt := σ_inc asps y x χ y_lt_x y_not_inset_x
-    simp [Nat.cast_add]; linarith [lt_of_lt_of_le hlt fx_le]
+    simp only [Nat.cast_add, Nat.cast_one, ge_iff_le]; linarith [lt_of_lt_of_le hlt fx_le]
 
 
 /-- The function reconstructed from an ASP set and a shift is surjective. -/
@@ -606,14 +614,14 @@ theorem func_asp : is_asp (asps.recon χ) := by
   have se_fin : se.Finite := by
     suffices se = outset asps 0 by
       rw [this]
-      simp [asps.finite_outdegree 0]
+      simp only [Set.Finite.coe_toFinset, asps.finite_outdegree 0]
     rw [outset_eq_se asps χ 0]
     congr
   let nw := northwest_set τ ((τ 0) + 1) 0
   have nw_fin : nw.Finite := by
     suffices nw = inset asps 0 by
       rw [this]
-      simp [asps.finite_indegree 0]
+      simp only [Set.Finite.coe_toFinset, asps.finite_indegree 0]
     rw [inset_eq_nw asps χ 0]
   apply asp_of_finite_quadrants (func_injective χ asps) se_fin nw_fin
 

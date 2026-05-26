@@ -592,13 +592,13 @@ lemma id_mul (s : SlipFace) : id ⋆ s = s := by
     have : id a a = 0 := by
       rw [id]
       simp
-    simp [this]
+    simp only [this, zero_add, ge_iff_le, le_refl]
   · apply (le_star_val_iff s id s a b).mpr
     intro l
     by_cases hl : l ≤ a
     · have : id a l = a - l := by
         rw [id]
-        simp [hl]
+        simp only [Int.sub_nonneg, hl, sup_of_le_left]
       rw [this]
       rw [s.s_eq a b, s.s_eq l b]
       have : s.dual b l ≥ s.dual b a := by
@@ -752,7 +752,7 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
     let middle := Finset.Icc L U
     have hmiddle_nonempty : middle.Nonempty := by
       refine ⟨L, ?_⟩
-      simp [middle, U]
+      simp only [Finset.mem_Icc, le_refl, le_sup_right, and_self, middle, U]
     let middleBounds := middle.image (fun l => s a l + l + t.χ)
     have hbounds_nonempty : middleBounds.Nonempty := hmiddle_nonempty.image _
     let M := middleBounds.max' hbounds_nonempty
@@ -776,7 +776,7 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
         omega
       · push_neg at hl_right
         have hl_mem : l ∈ middle := by
-          simp [middle]
+          simp only [Finset.mem_Icc, middle]
           omega
         have hval_mem : s a l + l + t.χ ∈ middleBounds := by
           exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
@@ -806,7 +806,7 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
     let middle := Finset.Icc L U
     have hmiddle_nonempty : middle.Nonempty := by
       refine ⟨L, ?_⟩
-      simp [middle, U]
+      simp only [Finset.mem_Icc, le_refl, le_sup_right, and_self, middle, U]
     let cutoffs := middle.image (fun l => Classical.choose (s.small_a l))
     have hcutoffs_nonempty : cutoffs.Nonempty := hmiddle_nonempty.image _
     let A₁ := cutoffs.min' hcutoffs_nonempty
@@ -830,7 +830,7 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
         omega
       · push_neg at hl_right
         have hl_mem : l ∈ middle := by
-          simp [middle]
+          simp only [Finset.mem_Icc, middle]
           omega
         let A_l := Classical.choose (s.small_a l)
         have hAl_mem : A_l ∈ cutoffs := by
@@ -959,7 +959,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
     let middle := Finset.Icc L U
     have hmiddle_nonempty : middle.Nonempty := by
       refine ⟨L, ?_⟩
-      simp [middle, U]
+      simp only [Int.max_assoc, Finset.mem_Icc, le_refl, le_sup_iff, or_true, and_self, middle, U]
     let cutoffs := middle.image (fun l => Classical.choose (t.large_b l))
     have hcutoffs_nonempty : cutoffs.Nonempty := hmiddle_nonempty.image _
     let B₁ := cutoffs.max' hcutoffs_nonempty
@@ -985,7 +985,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
         omega
       · push_neg at hl_right
         have hl_mem : l ∈ middle := by
-          simp [middle]
+          simp only [Finset.mem_Icc, middle]
           omega
         let B_l := Classical.choose (t.large_b l)
         have hBl_mem : B_l ∈ cutoffs := by
@@ -1018,7 +1018,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
     let middle := Finset.Icc L U
     have hmiddle_nonempty : middle.Nonempty := by
       refine ⟨L, ?_⟩
-      simp [middle, U]
+      simp only [Finset.mem_Icc, le_refl, le_sup_right, and_self, middle, U]
     let middleBounds := middle.image (fun l => l - s.χ - t l b)
     have hbounds_nonempty : middleBounds.Nonempty := hmiddle_nonempty.image _
     let A := middleBounds.min' hbounds_nonempty
@@ -1040,7 +1040,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
         omega
       · push_neg at hl_right
         have hl_mem : l ∈ middle := by
-          simp [middle]
+          simp only [Finset.mem_Icc, middle]
           omega
         have hval_mem : l - s.χ - t l b ∈ middleBounds := by
           exact Finset.mem_image.mpr ⟨l, hl_mem, rfl⟩
@@ -1422,6 +1422,6 @@ def Γ : Set (ℤ × ℤ) := {(a, b) | sf.Δ a b = 1}
 
 lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := by
   intro a b
-  simp [SlipFace.Γ, sf.Δ_dual]
+  simp only [Γ, Set.mem_setOf_eq, sf.Δ_dual]
 
 end SlipFace

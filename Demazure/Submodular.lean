@@ -1131,6 +1131,15 @@ lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
+theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
+    IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
+  constructor
+  · exact ⟨(Submodular.AspValley α β a b).M,
+      (Submodular.AspValley α β a b).f_M.trans (star_valley α β a b).symm⟩
+  · rintro y ⟨l, rfl⟩
+    rw [star_valley]
+    exact (Submodular.AspValley α β a b).min_spec l
+
 /-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`), part 4/5.* -/
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
   have ex := star_exists (β⁻¹) (α⁻¹)

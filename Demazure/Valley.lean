@@ -4,7 +4,7 @@ import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Tactic.Linarith
 
 /-- A function on `ℤ` whose sublevel sets are finite. This is the abstraction
-used to talk about minima and rightmost minimizers in the valley arguments.
+used to talk about minima and rightmost minimizers.
 *Lemma 4.6 (`lem:fg`).* -/
 structure Valley where
   f : ℤ → ℤ

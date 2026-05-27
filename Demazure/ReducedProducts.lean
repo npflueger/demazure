@@ -556,7 +556,7 @@ theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
 
 end ReducedProducts
 
-/-! ### Reduced Facts -/
+/-! ### Reduced Factorizations -/
 
 /-- A reduced factorization of `γ` into the ordinary product of `α` and `β`.
 

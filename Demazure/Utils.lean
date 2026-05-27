@@ -1,5 +1,7 @@
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Int.Basic
+import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Linarith
 
 /-! ### Small Finset and Set Helpers
@@ -8,6 +10,47 @@ This namespace contains auxiliary lemmas used across the development but not
 specific to ASP permutations or Demazure product. -/
 
 namespace Utils
+
+/-- The integer-valued indicator of a proposition: `1` when `P` holds and
+`0` otherwise. This is the paper's notation `δ[P]`. -/
+noncomputable abbrev oneIf (P : Prop) : ℤ := by
+  classical
+  exact if P then 1 else 0
+
+/-- The indicator `δ[P]` depends only on the truth value of `P`. -/
+lemma oneIf_congr {P Q : Prop} (h : P ↔ Q) :
+    oneIf P = oneIf Q := by
+  -- Proof written by GPT 5.5.
+  by_cases hP : P
+  · have hQ : Q := h.mp hP
+    simp only [oneIf, hP, hQ, if_true]
+  · have hQ : ¬ Q := fun hQ => hP (h.mpr hQ)
+    simp only [oneIf, hP, hQ, if_false]
+
+/-- On an integer interval, membership is the difference of two initial
+segments. -/
+lemma oneIf_Ico_eq_sub (m n : ℤ) (m_le_n : m ≤ n) (k : ℤ) :
+    oneIf (k ∈ Finset.Ico m n) = oneIf (k < n) - oneIf (k < m) := by
+  -- Proof written by GPT 5.5.
+  by_cases k_lt_m : k < m <;> by_cases k_lt_n : k < n
+  <;> simp only [oneIf, Finset.mem_Ico] <;> split_ifs <;> omega
+
+/-- Summing the indicator of membership in `A` over any finite superset `U`
+counts `A`. -/
+lemma sum_oneIf_mem_of_subset {ι : Type*} {A U : Finset ι} (hAU : A ⊆ U) :
+    (∑ k ∈ U, oneIf (k ∈ A)) = (A.card : ℤ) := by
+  -- Proof written by GPT 5.5.
+  classical
+  have hfilter : U.filter (fun k => k ∈ A) = A := by
+    ext k
+    simp only [Finset.mem_filter]
+    exact ⟨fun hk => hk.2, fun hk => ⟨hAU hk, hk⟩⟩
+  have hsum_eq :
+      (∑ k ∈ U, oneIf (k ∈ A)) = ∑ k ∈ U, if k ∈ A then (1 : ℤ) else 0 := by
+    apply Finset.sum_congr rfl
+    intro k _
+    by_cases hkA : k ∈ A <;> simp [oneIf, hkA]
+  rw [hsum_eq, Finset.sum_boole, hfilter]
 
 /-- The difference of the cardinalities of two finite sets is equal to the
 difference of the cardinalities of their set-theoretic differences. -/

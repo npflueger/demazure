@@ -202,13 +202,7 @@ section σ_diff
 variable (asps : AspSet) (m n χ : ℤ)
 noncomputable abbrev σ := asps.recon χ
 
-open Classical in
-private noncomputable abbrev oneIf (P : Prop) : ℤ := if P then 1 else 0
-
-private lemma oneIf_Ico_eq_sub (m_le_n : m ≤ n) (k : ℤ) :
-    oneIf (k ∈ Finset.Ico m n) = oneIf (k < n) - oneIf (k < m) := by
-  by_cases k_lt_m : k < m <;> by_cases k_lt_n : k < n
-  <;> simp only [oneIf, Finset.mem_Ico] <;> split_ifs <;> omega
+open Utils
 
 private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
     oneIf (k < a) - oneIf (k ∈ asps.inset a) + oneIf (k ∈ asps.outset a) =
@@ -227,20 +221,6 @@ private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
     rw [post_lt_swap_iff_mem asps a_lt_k.le]; simp only [← mem_outset]
     simp only [oneIf, not_k_lt_a, ↓reduceIte, not_in, sub_self,
       Set.Finite.mem_toFinset, Set.mem_setOf_eq, zero_add]
-
-private lemma sum_oneIf_mem_of_subset {A U : Finset ℤ} (hAU : A ⊆ U) :
-    (∑ k ∈ U, oneIf (k ∈ A)) = (A.card : ℤ) := by
-  -- Proof written by GPT 5.5.
-  have hfilter : U.filter (fun k => k ∈ A) = A := by
-    ext k
-    simp only [Finset.mem_filter]
-    exact ⟨fun hk => hk.2, fun hk => ⟨hAU hk, hk⟩⟩
-  have hsum_eq :
-      (∑ k ∈ U, oneIf (k ∈ A)) = ∑ k ∈ U, if k ∈ A then (1 : ℤ) else 0 := by
-    apply Finset.sum_congr rfl
-    intro k _
-    by_cases hkA : k ∈ A <;> simp [oneIf, hkA]
-  rw [hsum_eq, Finset.sum_boole, hfilter]
 
 private noncomputable def sigmaIndicator (asps : AspSet) (m n k : ℤ) : ℤ :=
   oneIf (k ∈ Finset.Ico m n)

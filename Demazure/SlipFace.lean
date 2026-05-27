@@ -610,18 +610,30 @@ lemma id_mul (s : SlipFace) : id ⋆ s = s := by
       apply s.nondec (by linarith) (le_refl b)
 
 lemma mul_id (s : SlipFace) : s ⋆ id = s := by
-  let t := s.dual
-  have : s = t.dual := by rw [SlipFace.dual_dual s]
-  rw [this]
-  have : id = id.dual := by
-    apply (SF_ext _ _).mpr
-    intro a b
-    dsimp [id, SlipFace.dual]
-    omega
-  suffices t.dual ⋆ id.dual = t.dual by
-    convert this
-  rw [← star_dual, id_mul]
-
+  apply (SF_ext _ _).mpr
+  intro a b
+  apply le_antisymm
+  · apply (ge_star_val_iff s s id a b).mpr
+    use b
+    have : id b b = 0 := by
+      rw [id]
+      simp
+    simp only [this, add_zero, ge_iff_le, le_refl]
+  · apply (le_star_val_iff s s id a b).mpr
+    intro l
+    by_cases hl : l ≤ b
+    · have : id l b = 0 := by
+        rw [id]; simp; omega
+      rw [this, add_zero]
+      apply s.nondec (le_refl a) hl
+    · have : id l b = l - b := by
+        rw [id]
+        exact max_eq_left (by omega)
+      rw [this]
+      rw [s.s_eq a b, s.s_eq a l]
+      have : s.dual l a ≥ s.dual b a := by
+        apply s.dual.nondec (by omega) (le_refl a)
+      omega
 
 noncomputable instance : Monoid SlipFace where
   mul := star
@@ -1150,12 +1162,170 @@ left/right duality to dual slipfaces.
   dsimp [right_contract]
   rw [SlipFace.dual_dual]
 
+/- A small set on which witnesses to the value $s \star t (a,b)$ always occur.
+*Lemma 3.12 (`lem:setL`), part 1/5.* -/
+def bend_set (t : SlipFace) (b : ℤ) : Set ℤ :=
+  {l : ℤ | t (l-1) b = t l b ∧ t l b ≠ t (l+1) b}
+
+/- *Lemma 3.12 (`lem:setL`), part 2/5.* -/
+lemma bend_set_finite (t : SlipFace) (b : ℤ) : Finite (bend_set t b) := by
+  sorry
+
+lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b ≠ t (l + 1) b) :
+  ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧ s a m + t m b ≤ s a l + t l b := by
+  by_cases h : t (l-1) b = t l b
+  · use l
+  have hl' : t (l-1) b ≠ t ((l-1)+1) b := by
+    contrapose! h with hl'
+    rw [hl']
+    congr
+    omega
+  obtain ⟨m, ⟨teq, tneq, sumle⟩⟩ := bend_set_witness_helper s t a b (l-1) hl'
+  use m, teq, tneq
+  apply le_trans sumle
+  have hs_step := s.b_step a (l-1)
+  have ht_step := t.a_step (l-1) b
+  have hs_le : s a (l-1) ≤ s a l + 1 := by
+    apply le_of_le_of_eq hs_step.2
+    congr; omega
+  have ht_eq : t l b = t (l-1) b + 1 := by
+    have hpred_succ : l - 1 + 1 = l := by omega
+    rw [hpred_succ] at ht_step
+    omega
+  omega
+termination_by (t l b).toNat
+decreasing_by
+  simp_wf
+  have ht_step := t.a_step (l - 1) b
+  have hpred_succ : l - 1 + 1 = l := by omega
+  rw [hpred_succ] at ht_step
+  have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
+  omega
+
+/- *Lemma 3.12 (`lem:setL`), part 3/5.* -/
+lemma bend_set_witness (s t : SlipFace) (a b : ℤ) :
+  ∃ l ∈ bend_set t b, (s ⋆ t) a b = s a l + t l b := by
+  -- Proof written by GPT 5.5.
+  let v := SlipValley s t a b
+  have hM_right : t v.M b ≠ t (v.M + 1) b := by
+    intro ht_eq
+    have hstrict : v.f (v.M + 1) > v.f v.M := (v.M_spec (v.M + 1)).2 (by omega)
+    have hs_step : s a (v.M + 1) ≤ s a v.M := (s.b_step a v.M).1
+    have hle : v.f (v.M + 1) ≤ v.f v.M := by
+      change s a (v.M + 1) + t (v.M + 1) b ≤ s a v.M + t v.M b
+      omega
+    omega
+  obtain ⟨m, ⟨hm_left, hm_right, hm_le⟩⟩ :=
+    bend_set_witness_helper s t a b v.M hM_right
+  use m
+  constructor
+  · exact ⟨hm_left, hm_right⟩
+  · have hstarM : (s ⋆ t) a b = s a v.M + t v.M b := by
+      rw [star_func_eq]
+      exact Eq.symm v.f_M
+    have hM_le_m : s a v.M + t v.M b ≤ s a m + t m b := by
+      exact (v.M_spec m).1
+    have hm_eq : s a m + t m b = s a v.M + t v.M b := le_antisymm hm_le hM_le_m
+    rw [hstarM, hm_eq]
+
+lemma bend_set_witness_lc_right_helper (s t : SlipFace) (a b l : ℤ)
+    (hmax : ∀ n, s a n - t.dual b n ≤ s a l - t.dual b l) :
+    ∃ m : ℤ, t m b ≠ t (m+1) b ∧
+      s a l - t.dual b l ≤ s a m - t.dual b m := by
+  -- Proof written by GPT 5.5.
+  by_cases hright : t l b = t (l+1) b
+  · have hdual : t.dual b (l+1) = t.dual b l - 1 := by
+      rw [t.s'_eq b (l+1), t.s'_eq b l, hright]
+      omega
+    have hs_step := s.b_step a l
+    have hle_next : s a l - t.dual b l ≤ s a (l+1) - t.dual b (l+1) := by
+      omega
+    have hge_next : s a (l+1) - t.dual b (l+1) ≤ s a l - t.dual b l :=
+      hmax (l+1)
+    have hs_drop : s a (l+1) = s a l - 1 := by
+      omega
+    have hmax_next :
+        ∀ n, s a n - t.dual b n ≤ s a (l+1) - t.dual b (l+1) := by
+      intro n
+      have hn := hmax n
+      omega
+    obtain ⟨m, hm_right, hm_le⟩ :=
+      bend_set_witness_lc_right_helper s t a b (l+1) hmax_next
+    use m, hm_right
+    exact le_trans hle_next hm_le
+  · use l, hright
+termination_by (s a l).toNat
+decreasing_by
+  simp_wf
+  have hnonneg : 0 ≤ s a (l+1) := s.nonneg a (l+1)
+  omega
+
+lemma bend_set_witness_lc_helper (s t : SlipFace) (a b l : ℤ)
+    (hl : t l b ≠ t (l + 1) b) :
+    ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧
+      s a l - t.dual b l ≤ s a m - t.dual b m := by
+  -- Proof written by GPT 5.5.
+  by_cases h : t (l-1) b = t l b
+  · use l, h, hl
+  have hl' : t (l-1) b ≠ t ((l-1)+1) b := by
+    contrapose! h with hl'
+    rw [hl']
+    congr
+    omega
+  obtain ⟨m, hm_left, hm_right, hm_le⟩ :=
+    bend_set_witness_lc_helper s t a b (l-1) hl'
+  use m, hm_left, hm_right
+  have hs_step := s.b_step a (l-1)
+  have ht_step := t.a_step (l-1) b
+  have ht_eq : t l b = t (l-1) b + 1 := by
+    have hpred_succ : l - 1 + 1 = l := by omega
+    rw [hpred_succ] at ht_step
+    omega
+  have hdual : t.dual b (l-1) = t.dual b l := by
+    rw [t.s'_eq b (l-1), t.s'_eq b l, ht_eq]
+    omega
+  have hs_le : s a l ≤ s a (l-1) := by
+    have hpred_succ : l - 1 + 1 = l := by omega
+    rw [hpred_succ] at hs_step
+    exact hs_step.1
+  have hcurr_prev : s a l - t.dual b l ≤ s a (l-1) - t.dual b (l-1) := by
+    rw [hdual]
+    omega
+  exact le_trans hcurr_prev hm_le
+termination_by (t l b).toNat
+decreasing_by
+  simp_wf
+  have ht_step := t.a_step (l - 1) b
+  have hpred_succ : l - 1 + 1 = l := by omega
+  rw [hpred_succ] at ht_step
+  have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
+  omega
+
+/- *Lemma 3.12 (`lem:setL`), part 4/5.* -/
+lemma bend_set_witness_lc (s t : SlipFace) (a b : ℤ) :
+    ∃ l ∈ bend_set t b, (s ◃ t) a b = s a l - t.dual b l := by
+  -- Proof written by GPT 5.5.
+  let l := lc_wit s t a b
+  have hmax : ∀ n, s a n - t.dual b n ≤ s a l - t.dual b l := by
+    intro n
+    change s a n - t.dual b n ≤ s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
+    exact lc_val_ge s t a b n
+  obtain ⟨r, hr_right, hlr⟩ := bend_set_witness_lc_right_helper s t a b l hmax
+  obtain ⟨m, hm_left, hm_right, hrm⟩ := bend_set_witness_lc_helper s t a b r hr_right
+  use m
+  constructor
+  · exact ⟨hm_left, hm_right⟩
+  · rw [lc_wit_spec]
+    apply le_antisymm
+    · exact le_trans hlr hrm
+    · exact hmax m
+
 /-- The $\star$ operation is Bruhat-increasing in both arguments.
 *Lemma 3.8 (`lem:compatLeq`), part 1/3.* -/
 lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ⋆ t₁ ≤ s₂ ⋆ t₂ := by
-  -- Proof written by Codex.
+  -- Proof written by GPT 5.5.
   intro a b
   apply (le_star_val_iff (s₁ ⋆ t₁) s₂ t₂ a b).mpr
   intro l
@@ -1170,7 +1340,7 @@ lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
 lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ◃ t₂.dual ≤ s₂ ◃ t₁.dual := by
-  -- Proof written by Codex.
+  -- Proof written by GPT 5.5.
   intro a b
   let l := lc_wit s₁ t₂.dual a b
   rw [lc_wit_spec]
@@ -1191,7 +1361,7 @@ lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
 lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     t₂.dual ▹ s₁ ≤ t₁.dual ▹ s₂ := by
-  -- Proof written by Codex.
+  -- Proof written by GPT 5.5.
   intro a b
   let l := rc_wit t₂.dual s₁ a b
   rw [rc_wit_spec]
@@ -1262,7 +1432,7 @@ lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
 *Lemma 3.11 (`lem:sfAlgebra`), part 2/3.* -/
 lemma left_contract_assoc (s t u : SlipFace) :
     (s ◃ t) ◃ u = s ◃ (t ⋆ u) := by
-  -- Proof written by Codex.
+  -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :
       v ≥ (s ◃ t) ◃ u ↔ v ≥ s ◃ (t ⋆ u) := by
     calc
@@ -1286,7 +1456,7 @@ lemma left_contract_assoc (s t u : SlipFace) :
 *Lemma 3.11 (`lem:sfAlgebra`), part 3/3.* -/
 lemma right_contract_assoc (s t u : SlipFace) :
     s ▹ (t ▹ u) = (s ⋆ t) ▹ u := by
-  -- Proof written by Codex.
+  -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :
       v ≥ s ▹ (t ▹ u) ↔ v ≥ (s ⋆ t) ▹ u := by
     calc

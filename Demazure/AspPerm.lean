@@ -1111,6 +1111,36 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
   simp only [sf_func_eq_s, sf_chi_eq] at this
   omega
 
+/-- For a slipface coming from an ASP permutation, the bend set in the second
+coordinate is the set of cut points where `β⁻¹` crosses `b`.
+*Lemma 3.12 (`lem:setL`), part 5/5.* -/
+lemma bend_set_sf (β : AspPerm) (b : ℤ) :
+    SlipFace.bend_set β.sf b = {l : ℤ | β⁻¹ (l - 1) < b ∧ b ≤ β⁻¹ l} := by
+  -- Proof written by GPT 5.5.
+  ext l
+  simp only [SlipFace.bend_set, Set.mem_setOf_eq, sf_func_eq_s]
+  constructor
+  · rintro ⟨hflat, hne⟩
+    constructor
+    · have hflat' : β.s ((l - 1) + 1) b = β.s (l - 1) b := by
+        simpa only [sub_add_cancel] using hflat.symm
+      exact (β.a_step_eq_iff (l - 1) b).mp hflat'
+    · have hnot : ¬ β⁻¹ l < b := by
+        intro hlt
+        have hflat' : β.s (l + 1) b = β.s l b :=
+          (β.a_step_eq_iff l b).mpr hlt
+        exact hne hflat'.symm
+      exact not_lt.mp hnot
+  · rintro ⟨hleft, hright⟩
+    constructor
+    · have hflat : β.s ((l - 1) + 1) b = β.s (l - 1) b :=
+        (β.a_step_eq_iff (l - 1) b).mpr hleft
+      simpa only [sub_add_cancel] using hflat.symm
+    · intro hsame
+      have hlt : β⁻¹ l < b :=
+        (β.a_step_eq_iff l b).mp hsame.symm
+      exact not_lt_of_ge hright hlt
+
 lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
   let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
   let d2 := τ.s a b - τ.s a (b+1)

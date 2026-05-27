@@ -31,7 +31,7 @@ noncomputable def sigmaFun (S : Set ℤ) (n : ℤ) : ℤ :=
 lemma sigmaFun_of_mem {S : Set ℤ} {n : ℤ} (hn : n ∈ S) :
     sigmaFun S n = n + 1 := by
   -- Proof written by GPT 5.5.
-  simp [sigmaFun, hn]
+  simp only [sigmaFun, hn, if_true]
 
 lemma sigmaFun_of_pred_mem {S : Set ℤ} (hS : NoConsecutive S) {n : ℤ}
     (hn : n - 1 ∈ S) :
@@ -40,12 +40,12 @@ lemma sigmaFun_of_pred_mem {S : Set ℤ} (hS : NoConsecutive S) {n : ℤ}
   have hmem : n ∉ S := by
     intro h
     exact hS (n - 1) hn (by simpa only [sub_add_cancel] using h)
-  simp [sigmaFun, hmem, hn]
+  simp only [sigmaFun, hmem, if_false, hn, if_true]
 
 lemma sigmaFun_of_not_mem {S : Set ℤ} {n : ℤ} (hn : n ∉ S) (hpred : n - 1 ∉ S) :
     sigmaFun S n = n := by
   -- Proof written by GPT 5.5.
-  simp [sigmaFun, hn, hpred]
+  simp only [sigmaFun, hn, if_false, hpred]
 
 lemma not_succ_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
     {n : ℤ} (hn : n ∈ S) : n + 1 ∉ S :=
@@ -65,13 +65,11 @@ lemma sigmaFun_involutive {S : Set ℤ} (hS : NoConsecutive S) :
   intro n
   by_cases hn : n ∈ S
   · have hsucc : n + 1 ∉ S := not_succ_mem_of_noConsecutive hS hn
-    have hpred_succ : n + 1 - 1 ∈ S := by
-      simpa only [add_sub_cancel_right] using hn
-    simp [sigmaFun, hn, hsucc]
+    simp only [sigmaFun, hn, if_true, hsucc, if_false, add_sub_cancel_right]
   · by_cases hpred : n - 1 ∈ S
-    · have hpredpred : n - 1 - 1 ∉ S := not_pred_mem_of_noConsecutive hS hpred
-      simp [sigmaFun, hn, hpred]
-    · simp [sigmaFun, hn, hpred]
+    · simp only [sigmaFun, hn, if_false, hpred, if_true]
+      omega
+    · simp only [sigmaFun, hn, if_false, hpred]
 
 lemma sigmaFun_injective {S : Set ℤ} (hS : NoConsecutive S) :
     Function.Injective (sigmaFun S) :=

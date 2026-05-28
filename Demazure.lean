@@ -5,6 +5,7 @@ import Demazure.AspPerm
 import Demazure.Submodular
 import Demazure.ReducedProducts
 import Demazure.Reduction
+import Demazure.Transpositions
 import Demazure.InvSet
 import Demazure.Avoiding321
 import Demazure.Tableaux

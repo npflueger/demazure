@@ -721,6 +721,19 @@ private lemma risingSet_singleton_of_lt (α : AspPerm) (n : ℤ)
     subst m
     exact ⟨rfl, h⟩
 
+private lemma fallingSet_singleton_of_lt (α : AspPerm) (n : ℤ)
+    (h : α (n + 1) < α n) :
+    fallingSet α ({n} : Set ℤ) = {n} := by
+  -- Proof written by GPT 5.5.
+  ext m
+  constructor
+  · intro hm
+    exact hm.1
+  · intro hm
+    rw [Set.mem_singleton_iff] at hm
+    subst m
+    exact ⟨rfl, h⟩
+
 /-- The inversion set of $\sigma_S$ is exactly the adjacent pairs
 $(n,n+1)$ with $n \in S$. -/
 lemma sigma_inv_set_iff (S : Set ℤ) (hS : NoConsecutive S) (u v : ℤ) :
@@ -1006,7 +1019,7 @@ has shift zero and its only inversion is $(n,n+1)$, then right Demazure
 multiplication by $\sigma$ follows the usual rule.
 
 This is the last sentence of *Theorem A,* supplied by
-*Theorem 6.8 (`thm:alphaStarSigma`).* -/
+*Theorem 8.7 (`thm:alphaStarSigma`).* -/
 theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ⋆ σ = if α n < α (n + 1) then α * σ else α := by
@@ -1028,6 +1041,41 @@ theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
         rw [sigma_eq_of_set_eq hRise (noConsecutive_risingSet α hT) hT]
   · rw [if_neg hα]
     apply star_sigma_eq_self
+    intro m hm
+    have hm_eq : m = n := by simpa only [T, Set.mem_singleton_iff] using hm
+    subst m
+    have hne : α n ≠ α (n + 1) := by
+      intro heq
+      exact (by omega : n ≠ n + 1) (α.injective heq)
+    omega
+
+/-- The simple-transposition case of left contraction: if $\sigma \in \asp$
+has shift zero and its only inversion is $(n,n+1)$, then right contraction by
+$\sigma$ follows the usual rule.
+
+This is the last sentence of *Theorem 1.1 (`thm:tll`),* supplied by
+*Theorem 8.7 (`thm:alphaStarSigma`).* -/
+theorem contract_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
+    (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
+    α ◃ σ = if α (n + 1) < α n then α * σ else α := by
+  -- Proof written by GPT 5.5.
+  let T : Set ℤ := {n}
+  let hT : NoConsecutive T := noConsecutive_singleton n
+  have hσ : σ = sigma T hT := by
+    exact eq_sigma_singleton_of_chi_eq_zero_of_inv_set_eq_singleton σ n hχ hInv
+  rw [hσ]
+  by_cases hα : α (n + 1) < α n
+  · rw [if_pos hα]
+    have hFall : fallingSet α T = T := by
+      simpa only [T] using fallingSet_singleton_of_lt α n hα
+    calc
+      α ◃ sigma T hT =
+          α * sigma (fallingSet α T) (noConsecutive_fallingSet α hT) :=
+            contractSigma α T hT
+      _ = α * sigma T hT := by
+        rw [sigma_eq_of_set_eq hFall (noConsecutive_fallingSet α hT) hT]
+  · rw [if_neg hα]
+    apply contract_sigma_eq_self
     intro m hm
     have hm_eq : m = n := by simpa only [T, Set.mem_singleton_iff] using hm
     subst m

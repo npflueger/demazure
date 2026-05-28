@@ -1169,7 +1169,19 @@ def bend_set (t : SlipFace) (b : ℤ) : Set ℤ :=
 
 /- *Lemma 3.12 (`lem:setL`), part 2/5.* -/
 lemma bend_set_finite (t : SlipFace) (b : ℤ) : Finite (bend_set t b) := by
-  sorry
+  obtain ⟨A1, hA1⟩ := t.large_a b
+  obtain ⟨A0, hA0⟩ := t.small_a b
+  have : bend_set t b ⊆ Finset.Icc A0 A1 := by
+    rintro l ⟨hl_left,hl_right⟩
+    rw [Finset.mem_coe, Finset.mem_Icc]
+    constructor
+    · contrapose! hl_right with l_lt_A0
+      rw [hA0 l (by omega), hA0 (l+1) (by omega)]
+    · contrapose! hl_left with A1_lt_l
+      rw [hA1 (l-1) (by omega), hA1 l (by omega)]
+      omega
+  apply Set.Finite.subset _ this
+  apply Finset.finite_toSet
 
 lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b ≠ t (l + 1) b) :
   ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧ s a m + t m b ≤ s a l + t l b := by

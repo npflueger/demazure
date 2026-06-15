@@ -79,8 +79,8 @@ To download and build this code, follow the steps below.
 
 2. **Clone the Repository**:
    ```bash
-   git clone https://github.com/DhyeyMavani2003/chip-firing-with-lean.git
-   cd chip-firing-with-lean
+   git clone https://github.com/npflueger/demazure.git
+   cd demazure
    ```
 
 3. **Build the Project**:

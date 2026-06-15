@@ -1,6 +1,19 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.AspPerm
 import Demazure.Valley
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+
+/-!
+# Submodular Slip Faces
+
+This file establishes that a slipface comes from $\mathrm{ASP}$ if and only if it is submodular, and
+uses this to define the operations $\star$, $\triangleleft$, and $\triangleright$ on $\mathrm{ASP}$.
+It corresponds roughly to Section 4 of the paper.
+-/
 
 /-! ### Submodular Slipfaces and Recovery of ASP Permutations
 
@@ -90,7 +103,9 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   obtain ⟨A'new_le_A'new, h_sum⟩ := unique_a_helper hsub Anew A'new b hAnew hA'new
   have : (∑ x ∈ Finset.Ico Anew A'new, s.Δ x b)
     = s.Δ a b + ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b := by
-    apply Finset.sum_eq_add_sum_diff_singleton a_Ico
+    exact Finset.sum_eq_add_sum_diff_singleton
+      (s := Finset.Ico Anew A'new) a (fun x => s.Δ x b)
+      (by intro ha; exact (ha a_Ico).elim)
   rw [this] at h_sum
   have sum0 : ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b  = 0 := by
     have : s.Δ a b = 1 := by
@@ -195,7 +210,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
         apply (asp_func_spec hsub a b).mp
         rfl
       have h0 : s.Δ a b = 1 := by
-        simpa using mem
+        simpa [SlipFace.Γ] using mem
       contrapose! h0 with b_ge_B'
       have s0 : s (a+1) b = 0 := by
         have : s 0 b = 0 := hB' b b_ge_B'
@@ -223,7 +238,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
         apply (asp_func_spec hsub a b).mp
         rfl
       have h0 : s.Δ a b = 1 := by
-        simpa using mem
+        simpa [SlipFace.Γ] using mem
       contrapose! h0 with b_lt_B
       have s0 : s.dual (b+1) a = 0 := by
         have : b + 1 ≤ B := by linarith
@@ -619,7 +634,6 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
     rw [AspSlipValley, α_spec, β_spec]
   simp only [this] at eq ⊢
   have := (AspValley_step_b α β (a+1) b).1
-  simp only at this
   rw [this] at eq
   let M' := (AspValley α β (a + 1) b).M
   have M'_ge_b : M' ≤ β b := by
@@ -642,7 +656,7 @@ submodularity.
 The paper phrases the argument using the rightmost maximizing witness
 $M_{\alpha \triangleleft \beta}(a,b)$. That maximum may be $\infty$ when the
 left contraction value is zero, since the set of maximizing witnesses may be
-unbounded above. Rather than extending $\mathbb{Z}$ to incluce $\infty$, we
+unbounded above. Rather than extending $\mathbb{Z}$ to include $\infty$, we
 instead keep the whole witness set and express cutoff conditions on $M$ by
 quantifying over witnesses: a bound $M \leq m$ becomes a bound on every
 witness, while $M > m$ becomes the existence of a witness above $m$. -/
@@ -666,7 +680,7 @@ lemma lc_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
 lemma lc_candidate_le (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l ≤ (α.sf ◃ β.sf) a b := by
   rw [SlipFace.lc_func_eq]
-  simpa only [AspPerm.sf_dual] using SlipFace.lc_val_ge α.sf β.sf a b l
+  simpa only [AspPerm.sf_dual, AspPerm.sf_func_eq_s] using SlipFace.lc_val_ge α.sf β.sf a b l
 
 /-- Witness-set form of the left-contraction step in the first coordinate:
 the step is flat exactly when a witness for the new value lies to the right of
@@ -1348,13 +1362,13 @@ lemma ge_star_iff (τ α β : AspPerm) : α ⋆ β ≤ τ ↔ τ.ge_dprod α β 
   · intro dge a b
     let v := (Submodular.AspValley α β a b)
     rcases dge a b with ⟨l, hl⟩
-    apply le_trans _ hl
-    suffices v.f v.M ≤ v.f l by
-      convert this using 1
-      rw [star_valley]
-      rw [v.f_M]
-    rw [v.f_M]
-    exact v.min_spec l
+    calc
+      (α ⋆ β).s a b = v.f v.M := by rw [star_valley, v.f_M]
+      _ ≤ v.f l := by
+        rw [v.f_M]
+        exact v.min_spec l
+      _ = α.s a l + β.s l b := rfl
+      _ ≤ τ.s a b := hl
 
 /-- Equality `τ = α ⋆ β` is equivalent to satisfying both Demazure comparison
 conditions. -/

@@ -1,8 +1,23 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.Utils
 import Demazure.SlipFace
 import Mathlib.Data.Int.LeastGreatest
 import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Ring
+
+/-!
+# ASP Permutations
+
+This file defines ASP permutations, their inversion sets, associated slipfaces,
+the Bruhat order, and some properties laying the groundwork for the Demazure product $\star$ and
+contractions $\triangleleft$ and $\triangleright$. These three operations are not yet defined in
+this file; that is deferred until `Submodular.lean`, where the bijection between $\mathrm{ASP}$ and
+the set of submodular slipfaces is established. This corresponds roughly to Section 2 of the paper.
+-/
 
 /-- The inversion set $\operatorname{Inv} \tau = \{(u,v) \in \mathbb{Z}^2 : u < v \text{ and }
 \tau(u) > \tau(v)\}$.
@@ -53,13 +68,13 @@ lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
       simp only [V]
       simp only [Finset.coe_Ico, Set.mem_Ico, hk.1, k_lt_n, and_self]
     obtain k_ge_n : k ≥ n := by
-      push_neg at k_lt_n; exact k_lt_n
+      push Not at k_lt_n; exact k_lt_n
     by_cases τk_ge_m : τ k ≥ m
     · right; left
       simp only [H, H₀]
       simp only [Finset.coe_Ico, Set.mem_preimage, Set.mem_Ico, τk_ge_m, hk.2, and_self]
     obtain τk_lt_m : τ k < m := by
-      push_neg at τk_ge_m; exact τk_ge_m
+      push Not at τk_ge_m; exact τk_ge_m
     left; exact ⟨k_ge_n, τk_lt_m⟩
   refine Set.Finite.subset ?_ h
   exact Set.Finite.union fin_A (Set.Finite.union fin_H fin_V)
@@ -208,7 +223,7 @@ def mul (σ τ : AspPerm) : AspPerm where
         right
         exact hσ
       exfalso
-      push_neg at hτ hσ
+      push Not at hτ hσ
       let C := (τ n) ^ 2
       have hC_pos : C > 0 := by
         simp only [C]
@@ -727,7 +742,7 @@ private lemma se_diff_card (a a' b : ℤ) :
     simp only [Finset.mem_sdiff, mem_se] at hk
     obtain ⟨⟨k_ge_b, τk_lt_a'⟩, hk_not⟩ := hk
     have τk_ge_a : a ≤ τ k := by
-      by_contra h; push_neg at h
+      by_contra h; push Not at h
       exact hk_not ⟨k_ge_b, h⟩
     simp only [Finset.mem_filter, Finset.mem_Ico, τ.inv_mul_cancel_eval]
     exact ⟨⟨τk_ge_a, τk_lt_a'⟩, k_ge_b⟩
@@ -1163,7 +1178,7 @@ lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
   · simp only [h', le_refl, ↓reduceIte]
   have h' : ¬ (τ b ≤ a) := by
     contrapose! h'
-    push_neg at h
+    push Not at h
     exact le_antisymm h' h
   simpa [h, h']
 

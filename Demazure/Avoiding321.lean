@@ -1,5 +1,17 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.InvSet
 import Demazure.Submodular
+
+/-!
+# 321-Avoiding permutations
+
+This file gives a characterization of the two-term Demazure factorizations of 321-avoiding
+permutations (not necessarily of finite length), which are all automatically in $\mathrm{ASP}$.
+-/
 
 /-- The 321-avoidance condition used in this file: every triple `i < j < k`
 has either `τ i < τ j` or `τ j < τ k`. -/
@@ -31,7 +43,7 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
       contrapose! h
       constructor <;> linarith
     · use 0
-      push_neg at h
+      push Not at h
       exact h
   obtain ⟨u, h_src⟩ := ex_src
   have ex_snk : ∃ v : ℤ, ∀ n : ℤ, ⟨v,n⟩ ∉ inv_set τ := by
@@ -45,7 +57,7 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
       contrapose! h
       constructor <;> linarith
     · use 0
-      push_neg at h
+      push Not at h
       exact h
   obtain ⟨v, h_snk⟩ := ex_snk
   have se_empty : (southeast_set τ (τ v) v) = ∅ := by
@@ -70,7 +82,6 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     unfold northwest_set at hn
     simp only [Set.mem_setOf_eq] at hn
     specialize h_src n
-    simp only at hn h_src
     obtain ⟨n_lt_u_plus_1, τ_n_ge_u_plus_1⟩ := hn
     unfold inv_set at h_src
     simp only [Set.mem_setOf_eq, not_and, not_lt] at h_src
@@ -164,8 +175,9 @@ noncomputable def Perm321a_equiv_Tfas :
     intro τ
     apply Subtype.ext
     refine AspPerm.eq_of_inv_set_eq_of_chi_eq _ _ ?_ ?_
-    · change inv_set ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ) = inv_set τ
-      simpa using (AspSet.of_AspPerm τ).invSet_of_toAspPerm τ.val.χ
+    · have h_inv := (AspSet.of_AspPerm τ).invSet_of_toAspPerm τ.val.χ
+      change inv_set ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ) = (AspSet.of_AspPerm τ).I
+      exact h_inv
     · change ((AspSet.of_AspPerm τ).toAspPerm τ.val.χ).χ = τ.val.χ
       simpa using (AspSet.of_AspPerm τ).chi_of_toAspPerm τ.val.χ
   right_inv := by
@@ -361,7 +373,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
       · left
         exact ⟨n_v, τn_lt_a⟩
       · right
-        push_neg at n_v
+        push Not at n_v
         suffices τ n < τ v by exact ⟨n_ge_b, this⟩
         by_contra! τv_le_τn
         have nv_inv : ⟨n, v⟩ ∈ inv_set τ := (τ.inv_iff_le n_v).mpr τv_le_τn
@@ -1369,7 +1381,7 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     have u'_le_u : u' ≤ u := h_prec.1
     have v_le_v' : v ≤ v' := h_prec.2
     contrapose! le with I_ne_J
-    dsimp [AspPerm.ge_dprod, AspPerm.dprod_val_le]; push_neg
+    dsimp [AspPerm.ge_dprod, AspPerm.dprod_val_le]; push Not
     by_cases u_eq_u' : u = u'
     · have v_lt_v' : v < v' := by
         by_contra!
@@ -1415,7 +1427,7 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     omega
   · intro no_excess a b
     contrapose! no_excess with ne_le
-    dsimp [AspPerm.dprod_val_le] at ne_le; push_neg at ne_le
+    dsimp [AspPerm.dprod_val_le] at ne_le; push Not at ne_le
     have ge : α.dprod_val_ge β a b (τ.s a b + 1) := by
       intro x
       specialize ne_le x

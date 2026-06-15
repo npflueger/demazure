@@ -1,11 +1,17 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.Reduction
 
 /-!
-Products of non-overlapping adjacent transpositions.
+# Transpositions
 
-This file follows Definition 3.11 and Theorem 6.8 of the paper: for a set
-$S$ with no consecutive integers, the permutation $\sigma_S$ swaps every pair
-$n, n + 1$ with $n \in S$ and fixes all other integers.
+This file characterizes the behavior of involutions $\sigma_S$ under the operations $\star$ and
+$\triangleleft$. Its main purpose is to prove Theorem 8.7 from the paper, as well as the last
+sentences of Theorem A and the theorem labeled `thm:tll`, which describe the
+special case of $\sigma_S$ for $S = \{n\}$ a singleton.
 -/
 
 namespace Transpositions
@@ -316,12 +322,17 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
           have hbpredpred : b - 1 - 1 ∈ S := by
             have harg : b - 1 - 1 = b - 2 := by ring
             rwa [harg]
-          simpa only [sub_sub] using
-            (sigma_apply_of_pred_mem (S := S) (hS := hS) (n := b - 1) hbpredpred)
+          have hraw := sigma_apply_of_pred_mem (S := S) (hS := hS) (n := b - 1) hbpredpred
+          omega
         rw [hσ]
         omega
       · have hσ : sigma S hS (b - 1) = b - 1 := by
-          exact sigma_apply_of_not_mem hbprev (by simpa only [sub_sub] using hbprevprev)
+          have hbprevprev' : b - 1 - 1 ∉ S := by
+            intro hmem
+            exact hbprevprev (by
+              have : b - 1 - 1 = b - 2 := by ring
+              rwa [this] at hmem)
+          exact sigma_apply_of_not_mem hbprev hbprevprev'
         rw [hσ]
         omega
     have hb_le_σb : b ≤ sigma S hS b := by

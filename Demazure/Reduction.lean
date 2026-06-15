@@ -1,4 +1,16 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.ReducedProducts
+
+/-!
+# Reduction Theorems
+
+This file proves the main reduction results connecting Demazure inequalities
+with reduced ordinary products. It corresponds roughly to Section 6 of the paper.
+-/
 
 /-! ### Reduction theorems
 

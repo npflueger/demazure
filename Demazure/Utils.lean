@@ -1,8 +1,20 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Int.Basic
 import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Linarith
+
+/-!
+# Auxiliary Utilities
+
+This file contains small helper lemmas. These are all generic -- they are not specific to this
+repository's main objects, so they are collected separately here.
+-/
 
 /-! ### Small Finset and Set Helpers
 
@@ -75,7 +87,7 @@ def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
   := by
   by_cases h : ⟨m-1, n⟩ ∉ S ∧ m ≥ 2 ∨ ⟨m, n-1⟩ ∉ S ∧ n ≥ 2
   · use m, n
-  push_neg at h
+  push Not at h
   by_cases m_ge_2 : m ≥ 2
   · have mem_m_dec : ⟨m-1, n⟩ ∈ S := by
       by_contra! h1

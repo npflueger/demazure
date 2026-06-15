@@ -1,7 +1,22 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Int.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Tactic.Linarith
+
+/-!
+# Valleys
+
+A *valley* is a function `f : ℤ → ℤ` tending to positive infinity on both sides. This terminology
+is not used in the paper; it is introduced here in order to package some elementary arguments that
+are needed about such functions. In particular, we need to keep track of the set where the minimum
+value is achieved, and some facts about how this set changes when the valley is modified in simple
+ways.
+-/
 
 /-- A function on `ℤ` whose sublevel sets are finite. This is the abstraction
 used to talk about minima and rightmost minimizers.
@@ -37,7 +52,7 @@ noncomputable def min : ℤ := Finset.min' (Finset.image v.f (v.floor (v.f 0)))
   (v.floor_image_nonempty 0)
 
 lemma min_mem : ∃ a ∈ {n | v.f n ≤ v.f 0}, v.f a = v.min := by
-  simpa [Finset.mem_image] using
+  simpa [min, Finset.mem_image] using
     Finset.min'_mem (Finset.image v.f (v.floor (v.f 0))) (v.floor_image_nonempty 0)
 
 lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
@@ -75,7 +90,7 @@ lemma M_spec : ∀ n : ℤ, v.f n ≥ v.f v.M ∧ (n > v.M → v.f n > v.f v.M) 
     contrapose! n_gt_vM with fn_le_fM
     have : n ∈ v.floor v.min := by
       simpa [v.f_M] using fn_le_fM
-    simpa using Finset.le_max' (v.floor v.min) n this
+    simpa [M] using Finset.le_max' (v.floor v.min) n this
 
 /-- Shift every value of a valley downward by the constant `k`. -/
 def shift_down (k : ℤ) : Valley where

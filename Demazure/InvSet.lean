@@ -1,6 +1,18 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.AspPerm
 import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Order.Interval.Set.Infinite
+
+/-!
+# Inversion Sets
+
+This file gives a characterization of the inversion set of ASP permutations.
+It corresponds to Theorem 2.13 in the paper.
+-/
 
 /-- The axioms characterizing inversion sets of ASP permutations: directedness,
 closure, coclosure, and finite in/out degree. -/
@@ -24,9 +36,9 @@ structure AspSet where
 
 instance : SetLike AspSet (ℤ × ℤ) where
   coe := AspSet.I
-  coe_injective' := by
+  coe_injective := by
     intro a b h
-    cases a; cases b;
+    cases a; cases b
     congr
 
 @[simp] lemma mem_AspSet (asps : AspSet) (u v : ℤ) :
@@ -663,7 +675,8 @@ noncomputable def AspPerm_equiv_AspSet :
     intro τ
     refine AspPerm.eq_of_inv_set_eq_of_chi_eq _ _ ?_ ?_
     · have h_inv := invSet_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
-      simpa using h_inv
+      change inv_set (toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ) = inv_set τ
+      exact h_inv
     · have h_chi := chi_of_toAspPerm ⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩ τ.χ
       simpa using h_chi
   right_inv := by

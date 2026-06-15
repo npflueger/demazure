@@ -8,8 +8,7 @@ The code includes full formalizations of the main theorems of that paper, follow
 
 ## Project Structure
 
-The Lean development in `Demazure/` is organized as follows. Read the diagram
-top to bottom: arrows point from prerequisites to files that import them.
+The Lean development in `Demazure/` is organized as follows. Section numbers tell roughly where the material of that file is found in the original paper. In some cases, material from one section is spread across multiple files, or not yet formalized, and some formalized theorems are not in the paper.
 
 ```text
 +-----------------------------+          +-----------------------------+
@@ -20,7 +19,7 @@ top to bottom: arrows point from prerequisites to files that import them.
                |                                        |
                |                                        v
                |                         +--------------+--------------+
-               |                         | SlipFace.lean               |
+               |                         | SlipFace.lean (§3)          |
                |                         | Slipfaces and operations    |
                |                         | on them.                    |
                |                         +--------------+--------------+
@@ -29,9 +28,9 @@ top to bottom: arrows point from prerequisites to files that import them.
                                         |
                                         v
                          +--------------+--------------+
-                         | AspPerm.lean                |
+                         | AspPerm.lean (§2)           |
                          | ASP permutations, inversion |
-                         | sets,weak                   |
+                         | sets, weak                  |
                          | orders, ⋆ and ◃ predicates  |
                          +--------------+--------------+
                                         |
@@ -39,7 +38,7 @@ top to bottom: arrows point from prerequisites to files that import them.
                          |                             |
                          v                             v
         +-----------------------------+     +-----------------------------+
-        | InvSet.lean                 |     | Submodular.lean             |
+        | InvSet.lean (§2)            |     | Submodular.lean (§4)        |
         | Abstract ASP inversion sets |     | Submodular slipfaces;       |
         | and reconstruction          |     | ⋆ and ◃ on ASP.             |
         +--------------+--------------+     +--------------+--------------+
@@ -48,14 +47,14 @@ top to bottom: arrows point from prerequisites to files that import them.
                                         |                       |
                                         v                       v
                          +-----------------------------+   +-----------------------------+
-                         | Avoiding321.lean            |   | ReducedProducts.lean        |
+                         | Avoiding321.lean            |   | ReducedProducts.lean (§5)   |
                          | 321-avoiding permutations   |   | Reduced products            |
                          | and behavior of ⋆ on them   |   | and relations to ⋆ and ◃    |
                          +--------------+--------------+   +--------------+--------------+
                                         |                                  |
                                         v                                  v
                          +-----------------------------+   +-----------------------------+
-                         | Tableaux.lean               |   | Reduction.lean              |
+                         | Tableaux.lean               |   | Reduction.lean (§6)         |
                          | Hecke                       |   | Greedy and stingy           |
                          | factorizations and          |   | characterizations;          |
                          | set-valued tableaux         |   | reduction theorems          |
@@ -63,12 +62,31 @@ top to bottom: arrows point from prerequisites to files that import them.
                                                                            |
                                                                            v
                                                                   +--------+----------------+
-                                                                  | Transpositions.lean     |
+                                                                  | Transpositions.lean (§3, §8)|
                                                                   | Adjacent transposition  |
                                                                   | formulas for product    |
                                                                   | and contraction         |
                                                                   +-------------------------+
 ```
+
+## Paper Coverage
+
+The formalization mostly follows Sections 2--6 of the paper, with some later
+results and some additional material developed beyond the paper. Lean statements
+are often split into several lemmas rather than matching the paper statements
+verbatim.
+
+| Paper material | Main Lean files | Coverage notes |
+| --- | --- | --- |
+| Introduction: Theorems A, B, C and the operation `◃` | `Submodular.lean`, `Reduction.lean`, `Transpositions.lean` | The main theorem statements are formalized as component lemmas: existence and associativity of `⋆`, the min-plus formula, the greedy and stingy characterizations, the reduction theorem, and the adjacent-transposition formulas. |
+| Section 2: ASP permutations, shift, inversions, weak orders, reduced products, inversion-set reconstruction | `AspPerm.lean`, `InvSet.lean` | Directly formalized, with reconstruction from inversion sets isolated in `InvSet.lean`. Some helper infrastructure for finite sets and integer counts lives in `Utils.lean`. |
+| Section 3: Slipface functions and the operations `⋆`, `◃`, `▹` on slipfaces | `SlipFace.lean`, `Transpositions.lean` | Directly formalized, including duality, monotonicity, operation existence, associativity identities, witness-set reductions, and the formulas for products with non-overlapping adjacent transpositions. |
+| Section 4: Submodular slipfaces and the induced operations on `AspPerm` | `Valley.lean`, `Submodular.lean` | Directly formalized. `Valley.lean` packages the rightmost-minimum argument used in the proof of closure under `⋆`; `Submodular.lean` formalizes closure under `⋆`, `◃`, and `▹`, inverse compatibility, shift formulas, and weak-order consequences. |
+| Section 5: When `⋆`, `◃`, and `▹` are ordinary products | `ReducedProducts.lean` | Directly formalized, including the reduced-product criteria and the comparison between weak and strong Bruhat orders. |
+| Section 6: Greediness, stinginess, and the reduction theorem | `Reduction.lean` | Directly formalized, including the two-factor reduction theorem and a list version of the many-factor reduction statement. |
+| Section 7: Bounded-difference permutations and the essential set | none | Not broadly formalized here. The essential-set theory and bounded-difference criteria from this section are not currently part of the Lean development. |
+| Section 8: Subgroups closed under `⋆` and `◃` | `Transpositions.lean` | Partially formalized. The adjacent-transposition computation used for symmetric and affine symmetric groups is formalized, but the downward-closed subgroup framework is not broadly formalized in this repository. |
+| Additional material outside the paper | `Avoiding321.lean`, `Tableaux.lean` | These files develop 321-avoiding ASP permutations, triangle-free inversion sets, Demazure factorization criteria, Hecke factorizations, chains of inversion boxes, and set-valued tableaux. |
 
 ## Installation
 
@@ -90,7 +108,7 @@ To download and build this code, follow the steps below.
    lake build
    ```
 
-For futher information about working with Lean4/Mathlib projects, consult the [Mathlib project guide](https://leanprover-community.github.io/install/project.html).
+For further information about working with Lean4/Mathlib projects, consult the [Mathlib project guide](https://leanprover-community.github.io/install/project.html).
 
 ## Generative AI disclosure
 

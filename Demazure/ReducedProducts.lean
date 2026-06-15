@@ -1,4 +1,16 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.Submodular
+
+/-!
+# Reduced Products
+
+This file compares the Demazure operations with ordinary multiplication on ASP
+permutations. It corresponds roughly to Section 5 of the paper.
+-/
 
 /-! ### Reduced Products and Ordinary Products
 

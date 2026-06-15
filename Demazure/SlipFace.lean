@@ -1,6 +1,19 @@
+/-
+Copyright (c) 2026 Nathan Pflueger. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Nathan Pflueger
+-/
 import Demazure.Valley
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Int.Interval
+
+/-!
+# Slip Faces
+
+This file defines slipface functions and develops their basic properties, including the $\star$
+(Demazure products) and contractions $\triangleleft$ and $\triangleright$. It corresponds roughly to
+Section 3 of the paper.
+-/
 
 /-- A slipface function of shift `χ`, i.e. a function $s : \mathbb{Z}^2 \to \mathbb{N}$
 satisfying the paper's conditions (S1) to (S3):
@@ -672,11 +685,11 @@ lemma left_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
     have htL : t.dual b L = b - L + t.dual.χ := hB₂ L (min_le_right _ _)
     have hm_L := hm_max L (Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩)
     omega
-  · push_neg at hlL
+  · push Not at hlL
     by_cases hUl : l ≤ U
     · -- l is in the finite interval: directly bounded by argmax
       exact hm_max l (Finset.mem_Icc.mpr ⟨le_of_lt hlL, hUl⟩)
-    · push_neg at hUl
+    · push Not at hUl
       -- l is in the right zero regime: f(l) = 0 ≤ f(U) ≤ f(m)
       have hU₁l : U₁ ≤ l :=
         le_trans (le_trans (le_max_left _ _) (le_max_left _ L)) hUl.le
@@ -780,13 +793,13 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
     by_cases hl_left : l ≤ L
     · have hs : s a l = a - l + s.χ := hL₀ l hl_left
       omega
-    · push_neg at hl_left
+    · push Not at hl_left
       by_cases hl_right : U ≤ l
       · have hU₀_le_l : U₀ ≤ l := le_trans (le_max_left U₀ L) hl_right
         have hs : s a l = 0 := hU₀ l hU₀_le_l
         have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
         omega
-      · push_neg at hl_right
+      · push Not at hl_right
         have hl_mem : l ∈ middle := by
           simp only [Finset.mem_Icc, middle]
           omega
@@ -834,13 +847,13 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
         change t.dual b l = b - l + t.dual.χ
         exact hLₜ l (le_trans hl_left (min_le_right _ _))
       omega
-    · push_neg at hl_left
+    · push Not at hl_left
       by_cases hl_right : U ≤ l
       · have hUₛ_le_l : Uₛ ≤ l := le_trans (le_max_left Uₛ L) hl_right
         have hsA₀ : s A₀ l = 0 := hUₛ l hUₛ_le_l
         have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
         omega
-      · push_neg at hl_right
+      · push Not at hl_right
         have hl_mem : l ∈ middle := by
           simp only [Finset.mem_Icc, middle]
           omega
@@ -880,11 +893,11 @@ lemma right_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
     have hsL : s.dual L a = 0 := hA₂ L (min_le_right _ _)
     have hm_L := hm_max L (Finset.mem_Icc.mpr ⟨le_refl _, L_le_U⟩)
     omega
-  · push_neg at hlL
+  · push Not at hlL
     by_cases hUl : l ≤ U
     · -- l is in the finite interval: directly bounded by argmax
       exact hm_max l (Finset.mem_Icc.mpr ⟨le_of_lt hlL, hUl⟩)
-    · push_neg at hUl
+    · push Not at hUl
       -- l is in the right constant regime: g(l) = g(U) ≤ g(m)
       have hU₁l : U₁ ≤ l :=
         le_trans (le_trans (le_max_left _ _) (le_max_left _ L)) hUl.le
@@ -984,7 +997,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
     · have htB₀ : t l B₀ = 0 := hLₜ l (le_trans hl_left (min_le_left _ _))
       have hs_nonneg : s.dual l a ≥ 0 := s.dual.nonneg l a
       omega
-    · push_neg at hl_left
+    · push Not at hl_left
       by_cases hl_right : U ≤ l
       · have hUₜ_le_l : Uₜ ≤ l :=
           le_trans (le_trans (le_max_left Uₜ Uₛ) (le_max_left _ L)) hl_right
@@ -995,7 +1008,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
           change s.dual l a = l - a + s.dual.χ
           exact hUₛ l hUₛ_le_l
         omega
-      · push_neg at hl_right
+      · push Not at hl_right
         have hl_mem : l ∈ middle := by
           simp only [Finset.mem_Icc, middle]
           omega
@@ -1045,12 +1058,12 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
     · have ht : t l b = 0 := hL₀ l hl_left
       have hs_nonneg : s.dual l a ≥ 0 := s.dual.nonneg l a
       omega
-    · push_neg at hl_left
+    · push Not at hl_left
       by_cases hl_right : U ≤ l
       · have hU₀_le_l : U₀ ≤ l := le_trans (le_max_left U₀ L) hl_right
         have ht : t l b = l - b + t.χ := hU₀ l hU₀_le_l
         omega
-      · push_neg at hl_right
+      · push Not at hl_right
         have hl_mem : l ∈ middle := by
           simp only [Finset.mem_Icc, middle]
           omega

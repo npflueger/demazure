@@ -9,9 +9,10 @@ import Demazure.Reduction
 # Transpositions
 
 This file characterizes the behavior of involutions $\sigma_S$ under the operations $\star$ and
-$\triangleleft$. Its main purpose is to prove Theorem 8.7 from the paper, as well as the last
-sentences of Theorem A and the theorem labeled `thm:tll`, which describe the
-special case of $\sigma_S$ for $S = \{n\}$ a singleton.
+$\triangleleft$. Its main purpose is to prove Theorem 8.7 from
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), as well as the last sentences of
+Theorem A and the theorem labeled `thm:tll`, which describe the special case of $\sigma_S$ for
+$S = \{n\}$ a singleton.
 -/
 
 namespace Transpositions
@@ -361,8 +362,8 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
       exact ⟨hσbprev_lt, hb_le_σb⟩
 
 /-- The bend set for $\sigma_S$ is the singleton $\{b\}$ when $b - 1 \notin S$.
-This is one case of the computation of `L` in the proof of Lemma 3.13
-(`lem:starTrans`). -/
+This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∉ S) :
     SlipFace.bend_set (sigma S hS).sf b = {b} := by
@@ -378,8 +379,8 @@ lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : �
     exact Or.inl ⟨hb, hl⟩
 
 /-- The bend set for $\sigma_S$ is $\{b - 1, b + 1\}$ when $b - 1 \in S$.
-This is one case of the computation of `L` in the proof of Lemma 3.13
-(`lem:starTrans`). -/
+This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∈ S) :
     SlipFace.bend_set (sigma S hS).sf b = {l : ℤ | l = b - 1 ∨ l = b + 1} := by
@@ -505,8 +506,10 @@ private lemma asp_s_gt_next_iff (α : AspPerm) (a b : ℤ) :
     omega
 
 /-- The slipface $s \star \sigma_S$ is given by adding 1 to a certain pattern of entries of $s$.
-The expression `Utils.oneIf P` is the paper's indicator $\delta(P)$.
-*Lemma 3.13 (`lem:starTrans`), part 1/2.* -/
+The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
+*Lemma 3.13 (`lem:starTrans`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b : ℤ) :
     (s ⋆ (sigma S hS).sf) a b =
         s a b
@@ -565,7 +568,8 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
     simp only [hb, false_and, Utils.oneIf, if_false, add_zero]
 
 /-- A formula for $s_\alpha \star \sigma_S$, specializing the more general `sf_star_sigma`.
-*Lemma 3.13 (`lem:starTrans`), part 1/2.* -/
+*Lemma 3.13 (`lem:starTrans`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a b : ℤ) :
     (α.sf ⋆ (sigma S hS).sf) a b =
       α.s a b + Utils.oneIf (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) := by
@@ -584,8 +588,10 @@ theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a
 
 /-- A formula for $s \triangleleft \sigma_S$.
 
-The expression `Utils.oneIf P` is the paper's indicator $\delta(P)$.
-*Lemma 3.13 (`lem:starTrans`), part 2/2.* -/
+The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
+*Lemma 3.13 (`lem:starTrans`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
     (s : SlipFace) (a b : ℤ) :
     (s ◃ (sigma S hS).sf) a b =
@@ -648,7 +654,8 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
     simp only [hb, false_and, Utils.oneIf, if_false, sub_zero]
 
 /-- A formula for $s_\alpha \triangleleft \sigma_S$. This is the ASP specialization of
-`sf_contract_sigma`. *Lemma 3.13 (`lem:starTrans`), part 2/2.* -/
+`sf_contract_sigma`. *Lemma 3.13 (`lem:starTrans`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem asp_contract_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
     (α : AspPerm) (a b : ℤ) :
     (α.sf ◃ (sigma S hS).sf) a b =
@@ -946,7 +953,8 @@ private lemma contract_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsec
     omega
   rw [hzero, sub_zero]
 
-/-- *Theorem 6.8 (`thm:alphaStarSigma`), part 1/2. -/
+/-- *Theorem 8.7 (`thm:alphaStarSigma`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem starSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ⋆ sigma S hS =
         α * sigma (risingSet α S) (noConsecutive_risingSet α hS) := by
@@ -985,7 +993,8 @@ theorem starSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
           intro n hn
           exact hn.2))
 
-/-- *Theorem 6.8 (`thm:alphaStarSigma`), part 2/2. -/
+/-- *Theorem 8.7 (`thm:alphaStarSigma`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ◃ sigma S hS =
         α * sigma (fallingSet α S) (noConsecutive_fallingSet α hS) := by
@@ -1029,8 +1038,10 @@ theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
 has shift zero and its only inversion is $(n,n+1)$, then right Demazure
 multiplication by $\sigma$ follows the usual rule.
 
-This is the last sentence of *Theorem A,* supplied by
-*Theorem 8.7 (`thm:alphaStarSigma`).* -/
+This is the last sentence of *Theorem A* of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
+*Theorem 8.7 (`thm:alphaStarSigma`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ⋆ σ = if α n < α (n + 1) then α * σ else α := by
@@ -1064,8 +1075,10 @@ theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
 has shift zero and its only inversion is $(n,n+1)$, then right contraction by
 $\sigma$ follows the usual rule.
 
-This is the last sentence of *Theorem 1.1 (`thm:tll`),* supplied by
-*Theorem 8.7 (`thm:alphaStarSigma`).* -/
+This is the last sentence of *Theorem 1.1 (`thm:tll`)* of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
+*Theorem 8.7 (`thm:alphaStarSigma`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 theorem contract_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ◃ σ = if α (n + 1) < α n then α * σ else α := by

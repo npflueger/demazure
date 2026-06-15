@@ -4,11 +4,13 @@ This repository contains formalizations about the basic theory of the *Demazure 
 
 N. Pflueger, [An extended Demazure product on integer permutations via min-plus matrix multiplication](https://arxiv.org/abs/2206.14227)
 
-The code includes full formalizations of the main theorems of that paper, following the style, definitions, and proof structure closely. The repository also includes some additional results not included in the paper, especially the classification of Demazure factorizations of 321-avoiding permutations (not necessarily of finite length).
+The code includes full formalizations of the main theorems of [An extended Demazure product](https://arxiv.org/abs/2206.14227), following the style, definitions, and proof structure closely. The repository also includes some additional results not included in that article, especially the classification of Demazure factorizations of 321-avoiding permutations (not necessarily of finite length).
+
+[Documentation](https://npflueger.github.io/demazure/docs) for this repository is auto-generated using [doc-gen4](https://github.com/leanprover/doc-gen4). Note that documentation for all Mathlib dependencies are automatically generated along with this repo; you should select "Demazure" in the left column to find the documentation for this repository.
 
 ## Project Structure
 
-The Lean development in `Demazure/` is organized as follows. Section numbers tell roughly where the material of that file is found in the original paper. In some cases, material from one section is spread across multiple files, or not yet formalized, and some formalized theorems are not in the paper.
+The Lean development in `Demazure/` is organized as follows. Section numbers tell roughly where the material of that file is found in [An extended Demazure product](https://arxiv.org/abs/2206.14227). In some cases, material from one section is spread across multiple files, or not yet formalized, and some formalized theorems are not in that article.
 
 ```text
 +-----------------------------+          +-----------------------------+
@@ -71,9 +73,10 @@ The Lean development in `Demazure/` is organized as follows. Section numbers tel
 
 ## Paper Coverage
 
-The formalization mostly follows Sections 2--6 of the paper, with some later
-results and some additional material developed beyond the paper. Lean statements
-are often split into several lemmas rather than matching the paper statements
+The formalization mostly follows Sections 2--6 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), with some later
+results and some additional material developed beyond that article. Lean statements
+are often split into several lemmas rather than matching the article's statements
 verbatim.
 
 | Paper material | Main Lean files | Coverage notes |
@@ -86,7 +89,7 @@ verbatim.
 | Section 6: Greediness, stinginess, and the reduction theorem | `Reduction.lean` | Directly formalized, including the two-factor reduction theorem and a list version of the many-factor reduction statement. |
 | Section 7: Bounded-difference permutations and the essential set | none | Not broadly formalized here. The essential-set theory and bounded-difference criteria from this section are not currently part of the Lean development. |
 | Section 8: Subgroups closed under `⋆` and `◃` | `Transpositions.lean` | Partially formalized. The adjacent-transposition computation used for symmetric and affine symmetric groups is formalized, but the downward-closed subgroup framework is not broadly formalized in this repository. |
-| Additional material outside the paper | `Avoiding321.lean`, `Tableaux.lean` | These files develop 321-avoiding ASP permutations, triangle-free inversion sets, Demazure factorization criteria, Hecke factorizations, chains of inversion boxes, and set-valued tableaux. |
+| Additional material outside [An extended Demazure product](https://arxiv.org/abs/2206.14227) | `Avoiding321.lean`, `Tableaux.lean` | These files develop 321-avoiding ASP permutations, triangle-free inversion sets, Demazure factorization criteria, Hecke factorizations, chains of inversion boxes, and set-valued tableaux. |
 
 ## Installation
 

@@ -11,16 +11,18 @@ import Mathlib.Tactic.Linarith
 /-!
 # Valleys
 
-A *valley* is a function `f : ℤ → ℤ` tending to positive infinity on both sides. This terminology
-is not used in the paper; it is introduced here in order to package some elementary arguments that
-are needed about such functions. In particular, we need to keep track of the set where the minimum
-value is achieved, and some facts about how this set changes when the valley is modified in simple
-ways.
+A *valley* is a function `f : ℤ → ℤ` tending to positive infinity on both sides. This
+terminology is not used in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227); it is introduced here in order
+to package some elementary arguments that are needed about such functions. In particular, we need
+to keep track of the set where the minimum value is achieved, and some facts about how this set
+changes when the valley is modified in simple ways.
 -/
 
 /-- A function on `ℤ` whose sublevel sets are finite. This is the abstraction
 used to talk about minima and rightmost minimizers.
-*Lemma 4.6 (`lem:fg`).* -/
+*Lemma 4.6 (`lem:fg`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 structure Valley where
   f : ℤ → ℤ
   rises : ∀ m : ℤ, {n : ℤ | f n ≤ m}.Finite

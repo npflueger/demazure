@@ -11,11 +11,13 @@ import Mathlib.Order.Interval.Set.Infinite
 # Inversion Sets
 
 This file gives a characterization of the inversion set of ASP permutations.
-It corresponds to Theorem 2.13 in the paper.
+It corresponds to Theorem 2.13 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-- The axioms characterizing inversion sets of ASP permutations: directedness,
-closure, coclosure, and finite in/out degree. -/
+closure, coclosure, and finite in/out degree. *Definition 2.12 (`defn:aspSet`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 structure AspSet_prop (I : Set (ℤ × ℤ)) where
   directed :
     (∀ u v : ℤ, ⟨u, v⟩ ∈ I → u < v)
@@ -666,7 +668,8 @@ lemma chi_of_toAspPerm : (toAspPerm asps χ).χ = χ := by
 end OfAspSet
 
 /-- ASP permutations are equivalent to abstract ASP inversion sets together
-with a shift parameter. -/
+with a shift parameter. *Theorem 2.13 (`thm:aspSetReconstruction`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 noncomputable def AspPerm_equiv_AspSet :
   AspPerm ≃ AspSet × ℤ where
   toFun τ := (⟨inv_set τ, AspSet_InvSet_of_AspPerm τ⟩, τ.χ)

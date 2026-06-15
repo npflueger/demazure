@@ -24,7 +24,8 @@ specific to ASP permutations or Demazure product. -/
 namespace Utils
 
 /-- The integer-valued indicator of a proposition: `1` when `P` holds and
-`0` otherwise. This is the paper's notation `δ[P]`. -/
+`0` otherwise. This is the notation `δ[P]` in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable abbrev oneIf (P : Prop) : ℤ := by
   classical
   exact if P then 1 else 0

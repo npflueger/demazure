@@ -9,13 +9,15 @@ import Demazure.Submodular
 # Reduced Products
 
 This file compares the Demazure operations with ordinary multiplication on ASP
-permutations. It corresponds roughly to Section 5 of the paper.
+permutations. It corresponds roughly to Section 5 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-! ### Reduced Products and Ordinary Products
 
-This file formalizes Section 5 of the paper, comparing the Demazure operations
-`⋆`, `◃`, and `▹` with ordinary multiplication on `AspPerm`. -/
+This file formalizes Section 5 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), comparing the
+Demazure operations `⋆`, `◃`, and `▹` with ordinary multiplication on `AspPerm`. -/
 
 namespace ReducedProducts
 
@@ -38,11 +40,13 @@ noncomputable def star_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   simp only [star_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
 
 /-- The two nonnegative error terms in the product-counting formula for
-Lemma 5.1. This is the paper's partition of
+Lemma 5.1. This is the partition from
+[An extended Demazure product](https://arxiv.org/abs/2206.14227) of
 $s_\alpha(a,\ell) + s_\beta(\ell,b)$ into the ordinary-product count
 $s_{\alpha\beta}(a,b)$ and the two remaining quadrants.
 
-*Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+*Proof component for Lemma 5.1 (`lem:reducedStar`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
     α.s a l + β.s l b =
       (α * β).s a b
@@ -126,7 +130,8 @@ lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
   exact_mod_cast hcards
 
 /-- An ordinary product lies below the corresponding Demazure product in
-Bruhat order. *Lemma 5.1 (`lem:reducedStar`), part 1/2.* -/
+Bruhat order. *Lemma 5.1 (`lem:reducedStar`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem mul_le_star (α β : AspPerm) : α * β ≤ α ⋆ β := by
   rw [AspPerm.le_star_iff]
   intro a b l
@@ -134,7 +139,8 @@ theorem mul_le_star (α β : AspPerm) : α * β ≤ α ⋆ β := by
   omega
 
 /-- If the Demazure product lies below the ordinary product, then the ordinary
-product is reduced. *Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+product is reduced. *Proof component for Lemma 5.1 (`lem:reducedStar`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α * β) :
     AspPerm.ReducedProduct α β := by
   -- Proof written by Codex.
@@ -157,7 +163,8 @@ lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α
     omega
 
 /-- A reduced ordinary product is an upper bound for the Demazure product.
-*Proof component for Lemma 5.1 (`lem:reducedStar`).* -/
+*Proof component for Lemma 5.1 (`lem:reducedStar`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma star_le_mul_of_reducedProduct (α β : AspPerm)
     (h_reduced : AspPerm.ReducedProduct α β) : α ⋆ β ≤ α * β := by
   -- Proof written by Codex.
@@ -229,7 +236,8 @@ lemma star_le_mul_of_reducedProduct (α β : AspPerm)
   exact Set.disjoint_left.mp h_reduced hαmn hβmn
 
 /-- The Demazure product agrees with ordinary multiplication exactly for a
-reduced product. *Lemma 5.1 (`lem:reducedStar`), part 2/2.* -/
+reduced product. *Lemma 5.1 (`lem:reducedStar`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem star_eq_mul_iff_reducedProduct (α β : AspPerm) :
     α ⋆ β = α * β ↔ AspPerm.ReducedProduct α β := by
   -- Proof written by Codex.
@@ -262,11 +270,13 @@ noncomputable def lc_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   simp only [lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
 
 /-- The two nonnegative error terms in the left-contraction counting formula
-for Lemma 5.2. The paper's candidate
+for Lemma 5.2. The candidate in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
 $s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$ is the ordinary-product count
 $s_{\alpha\beta}(a,b)$ minus these two errors.
 
-*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+*Proof component for Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l =
       (α * β).s a b
@@ -337,7 +347,8 @@ lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
   exact hcards
 
 /-- Left contraction lies below ordinary multiplication in Bruhat order.
-*Lemma 5.2 (`lem:reducedTri`), part 1/4.* -/
+*Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/4.* -/
 theorem left_contract_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
   -- Proof written by Codex.
   apply (AspPerm.sf_le_iff (α ◃ β) (α * β)).mp
@@ -353,7 +364,8 @@ theorem left_contract_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
 
 /-- If ordinary multiplication lies below left contraction, then the inverse
 of the right factor lies below the left factor in left weak order.
-*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+*Proof component for Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
     (hle : α * β ≤ α ◃ β) : β⁻¹ ≤L α := by
   -- Proof written by Codex.
@@ -395,7 +407,8 @@ lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
 
 /-- If the inverse of the right factor lies below the left factor in left weak
 order, then ordinary multiplication lies below left contraction.
-*Proof component for Lemma 5.2 (`lem:reducedTri`).* -/
+*Proof component for Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
     (hweak : β⁻¹ ≤L α) : α * β ≤ α ◃ β := by
   -- Proof written by Codex.
@@ -464,7 +477,8 @@ lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
 
 /-- Left contraction agrees with ordinary multiplication exactly when the
 inverse of the right factor is below the left factor in left weak order.
-*Lemma 5.2 (`lem:reducedTri`), part 2/4.* -/
+*Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/4.* -/
 theorem left_contract_eq_mul_iff (α β : AspPerm) :
     α ◃ β = α * β ↔ β⁻¹ ≤L α := by
   -- Proof written by Codex.
@@ -478,7 +492,8 @@ theorem left_contract_eq_mul_iff (α β : AspPerm) :
       (mul_le_left_contract_of_le_weak_L α β hweak)
 
 /-- Right contraction lies below ordinary multiplication in Bruhat order.
-*Lemma 5.2 (`lem:reducedTri`), part 3/4.* -/
+*Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/4.* -/
 theorem right_contract_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
   -- Proof written by Codex.
   have hχ : (β⁻¹ ◃ α⁻¹).χ = (β⁻¹ * α⁻¹).χ := by
@@ -491,7 +506,8 @@ theorem right_contract_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
 
 /-- Right contraction agrees with ordinary multiplication exactly when the
 inverse of the left factor is below the right factor in right weak order.
-*Lemma 5.2 (`lem:reducedTri`), part 4/4.* -/
+*Lemma 5.2 (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
 theorem right_contract_eq_mul_iff (α β : AspPerm) :
     α ▹ β = α * β ↔ α⁻¹ ≤R β := by
   -- Proof written by Codex.
@@ -523,7 +539,8 @@ theorem right_contract_eq_mul_iff (α β : AspPerm) :
 /-! ### Weak order implies strong order -/
 
 /-- Left weak order implies Bruhat order when the shifts are weakly ordered.
-*Corollary 5.3 (`cor:weakStrong`), part 1/2.* -/
+*Corollary 5.3 (`cor:weakStrong`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}
     (hweak : α ≤L β) (hχ : α.χ ≤ β.χ) : α ≤ β := by
   -- Proof written by Codex.
@@ -545,7 +562,8 @@ theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}
       rw [hγ_eq, mul_assoc, inv_mul_cancel, mul_one]
 
 /-- Right weak order implies Bruhat order when the shifts are weakly ordered.
-*Corollary 5.3 (`cor:weakStrong`), part 2/2.* -/
+*Corollary 5.3 (`cor:weakStrong`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
     (hweak : α ≤R β) (hχ : α.χ ≤ β.χ) : α ≤ β := by
   -- Proof written by Codex.

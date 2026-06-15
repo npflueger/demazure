@@ -16,14 +16,16 @@ This file defines ASP permutations, their inversion sets, associated slipfaces,
 the Bruhat order, and some properties laying the groundwork for the Demazure product $\star$ and
 contractions $\triangleleft$ and $\triangleright$. These three operations are not yet defined in
 this file; that is deferred until `Submodular.lean`, where the bijection between $\mathrm{ASP}$ and
-the set of submodular slipfaces is established. This corresponds roughly to Section 2 of the paper.
+the set of submodular slipfaces is established. This corresponds roughly to Section 2 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-- The inversion set $\operatorname{Inv} \tau = \{(u,v) \in \mathbb{Z}^2 : u < v \text{ and }
 \tau(u) > \tau(v)\}$.
 
 In Lean, membership is written `⟨u, v⟩ ∈ inv_set τ`, and the inequality is
-encoded as `τ v < τ u`. -/
+encoded as `τ v < τ u`. *Definition 2.6 (`defn:Inv`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
 
@@ -157,8 +159,9 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
 
 /-- An almost-sign-preserving permutation of `ℤ`, abbreviated ASP permutation.
 
-This is the paper's group $\mathrm{ASP}$, packaged in Lean as a function together with
-proofs of bijectivity and the ASP condition. -/
+This is the group $\mathrm{ASP}$ from
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), packaged in Lean as a function
+together with proofs of bijectivity and the ASP condition. -/
 structure AspPerm where
   func : ℤ → ℤ
   bijective : Function.Bijective func
@@ -335,7 +338,8 @@ def rev_map : ℤ × ℤ → ℤ × ℤ := fun ⟨i, j⟩ => ⟨τ j, τ i⟩
 
 /-- The slipface value $s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$.
 
-This is one of the main notation shifts from the paper to Lean: the paper
+This is one of the main notation shifts from
+[An extended Demazure product](https://arxiv.org/abs/2206.14227) to Lean: the article
 writes $s_\tau(a,b)$, while the code writes `τ.s a b`. -/
 noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 
@@ -347,7 +351,8 @@ noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 
 /-- The shift $\chi_\tau = s_\tau(0,0) - s_{\tau^{-1}}(0,0)$.
 
-The paper writes this as $\chi_\tau$; Lean writes it as `τ.χ`. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227) writes this as
+$\chi_\tau$; Lean writes it as `τ.χ`. -/
 noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
 
 @[simp] lemma id_chi : AspPerm.id.χ = 0 := by
@@ -419,7 +424,8 @@ lemma chi_dual' : τ.χ = - (τ⁻¹).χ := by
 
 /-- Shift is additive under ordinary multiplication:
 $\chi_{\alpha\beta} = \chi_\alpha + \chi_\beta$.
-*Equation (`eq:chiHom`).* -/
+*Equation `eq:chiHom` of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma chi_mul (α β : AspPerm) : (α * β).χ = α.χ + β.χ := by
   -- Proof written by Codex.
   let A := Finset.image β (β.se_finset 0 0)
@@ -944,7 +950,9 @@ $\tau(n) = n - \chi_\tau$
 $+ \#\{v \in \mathbb{Z} : (n,v) \in \operatorname{Inv} \tau\}$
 $- \#\{u \in \mathbb{Z} : (u,n) \in \operatorname{Inv} \tau\}$.
 
-In Lean the two finite sets are implemented as `τ.outset n` and `τ.inset n`. -/
+In Lean the two finite sets are implemented as `τ.outset n` and `τ.inset n`.
+*Proposition 2.10 (`prop:reconstruction`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 theorem reconstruction : ∀ n : ℤ,
   τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
   intro n
@@ -958,7 +966,8 @@ theorem reconstruction : ∀ n : ℤ,
   omega
 
 /-- Two ASP permutations are equal if they have the same inversion set and the
-same shift. -/
+same shift. *Proposition 2.10 (`prop:reconstruction`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), consequence.* -/
 theorem eq_of_inv_set_eq_of_chi_eq (σ τ : AspPerm)
     (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) : σ = τ := by
   apply AspPerm.ext.mpr
@@ -1058,7 +1067,8 @@ lemma tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
 
 /-- The slipface attached to `τ`.
 
-The paper writes its values as $s_\tau(a,b)$; in Lean the corresponding value
+[An extended Demazure product](https://arxiv.org/abs/2206.14227) writes its values as
+$s_\tau(a,b)$; in Lean the corresponding value
 is `τ.s a b`, and `τ.sf` packages the same data as a `SlipFace`. -/
 noncomputable def sf : SlipFace := {
   func := τ.s
@@ -1128,7 +1138,8 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
 
 /-- For a slipface coming from an ASP permutation, the bend set in the second
 coordinate is the set of cut points where `β⁻¹` crosses `b`.
-*Lemma 3.12 (`lem:setL`), part 5/5.* -/
+*Lemma 3.12 (`lem:setL`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
 lemma bend_set_sf (β : AspPerm) (b : ℤ) :
     SlipFace.bend_set β.sf b = {l : ℤ | β⁻¹ (l - 1) < b ∧ b ≤ β⁻¹ l} := by
   -- Proof written by GPT 5.5.
@@ -1492,17 +1503,21 @@ This section introduces some infrastructure about inversion sets. -/
 $\operatorname{Inv}(\alpha) \cap \operatorname{Inv}(\beta^{-1})$ is empty.
 
 Lean keeps this reducedness condition separate from ordinary and Demazure
-multiplication. *Definition 2.8 (`defn:reducedProduct`).* -/
+multiplication. *Definition 2.8 (`defn:reducedProduct`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def ReducedProduct (α β : AspPerm) : Prop :=
   Disjoint (inv_set α) (inv_set (β⁻¹).func)
 
 /-- The left weak order: `σ ≤L τ` if and only if $\operatorname{Inv} \sigma \subseteq
-\operatorname{Inv} \tau$. -/
+\operatorname{Inv} \tau$. *Definition 2.7 (`defn:weakOrders`), part 1/2, of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 
 /-- The right weak order: `σ ≤R τ` if and only if
-$\operatorname{Inv}(\sigma^{-1}) \subseteq \operatorname{Inv}(\tau^{-1})$. -/
+$\operatorname{Inv}(\sigma^{-1}) \subseteq \operatorname{Inv}(\tau^{-1})$.
+*Definition 2.7 (`defn:weakOrders`), part 2/2, of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
 infix:50 " ≤R " => le_weak_R
 
@@ -1513,7 +1528,8 @@ lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹
   exact h_L hx
 
 /-- A product `α β` is reduced exactly when `α` is below `α β` in right
-weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`), part 1/2.* -/
+weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     ReducedProduct α β ↔ α ≤R α * β := by
   -- Proof written by Codex.
@@ -1553,7 +1569,8 @@ lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     exact (not_lt_of_ge (le_of_lt hβ.2)) hmul
 
 /-- A product `α β` is reduced exactly when `β` is below `α β` in left
-weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`), part 2/2.* -/
+weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 lemma reducedProduct_iff_le_weak_L_mul (α β : AspPerm) :
     ReducedProduct α β ↔ β ≤L α * β := by
   -- Proof written by Codex.

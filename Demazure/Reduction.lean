@@ -9,15 +9,16 @@ import Demazure.ReducedProducts
 # Reduction Theorems
 
 This file proves the main reduction results connecting Demazure inequalities
-with reduced ordinary products. It corresponds roughly to Section 6 of the paper.
+with reduced ordinary products. It corresponds roughly to Section 6 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-! ### Reduction theorems
 
-This file formalizes the main theorems from the introduction of the paper:
-Theorem B (`thm:starGreedy`) characterizes `α ⋆ β` as a greedy maximum, and
-Theorem C (`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of
-reduced products. -/
+This file formalizes the main theorems from the introduction of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227): Theorem B
+(`thm:starGreedy`) characterizes `α ⋆ β` as a greedy maximum, and Theorem C
+(`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of reduced products. -/
 
 namespace Reduction
 
@@ -62,14 +63,17 @@ lemma star_right_witness (α β : AspPerm) :
 
 /-- The ordinary product of Bruhat-smaller factors lies below the Demazure
 product of the original factors. This is the ASP form of the bound used in
-Equation \eqref{eq:astarbBound}. -/
+the equation labeled `eq:astarbBound` in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma mul_le_star_of_le {α₁ α₂ β₁ β₂ : AspPerm}
     (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ * β₁ ≤ α₂ ⋆ β₂ := by
   exact le_trans (ReducedProducts.mul_le_star α₁ β₁) (star_mono hα hβ)
 
 /-! ### Theorem B: greedy characterization of `⋆` -/
 
-/-- *Theorem B (`thm:starGreedy`)*, equation \eqref{eq:starGreedyAlpha}.
+/-- *Theorem B (`thm:starGreedy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:starGreedyAlpha`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
 $\{ \alpha_1 \beta : \alpha_1 \leq_\chi \alpha\}$. -/
@@ -82,7 +86,9 @@ theorem starGreedy_alpha (α β : AspPerm) :
   rintro τ ⟨α₁, hα₁_le, rfl⟩
   exact mul_le_star_of_le hα₁_le.1 (le_refl β)
 
-/-- *Theorem B (`thm:starGreedy`)*, equation \eqref{eq:starGreedyBeta}.
+/-- *Theorem B (`thm:starGreedy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:starGreedyBeta`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
 $\{ \alpha \beta_1 : \beta_1 \leq_\chi \beta\}$. -/
@@ -95,7 +101,9 @@ theorem starGreedy_beta (α β : AspPerm) :
   rintro τ ⟨β₁, hβ₁_le, rfl⟩
   exact mul_le_star_of_le (le_refl α) hβ₁_le.1
 
-/-- *Theorem B (`thm:starGreedy`)*, equation \eqref{eq:starGreedy}.
+/-- *Theorem B (`thm:starGreedy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:starGreedy`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
 $\{ \alpha_1 \beta_1 : \alpha_1 \leq \alpha, \beta_1 \leq \beta\}$. -/
@@ -112,7 +120,8 @@ theorem starGreedy (α β : AspPerm) :
 
 /-! ### Theorem C: reduction theorem for `α ⋆ β ≥ γ` -/
 
-/-- *Theorem C (`thm:reduce`)*, second paragraph, Bruhat part.
+/-- *Theorem C (`thm:reduce`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), second paragraph, Bruhat part.*
 
 If `α ⋆ β ≥ γ`, then `α₁ = γ ◃ β⁻¹` and `β₁ = α₁⁻¹ ▹ γ` satisfy
 `α₁ ⋆ β₁ = α₁ * β₁ = γ` and `α₁ ≤ α`, `β₁ ≤ β`. -/
@@ -131,8 +140,9 @@ theorem reduce_witness (α β γ : AspPerm) (h : α ⋆ β ≥ γ) :
   have rf := ReducedFact.of_ler_lc this hβ₁_def
   exact ⟨rf.mul_eq, rf.star_eq, α₁_le, β₁_le⟩
 
-/-- *Theorem C (`thm:reduce`)*, second paragraph, including the shift
-identities. Under the additional hypothesis $\chi_\alpha + \chi_\beta =
+/-- *Theorem C (`thm:reduce`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), second paragraph, including the
+shift identities.* Under the additional hypothesis $\chi_\alpha + \chi_\beta =
 \chi_\gamma$ (which makes both shift equalities meaningful), we further have
 $\alpha_1 \leq_\chi \alpha$ and $\beta_1 \leq_\chi \beta$. -/
 theorem reduce_witness_chi (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ)
@@ -152,7 +162,8 @@ theorem reduce_witness_chi (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ)
     linarith
   exact ⟨h_mul, h_star, ⟨h_alpha1_le, h_chi_alpha⟩, ⟨h_beta1_le, h_chi_beta⟩⟩
 
-/-- *Theorem C (`thm:reduce`)*, first paragraph, ASP form.
+/-- *Theorem C (`thm:reduce`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), first paragraph, ASP form.*
 
 For all `α, β, γ ∈ ASP` with `α.χ + β.χ = γ.χ`, the inequality `α ⋆ β ≥ γ`
 is equivalent to the existence of `α₁, β₁` with `α₁ ≤χ α`, `β₁ ≤χ β`, and
@@ -172,8 +183,9 @@ theorem reduce (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ) :
 
 /-! ### Theorem 6.1 (`tllStingy`): stingy characterization of `◃`
 
-The dual story for `◃`, mirroring Theorem B. Equation \eqref{eq:tllGreedyAlpha}
-in the paper. -/
+The dual story for `◃`, mirroring Theorem B. This is the formula labeled
+`eq:tllGreedyAlpha` in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 
 /-- The contraction `α ◃ β⁻¹` is monotone in `α` for fixed `β`.
 
@@ -195,7 +207,8 @@ lemma left_contract_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
   exact SlipFace.left_contract_mono (le_refl α.sf) ((sf_le_iff β' β).mpr hβ)
 
 /-- Bounding the two factors puts an ordinary product above a left contraction.
-This is the ASP form of the bound used in Equation \eqref{eq:atllbBound}. -/
+This is the ASP form of the bound labeled `eq:atllbBound` in
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
     (hα : α ≤ α') (hβ : β' ≤ β) : α ◃ β⁻¹ ≤ α' * β'⁻¹ := by
   -- Proof written by GPT 5.5.
@@ -203,7 +216,9 @@ lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
     le_trans (left_contract_inv_antimono_beta hβ)
       (ReducedProducts.left_contract_le_mul α' β'⁻¹)
 
-/-- *Theorem 6.1 (`thm:tllStingy`)*, equation \eqref{eq:tllGreedyAlpha}.
+/-- *Theorem 6.1 (`thm:tllStingy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:tllGreedyAlpha`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta^{-1}: \alpha_1 \geq_\chi \alpha\}$. -/
@@ -230,7 +245,9 @@ theorem left_contract_stingy_alpha (α β : AspPerm) :
   rintro τ ⟨α₂, hα₂_le, rfl⟩
   exact left_contract_inv_le_mul hα₂_le.1 (le_refl β)
 
-/-- *Theorem 6.1 (`thm:tllStingy`)*, equation \eqref{eq:tllGreedyBeta}.
+/-- *Theorem 6.1 (`thm:tllStingy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:tllGreedyBeta`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha \beta_1^{-1}: \beta_1 \leq_\chi \beta\}$. -/
@@ -260,7 +277,9 @@ theorem left_contract_stingy_beta (α β : AspPerm) :
   rintro τ ⟨β₂, hβ₂_le, rfl⟩
   exact left_contract_inv_le_mul (le_refl α) hβ₂_le.1
 
-/-- *Theorem 6.1 (`thm:tllStingy`)*, equation \eqref{eq:tllGreedy}.
+/-- *Theorem 6.1 (`thm:tllStingy`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+formula `eq:tllGreedy`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta_1^{-1}: \alpha_1 \geq \alpha,\, \beta_1 \leq \beta\}$. -/
@@ -290,7 +309,8 @@ lemma eq_id_of_le_id_chi_zero {γ : AspPerm} (h : γ ≤ AspPerm.id)
     rw [hχ]
   exact le_antisymm h h_id_le
 
-/-- *Theorem 6.5 (`thm:reduceSeveral`)*, ASP-level (list version).
+/-- *Theorem 6.5 (`thm:reduceSeveral`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), ASP-level (list version).*
 
 For any list of permutations `αs` and a target `γ ∈ ASP` with matching total
 shift, if the Demazure product over `αs` is Bruhat-≥ `γ`, then there exists a

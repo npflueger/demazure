@@ -6,7 +6,7 @@ N. Pflueger, [An extended Demazure product on integer permutations via min-plus 
 
 The code includes full formalizations of the main theorems of [An extended Demazure product](https://arxiv.org/abs/2206.14227), following the style, definitions, and proof structure closely. The repository also includes some additional results not included in that article, especially the classification of Demazure factorizations of 321-avoiding permutations (not necessarily of finite length).
 
-[Documentation](https://npflueger.github.io/demazure/docs) for this repository is auto-generated using [doc-gen4](https://github.com/leanprover/doc-gen4). Note that documentation for all Mathlib dependencies are automatically generated along with this repo; you should select "Demazure" in the left column to find the documentation for this repository.
+[Documentation](https://npflueger.github.io/demazure/docs) for this repository is auto-generated using [doc-gen4](https://github.com/leanprover/doc-gen4). Note that documentation for all Mathlib dependencies is automatically generated along with this repo; you should select "Demazure" in the left column to find the documentation for this repository.
 
 ## Project Structure
 
@@ -16,7 +16,7 @@ The Lean development in `Demazure/` is organized as follows. Section numbers tel
 ┌───────────────────────────────┐          ┌───────────────────────────────┐
 │ Utils.lean                    │          │ Valley.lean                   │
 │ Generic helper lemmas         │          │ Tools for tracking minima     │
-│                               │          │ and argmins.                  │
+│                               │          │ and argmin sets.              │
 └───────────────┬───────────────┘          └───────────────┬───────────────┘
                 │                                          │
                 │                                          ▼
@@ -111,7 +111,7 @@ To download and build this code, follow the steps below.
    lake build
    ```
 
-For further information about working with Lean4/Mathlib projects, consult the [Mathlib project guide](https://leanprover-community.github.io/install/project.html).
+For further information about working with Lean 4/Mathlib projects, consult the [Mathlib project guide](https://leanprover-community.github.io/install/project.html).
 
 ## Generative AI disclosure
 

@@ -606,7 +606,7 @@ private theorem func_surjective : Function.Surjective (asps.recon χ) := by
 private theorem func_bijective : Function.Bijective (asps.recon χ) :=
   ⟨func_injective χ asps, func_surjective asps χ⟩
 
-/-- The function reconstructred from an ASP set is an ASP permutation. -/
+/-- The function reconstructed from an ASP set is an ASP permutation. -/
 theorem func_asp : is_asp (asps.recon χ) := by
   let τ := asps.recon χ
   let se := southeast_set τ (τ 0) 1

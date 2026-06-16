@@ -11,7 +11,7 @@ This file formalizes the main theorems from the introduction of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227): Theorem B
 (`thm:starGreedy`) characterizes `α ⋆ β` as a greedy maximum, and Theorem C
 (`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of reduced products.
-It corresponds roughtly to Section 6 of the paper. -/
+It corresponds roughly to Section 6 of the paper. -/
 
 namespace Reduction
 

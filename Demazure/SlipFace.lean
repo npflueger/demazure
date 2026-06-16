@@ -8,10 +8,10 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Int.Interval
 
 /-!
-# Slip Faces
+# Slipfaces
 
 This file defines slipface functions and develops their basic properties, including the $\star$
-(Demazure products) and contractions $\triangleleft$ and $\triangleright$. It corresponds roughly to
+(Demazure product) and contractions $\triangleleft$ and $\triangleright$. It corresponds roughly to
 Section 3 of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 

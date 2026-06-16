@@ -13,7 +13,7 @@ set-valued Young tableaux defined on the inversion set.
 
 This material is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 
-This file is largely experimental, and is still under developemnt. Use at your own risk.
+This file is largely experimental and is still under development. Use at your own risk.
 -/
 
 namespace Tableaux

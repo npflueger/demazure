@@ -841,7 +841,7 @@ lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b :
   have := a_step_eq_iff τ (τ u) b
   simpa [τ.mul_inv_cancel_eval] using this
 
-/-- The key duality formula for slipfaces of ASP Permutations:
+/-- The key duality formula for slipfaces of ASP permutations:
 $s_\alpha(a,b) - s_{\alpha^{-1}}(b,a) = \chi_\alpha + a - b$.
 This is Equation (15) (`eq:saDuality`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
@@ -1203,7 +1203,7 @@ lemma Γ_eq : τ.sf.Γ = { ⟨a, b⟩ | τ b = a } := by
   simp only [SlipFace.Γ, τ.Δ_eq, ite_eq_left_iff, zero_ne_one, imp_false,
     Decidable.not_not, Set.mem_setOf_eq]
 
-/-- The slipface of an ASP permuation is submodular.
+/-- The slipface of an ASP permutation is submodular.
 *Proposition 4.3* (`prop:imageASP`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), one direction. -/
 lemma submodular : τ.sf.submodular := by
   intro a b
@@ -1213,7 +1213,7 @@ lemma submodular : τ.sf.submodular := by
 /-! ### Ramps, Lamps, and Wing Parameters
 
 This section defines the ramp and lamp regions associated to an ASP
-permutation. These are Young diagrams assocaited to particular values of a or b,
+permutation. These are Young diagrams associated to particular values of `a` or `b`,
 useful in characterizing Demazure factorizations of 321-avoiding permutations.
 
 This material is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/

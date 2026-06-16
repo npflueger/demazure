@@ -1168,7 +1168,9 @@ private lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
-private theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
+/-- The min-plus characterization of the Demazure product on \mathrm{ASP}.
+This is part of *Theorem A* (`thm:starExists`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
     IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
   constructor
   · exact ⟨(Submodular.AspValley α β a b).M,

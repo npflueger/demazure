@@ -1034,7 +1034,7 @@ theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
           intro n hn
           exact hn.2))
 
-/-- The simple-transposition case of the Demazure product: if $\sigma \in \asp$
+/-- The simple-transposition case of the Demazure product: if $\sigma \in \mathrm{ASP}$
 has shift zero and its only inversion is $(n,n+1)$, then right Demazure
 multiplication by $\sigma$ follows the usual rule.
 
@@ -1071,7 +1071,7 @@ theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
       exact (by omega : n ≠ n + 1) (α.injective heq)
     omega
 
-/-- The simple-transposition case of left contraction: if $\sigma \in \asp$
+/-- The simple-transposition case of left contraction: if $\sigma \in \mathrm{ASP}$
 has shift zero and its only inversion is $(n,n+1)$, then right contraction by
 $\sigma$ follows the usual rule.
 

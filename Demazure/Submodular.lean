@@ -1179,6 +1179,26 @@ theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
     rw [star_valley]
     exact (Submodular.AspValley α β a b).min_spec l
 
+/-- The max-minus characteriztion of the $\triangleleft$ operator on \mathrm{ASP}.
+This is part of *Theorem 1.1* (`thm:tll`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem lc_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
+    IsGreatest {α.s a l - β⁻¹.s b l | l : ℤ} ((α ◃ β).s a b) := by
+  constructor
+  · use SlipFace.lc_wit α.sf β.sf a b
+    convert Eq.symm <| SlipFace.lc_wit_spec α.sf β.sf a b
+    · rfl
+    · rw [β.sf_dual]
+      rfl
+    · rw [← left_contract_spec α β]
+      rfl
+  · rintro x ⟨l, rfl⟩
+    convert SlipFace.lc_val_ge α.sf β.sf a b l
+    · rfl
+    · rw [β.sf_dual]
+      rfl
+    · rw [← SlipFace.lc_func_eq α.sf β.sf, ← left_contract_spec α β]
+      rfl
+
 /-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
@@ -1372,6 +1392,16 @@ lemma ge_star_iff_ge_right_contract (α β τ : AspPerm) :
   change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
   simpa only [right_contract_spec, star_spec, sf_dual] using
     (SlipFace.ge_star_iff_ge_right_contract α.sf β.sf τ.sf)
+
+/-- The left contraction $\alpha \triangleleft \beta^{-1}$ is the minimum permutation $\gamma$
+  such that $\gamma \star \beta \ge \alpha$.
+  This is the first sentence of *Theorem 1.1* (`thm:tll`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem lc_eq_min (α β : AspPerm) :
+  IsLeast {γ : AspPerm | γ ⋆ β ≥ α } (α ◃ β⁻¹) := by
+  constructor
+  · apply (ge_star_iff_ge_left_contract (α ◃ β⁻¹) β α).mp (le_refl _)
+  · intro γ h
+    exact (ge_star_iff_ge_left_contract γ β α).mpr h
 
 /-- Comparison `τ ≤ α ⋆ β` is equivalent to the lower Demazure-product
 inequalities defining `τ.le_dprod α β`. -/

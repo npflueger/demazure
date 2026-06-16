@@ -1042,7 +1042,7 @@ This is the last sentence of *Theorem A* of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
 *Theorem 8.7 (`thm:alphaStarSigma`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/4.* -/
-theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
+theorem star_simple (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ⋆ σ = if α n < α (n + 1) then α * σ else α := by
   -- Proof written by GPT 5.5.
@@ -1079,7 +1079,7 @@ This is the last sentence of *Theorem 1.1 (`thm:tll`)* of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
 *Theorem 8.7 (`thm:alphaStarSigma`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
-theorem contract_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
+theorem contract_simple (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ◃ σ = if α (n + 1) < α n then α * σ else α := by
   -- Proof written by GPT 5.5.

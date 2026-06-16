@@ -21,8 +21,7 @@ changes when the valley is modified in simple ways.
 
 /-- A function on `ℤ` whose sublevel sets are finite. This is the abstraction
 used to talk about minima and rightmost minimizers.
-*Lemma 4.6 (`lem:fg`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+-/
 structure Valley where
   f : ℤ → ℤ
   rises : ∀ m : ℤ, {n : ℤ | f n ≤ m}.Finite

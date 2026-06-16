@@ -23,7 +23,7 @@ ASP permutations. -/
 
 namespace Submodular
 
-lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
+private lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
   (A A' b : ℤ) (hA : ∀ a ≤ A, s a b = 0) (hA' : ∀ a ≥ A', s.dual (b + 1) a = 0) :
   A ≤ A' ∧ ∑ a ∈ Finset.Ico A A', s.Δ a b = 1 := by
   specialize hA A (le_refl A)
@@ -58,7 +58,7 @@ lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
     rwa [hA' A' (le_refl A')] at this
   exact le_antisymm this (s.dual.nonneg b A')
 
-lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
+private lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   ∃! a : ℤ, ⟨a, b⟩ ∈ s.Γ := by
   rcases s.dual.large_b (b+1) with ⟨A', hA'⟩
   rcases s.small_a b with ⟨A, hA⟩
@@ -132,22 +132,22 @@ lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   rw [eq0] at eq1
   norm_num at eq1
 
-lemma submodular_dual {s : SlipFace} (hsub : s.submodular) :
+private lemma submodular_dual {s : SlipFace} (hsub : s.submodular) :
     s.dual.submodular := by
   intro a b
   rw [← s.dual.Δ_dual, s.dual_dual]
   exact hsub b a
 
-lemma unique_b {s : SlipFace} (hsub : s.submodular) (a : ℤ) :
+private lemma unique_b {s : SlipFace} (hsub : s.submodular) (a : ℤ) :
   ∃! b : ℤ, ⟨a, b⟩ ∈ s.Γ := by
   suffices ∃! b : ℤ, ⟨b, a⟩ ∈ s.dual.Γ by
     simpa [s.Γ_dual] using this
   exact unique_a (submodular_dual hsub) a
 
-noncomputable def asp_func {s : SlipFace} (hsub : s.submodular) : ℤ → ℤ :=
+private noncomputable def asp_func {s : SlipFace} (hsub : s.submodular) : ℤ → ℤ :=
   fun b => (unique_a hsub b).choose
 
-lemma asp_func_spec {s : SlipFace} (hsub : s.submodular) (a b : ℤ) :
+private lemma asp_func_spec {s : SlipFace} (hsub : s.submodular) (a b : ℤ) :
   asp_func hsub b = a ↔ ⟨a, b⟩ ∈ s.Γ := by
   constructor
   · intro eq
@@ -159,7 +159,7 @@ lemma asp_func_spec {s : SlipFace} (hsub : s.submodular) (a b : ℤ) :
     have := (unique_a hsub b).choose_spec.2 a mem
     rw [this]
 
-lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
+private lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
   (asp_func hsub).Bijective := by
   constructor
   · intro b1 b2 h
@@ -185,6 +185,8 @@ lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
       rw [this]
     exact (unique_a hsub b).choose_spec.2 a mem
 
+/-- The ASP permutation associated to a submodular slipface. It can be reconstructed from the set
+$\Gamma$ in the manner described in Section 4 of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
   func := fun b => (unique_a hsub b).choose
   bijective := asp_bijective hsub
@@ -259,7 +261,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
     apply Set.Finite.subset _ this
     apply Set.finite_Ico
 
-theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
+private lemma asp_spec (s : SlipFace) (hsub : s.submodular) :
   (asp hsub).sf = s := by
   apply (SF_ext _ _).mpr
   intro a b
@@ -351,11 +353,8 @@ theorem asp_spec (s : SlipFace) (hsub : s.submodular) :
 /-- A slipface is submodular if and only if it is of the form $s_\alpha$ for
 some ASP permutation `α`.
 
-This is the identification of $\mathrm{ASP}$ with the submodular slipfaces in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227); in Lean the map
-$\alpha \mapsto s_\alpha$ is implemented as `α ↦ α.sf`.
 *Proposition 4.3 (`prop:imageASP`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).*, full statement. -/
 theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
   constructor
   · intro hsub
@@ -377,7 +376,7 @@ the $M_{\alpha \star \beta}(a,b)$ of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). In Lean that rightmost
 minimizer is `(AspValley α β a b).M`. *Definition 4.5 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), unlabeled in source.* -/
-noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
+private noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
     f := fun l => α.s a l + β.s l b
     rises := by
       intro m
@@ -395,7 +394,7 @@ noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
       · linarith [β.s_nonneg n b, α.s_ge a n]
       · linarith [α.s_nonneg a n, β.s_ge n b]
 
-lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
+private lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
   (AspValley α β a b) = (SlipFace.SlipValley α.sf β.sf a b) := by
   suffices (AspValley α β a b).f = (SlipFace.SlipValley α.sf β.sf a b).f by
     rwa [Valley.mk.injEq]
@@ -404,7 +403,7 @@ lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
 
 /-- If `τ = α ⋆ β` in the Demazure sense, then the minimum of
 `AspValley α β a b` is `τ.s a b`. -/
-lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
+private lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b : ℤ) :
   (AspValley α β a b).min = τ.s a b := by
   apply le_antisymm
   · have := dprod.2 a b
@@ -422,7 +421,7 @@ lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β) (a b :
 
 /-- Compare the minima and rightmost minimizers of two valleys that differ by
 `1` below a cutoff and agree above it. *Lemma 4.6 (`lem:fg`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 lemma sediment (v w : Valley) {A : ℤ}
   (low : ∀ l : ℤ, l ≤ A → w.f l = v.f l + 1) (high : ∀ l : ℤ, l > A → w.f l = v.f l) :
   ((v.M ≤ A → w.min = v.min + 1)
@@ -594,7 +593,7 @@ lemma AspValley_noninc (α β : AspPerm) (a b c : ℤ) (b_le_c : b ≤ c) :
 
 /-- A local criterion for submodularity: if `s (a + 1) b` does not drop when
 `b` increases, then `s a b` does not drop either. -/
-lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
+private lemma submodular_of_basepoint_preserved (s : SlipFace) (a b : ℤ) :
   s.Δ a b ≥ 0 ↔ (s (a + 1) b = s (a + 1) (b + 1) → s a b = s a (b + 1)) := by
   let d1 := s (a + 1) b - s (a + 1) (b + 1)
   let d2 := s a b - s a (b + 1)
@@ -671,16 +670,16 @@ a bound on every witness, while $M > m$ becomes the existence of a witness above
 
 /-- The set of witnesses attaining the maximum in
 $s_\alpha \triangleleft s_\beta(a,b)$. -/
-def lc_witness_set (α β : AspPerm) (a b : ℤ) : Set ℤ :=
+private def lc_witness_set (α β : AspPerm) (a b : ℤ) : Set ℤ :=
   {l | (α.sf ◃ β.sf) a b = α.s a l - (β⁻¹).s b l}
 
-lemma lc_wit_mem_lc_witness_set (α β : AspPerm) (a b : ℤ) :
+private lemma lc_wit_mem_lc_witness_set (α β : AspPerm) (a b : ℤ) :
     SlipFace.lc_wit α.sf β.sf a b ∈ lc_witness_set α β a b := by
   dsimp [lc_witness_set]
   rw [SlipFace.lc_wit_spec, AspPerm.sf_dual]
   simp only [AspPerm.sf_func_eq_s]
 
-lemma lc_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
+private lemma lc_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
     (lc_witness_set α β a b).Nonempty :=
   ⟨SlipFace.lc_wit α.sf β.sf a b, lc_wit_mem_lc_witness_set α β a b⟩
 
@@ -693,7 +692,7 @@ lemma lc_candidate_le (α β : AspPerm) (a b l : ℤ) :
 /-- Witness-set form of the left-contraction step in the first coordinate:
 the step is flat exactly when a witness for the new value lies to the right of
 the cutoff. -/
-lemma lc_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lc_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b ↔
       ∃ l ∈ lc_witness_set α β (a + 1) b, α⁻¹ a < l := by
   -- Proof written by Codex.
@@ -731,7 +730,7 @@ lemma lc_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
 /-- Witness-set form of the left-contraction step in the first coordinate:
 the step rises by one exactly when every witness for the new value is at or
 left of the cutoff. -/
-lemma lc_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lc_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b + 1 ↔
       ∀ l ∈ lc_witness_set α β (a + 1) b, l ≤ α⁻¹ a := by
   -- Proof written by Codex.
@@ -755,7 +754,7 @@ lemma lc_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
 the step is flat exactly when an old witness lies to the right of the cutoff.
 Here the cutoff is `β b`, from applying the first-coordinate step formula to
 the dual slipface $s_{\beta^{-1}}$. -/
-lemma lc_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lc_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b ↔
       ∃ l ∈ lc_witness_set α β a b, β b < l := by
   -- Proof written by Codex.
@@ -795,7 +794,7 @@ lemma lc_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
 /-- Witness-set form of the left-contraction step in the second coordinate:
 the step drops by one exactly when every old witness is at or left of the
 cutoff. -/
-lemma lc_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lc_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b - 1 ↔
       ∀ l ∈ lc_witness_set α β a b, l ≤ β b := by
   -- Proof written by Codex.
@@ -820,7 +819,7 @@ right. This replaces the inequality from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227)
 $M_{\alpha \triangleleft \beta}(a+1,b) \leq
 M_{\alpha \triangleleft \beta}(a,b)$. -/
-lemma lc_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
+private lemma lc_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
     (hl : l ∈ lc_witness_set α β (a + 1) b) :
     ∃ l' ∈ lc_witness_set α β a b, l ≤ l' := by
   -- Proof written by Codex.
@@ -858,7 +857,7 @@ right. This replaces the inequality from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227)
 $M_{\alpha \triangleleft \beta}(a,b) \leq
 M_{\alpha \triangleleft \beta}(a,b+1)$. -/
-lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
+private lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
     (hl : l ∈ lc_witness_set α β a b) :
     ∃ l' ∈ lc_witness_set α β a (b + 1), l ≤ l' := by
   -- Proof written by Codex.
@@ -894,7 +893,7 @@ lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
 
 /-- Moving the first coordinate down through several steps transports a witness
 weakly to the right. -/
-lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
+private lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
     (hac : a ≤ c) (hl : l ∈ lc_witness_set α β c b) :
     ∃ l' ∈ lc_witness_set α β a b, l ≤ l' := by
   -- Proof written by Codex.
@@ -921,7 +920,7 @@ lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
 
 /-- Moving the second coordinate up through several steps transports a witness
 weakly to the right. -/
-lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
+private lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
     (hbc : b ≤ c) (hl : l ∈ lc_witness_set α β a b) :
     ∃ l' ∈ lc_witness_set α β a c, l ≤ l' := by
   -- Proof written by Codex.
@@ -947,7 +946,7 @@ lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
 
 /-- The left contraction $s \triangleleft t$ of submodular slipfaces is
 submodular. *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/11.* -/
 theorem submodular_of_left_contract {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ◃ t).submodular := by
@@ -971,7 +970,7 @@ theorem submodular_of_left_contract {s t : SlipFace}
 
 /-- The right contraction $s \triangleright t$ of submodular slipfaces is
 submodular. *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/11.* -/
 theorem submodular_of_right_contract {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ▹ t).submodular := by
@@ -1007,9 +1006,8 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
   simp only [neq, ↓reduceIte, ne_eq, zero_ne_one, not_false_eq_true]
 
 /-- The slipface product of two ASP permutations is represented by a unique ASP
-permutation. *Theorem 4.4 (`thm:starExists1`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
-lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
+permutation. -/
+private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
   intro α β
   have : (α.sf ⋆ β.sf).submodular := by
     exact Submodular.submodular_of_star (α.submodular) (β.submodular)
@@ -1023,9 +1021,8 @@ lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β
     rw [τ.eq_of_sf_eq hτ]
 
 /-- The slipface left contraction of two ASP permutations is represented by a
-unique ASP permutation. *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
-lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
+unique ASP permutation. -/
+private lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
   intro α β
   have : (α.sf ◃ β.sf).submodular := by
     exact Submodular.submodular_of_left_contract (α.submodular) (β.submodular)
@@ -1039,9 +1036,8 @@ lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.s
     rw [τ.eq_of_sf_eq hτ]
 
 /-- The slipface right contraction of two ASP permutations is represented by a
-unique ASP permutation. *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
-lemma rc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
+unique ASP permutation. -/
+private lemma rc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
   intro α β
   have : (α.sf ▹ β.sf).submodular := by
     exact Submodular.submodular_of_right_contract (α.submodular) (β.submodular)
@@ -1064,6 +1060,10 @@ In Lean this operation is written `α ⋆ β`. -/
 noncomputable def star (α β : AspPerm) : AspPerm :=
   Classical.choose (star_exists α β)
 
+/-- The Demazure product on ASP is characterized by the equation
+$s_{\alpha \star \beta} = s_\alpha \star s_\beta$.
+*Theorem 4.4 (`thm:starExists1`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5. -/
 @[simp] lemma star_spec (α β : AspPerm) : (star α β).sf = α.sf ⋆ β.sf :=
   (Classical.choose_spec (star_exists α β)).1
 
@@ -1072,15 +1072,14 @@ infixl:70 " ⋆ " => star
 /-- Left contraction on ASP permutations, characterized by
 $s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
 
-In Lean this operation is written `α ◃ β`.
-*Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
+In Lean this operation is written `α ◃ β`. -/
 noncomputable def left_contract (α β : AspPerm) : AspPerm :=
   Classical.choose (lc_exists α β)
 
-/-- Left contraction on ASP permutations has the defining slipface.
+/-- Left contraction on ASP permutations is characterized by
+$s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/11.* -/
 @[simp] lemma left_contract_spec (α β : AspPerm) :
     (left_contract α β).sf = α.sf ◃ β.sf :=
   (Classical.choose_spec (lc_exists α β)).1
@@ -1090,15 +1089,14 @@ infixl:70 " ◃ " => left_contract
 /-- Right contraction on ASP permutations, characterized by
 $s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
 
-In Lean this operation is written `α ▹ β`.
-*Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
+In Lean this operation is written `α ▹ β`. -/
 noncomputable def right_contract (α β : AspPerm) : AspPerm :=
   Classical.choose (rc_exists α β)
 
-/-- Right contraction on ASP permutations has the defining slipface.
+/-- Right contraction on ASP permutations is characterized by
+$s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/11.* -/
 @[simp] lemma right_contract_spec (α β : AspPerm) :
     (right_contract α β).sf = α.sf ▹ β.sf :=
   (Classical.choose_spec (rc_exists α β)).1
@@ -1115,7 +1113,7 @@ lemma star_assoc : ∀ α β γ : AspPerm, (α ⋆ β) ⋆ γ = α ⋆ (β ⋆ �
 
 /-- Left contraction associates with Demazure product on ASP permutations.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/11.* -/
 lemma left_contract_assoc (α β γ : AspPerm) :
     (α ◃ β) ◃ γ = α ◃ (β ⋆ γ) := by
   -- Proof written by Codex.
@@ -1124,7 +1122,7 @@ lemma left_contract_assoc (α β γ : AspPerm) :
 
 /-- Right contraction associates with Demazure product on ASP permutations.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/11.* -/
 lemma right_contract_assoc (α β γ : AspPerm) :
     α ▹ (β ▹ γ) = (α ⋆ β) ▹ γ := by
   -- Proof written by Codex.
@@ -1133,7 +1131,7 @@ lemma right_contract_assoc (α β γ : AspPerm) :
 
 /-- Inversion swaps left contraction for right contraction.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 7/11.* -/
 lemma inverse_left_contract (α β : AspPerm) :
     (α ◃ β)⁻¹ = β⁻¹ ▹ α⁻¹ := by
   -- Proof written by Codex.
@@ -1144,19 +1142,19 @@ lemma inverse_left_contract (α β : AspPerm) :
 
 /-- The shift of left contraction is the sum of shifts.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 8/11.* -/
 lemma chi_left_contract (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [left_contract_spec, SlipFace.chi_lc]
 
 /-- The shift of right contraction is the sum of shifts.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 9/11.* -/
 lemma chi_right_contract (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [right_contract_spec, SlipFace.chi_rc]
 
-lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
+private lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   = (Submodular.AspValley α β a b).min := by
   let v := (Submodular.AspValley α β a b)
   have : (α ⋆ β).s a b = (α ⋆ β).sf.func a b := by
@@ -1170,7 +1168,7 @@ lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   have : w = v := by exact Submodular.AspSlipValley α β a b
   rw [this]
 
-theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
+private theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
     IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
   constructor
   · exact ⟨(Submodular.AspValley α β a b).M,
@@ -1201,6 +1199,10 @@ lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have τ_eq : τ.sf = α.sf ⋆ β.sf  := (ex.choose_spec).1
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [star_spec, SlipFace.chi_star, sf_chi_eq]
+
+/-!
+  ## Products and Demazure products of lists of ASP permutations
+-/
 
 /-- Demazure product of a list of ASP permutations. -/
 noncomputable abbrev DProd (L : List AspPerm) : AspPerm :=
@@ -1235,6 +1237,10 @@ lemma chi_OrdProd (L : List AspPerm) : (OrdProd L).χ = (L.map AspPerm.χ).sum :
   | nil => simp only [OrdProd_nil, List.map_nil, List.sum_nil, id_chi]
   | cons α L ih =>
       simp only [OrdProd_cons, List.map_cons, List.sum_cons, chi_mul, ih]
+
+/-!
+  ## Some properties of the identity permutations
+-/
 
 lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
   rw [AspPerm.s_eq_se_card]
@@ -1274,6 +1280,10 @@ lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
   apply AspPerm.eq_of_sf_eq
   rw [AspPerm.star_spec, id_sf]
   simpa using SlipFace.mul_id α.sf
+
+/-!
+  ## Partial (pre)orders on ASP permutations
+-/
 
 -- The `PartialOrder` on `AspPerm` is only now defined because we needed `eq_of_sf_eq`.
 instance : PartialOrder AspPerm where
@@ -1344,7 +1354,7 @@ lemma star_mono {α₁ α₂ β₁ β₂ : AspPerm}
 /-- The left contraction $\tau \triangleleft \beta^{-1}$ is the Bruhat
 minimum of the ASP permutations $\alpha$ such that $\alpha \star \beta \geq \tau$.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 7/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 10/11.* -/
 lemma ge_star_iff_ge_left_contract (α β τ : AspPerm) :
     α ≥ τ ◃ β⁻¹ ↔ α ⋆ β ≥ τ := by
   change (τ ◃ β⁻¹).sf ≤ α.sf ↔ τ.sf ≤ (α ⋆ β).sf
@@ -1354,7 +1364,7 @@ lemma ge_star_iff_ge_left_contract (α β τ : AspPerm) :
 /-- The right contraction $\alpha^{-1} \triangleright \tau$ is the Bruhat
 minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$.
 *Theorem 4.10 (`thm:tllExists`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 8/8.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 11/11.* -/
 lemma ge_star_iff_ge_right_contract (α β τ : AspPerm) :
     β ≥ α⁻¹ ▹ τ ↔ α ⋆ β ≥ τ := by
   change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
@@ -1434,7 +1444,7 @@ namespace Submodular
 
 /-- In a Demazure product `α ⋆ β`, the factor `β` lies below the product in
 left weak order. *Lemma 4.9 (`lem:invStar`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by
@@ -1474,7 +1484,7 @@ theorem lel_of_dprod (α β : AspPerm) : β ≤L α ⋆ β := by
 
 /-- In a Demazure product `α ⋆ β`, the factor `α` lies below the product in
 right weak order. *Lemma 4.9 (`lem:invStar`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
   let τ := α ⋆ β
   have dprod : τ.eq_dprod α β := by

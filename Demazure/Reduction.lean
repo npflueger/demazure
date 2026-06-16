@@ -5,20 +5,13 @@ Authors: Nathan Pflueger
 -/
 import Demazure.ReducedProducts
 
-/-!
-# Reduction Theorems
-
-This file proves the main reduction results connecting Demazure inequalities
-with reduced ordinary products. It corresponds roughly to Section 6 of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).
--/
-
-/-! ### Reduction theorems
+/-! # Reduction theorems
 
 This file formalizes the main theorems from the introduction of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227): Theorem B
 (`thm:starGreedy`) characterizes `α ⋆ β` as a greedy maximum, and Theorem C
-(`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of reduced products. -/
+(`thm:reduce`) reduces inequalities `α ⋆ β ≥ γ` to equalities of reduced products.
+It corresponds roughtly to Section 6 of the paper. -/
 
 namespace Reduction
 
@@ -72,7 +65,7 @@ lemma mul_le_star_of_le {α₁ α₂ β₁ β₂ : AspPerm}
 /-! ### Theorem B: greedy characterization of `⋆` -/
 
 /-- *Theorem B (`thm:starGreedy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3,
 formula `eq:starGreedyAlpha`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
@@ -87,7 +80,7 @@ theorem starGreedy_alpha (α β : AspPerm) :
   exact mul_le_star_of_le hα₁_le.1 (le_refl β)
 
 /-- *Theorem B (`thm:starGreedy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3,
 formula `eq:starGreedyBeta`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
@@ -102,7 +95,7 @@ theorem starGreedy_beta (α β : AspPerm) :
   exact mul_le_star_of_le (le_refl α) hβ₁_le.1
 
 /-- *Theorem B (`thm:starGreedy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3,
 formula `eq:starGreedy`.*
 
 `α ⋆ β` is the Bruhat-maximum of the set
@@ -121,7 +114,8 @@ theorem starGreedy (α β : AspPerm) :
 /-! ### Theorem C: reduction theorem for `α ⋆ β ≥ γ` -/
 
 /-- *Theorem C (`thm:reduce`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), second paragraph, Bruhat part.*
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), second paragraph,
+Bruhat component, part 1/3.*
 
 If `α ⋆ β ≥ γ`, then `α₁ = γ ◃ β⁻¹` and `β₁ = α₁⁻¹ ▹ γ` satisfy
 `α₁ ⋆ β₁ = α₁ * β₁ = γ` and `α₁ ≤ α`, `β₁ ≤ β`. -/
@@ -142,7 +136,7 @@ theorem reduce_witness (α β γ : AspPerm) (h : α ⋆ β ≥ γ) :
 
 /-- *Theorem C (`thm:reduce`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), second paragraph, including the
-shift identities.* Under the additional hypothesis $\chi_\alpha + \chi_\beta =
+shift identities, part 2/3.* Under the additional hypothesis $\chi_\alpha + \chi_\beta =
 \chi_\gamma$ (which makes both shift equalities meaningful), we further have
 $\alpha_1 \leq_\chi \alpha$ and $\beta_1 \leq_\chi \beta$. -/
 theorem reduce_witness_chi (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ)
@@ -163,7 +157,8 @@ theorem reduce_witness_chi (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ)
   exact ⟨h_mul, h_star, ⟨h_alpha1_le, h_chi_alpha⟩, ⟨h_beta1_le, h_chi_beta⟩⟩
 
 /-- *Theorem C (`thm:reduce`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), first paragraph, ASP form.*
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), first paragraph,
+ASP form, part 3/3.*
 
 For all `α, β, γ ∈ ASP` with `α.χ + β.χ = γ.χ`, the inequality `α ⋆ β ≥ γ`
 is equivalent to the existence of `α₁, β₁` with `α₁ ≤χ α`, `β₁ ≤χ β`, and
@@ -190,7 +185,7 @@ The dual story for `◃`, mirroring Theorem B. This is the formula labeled
 /-- The contraction `α ◃ β⁻¹` is monotone in `α` for fixed `β`.
 
 This is the ASP-level lift of `SlipFace.left_contract_mono`. -/
-lemma left_contract_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
+private lemma left_contract_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
     α ◃ β⁻¹ ≤ α' ◃ β⁻¹ := by
   -- Proof written by Claude Opus 4.7.
   apply (sf_le_iff (α ◃ β⁻¹) (α' ◃ β⁻¹)).mp
@@ -199,7 +194,7 @@ lemma left_contract_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
 
 /-- The contraction `α ◃ β⁻¹` is anti-monotone in `β`: if `β' ≤ β` then
 `α ◃ β⁻¹ ≤ α ◃ β'⁻¹`. -/
-lemma left_contract_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
+private lemma left_contract_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
     α ◃ β⁻¹ ≤ α ◃ β'⁻¹ := by
   -- Proof written by Claude Opus 4.7.
   apply (sf_le_iff (α ◃ β⁻¹) (α ◃ β'⁻¹)).mp
@@ -209,7 +204,7 @@ lemma left_contract_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
 /-- Bounding the two factors puts an ordinary product above a left contraction.
 This is the ASP form of the bound labeled `eq:atllbBound` in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
+private lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
     (hα : α ≤ α') (hβ : β' ≤ β) : α ◃ β⁻¹ ≤ α' * β'⁻¹ := by
   -- Proof written by GPT 5.5.
   exact le_trans (left_contract_inv_mono_alpha hα) <|
@@ -217,7 +212,7 @@ lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
       (ReducedProducts.left_contract_le_mul α' β'⁻¹)
 
 /-- *Theorem 6.1 (`thm:tllStingy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3,
 formula `eq:tllGreedyAlpha`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
@@ -246,7 +241,7 @@ theorem left_contract_stingy_alpha (α β : AspPerm) :
   exact left_contract_inv_le_mul hα₂_le.1 (le_refl β)
 
 /-- *Theorem 6.1 (`thm:tllStingy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3,
 formula `eq:tllGreedyBeta`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
@@ -278,7 +273,7 @@ theorem left_contract_stingy_beta (α β : AspPerm) :
   exact left_contract_inv_le_mul (le_refl α) hβ₂_le.1
 
 /-- *Theorem 6.1 (`thm:tllStingy`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3,
 formula `eq:tllGreedy`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
@@ -301,7 +296,7 @@ from `reduce` by induction. The list form below packages that induction. -/
 /-- If `γ ≤ id` and `γ` has shift zero, then `γ = id`.
 
 This is the shift-zero special case of the antisymmetry of Bruhat order. -/
-lemma eq_id_of_le_id_chi_zero {γ : AspPerm} (h : γ ≤ AspPerm.id)
+private lemma eq_id_of_le_id_chi_zero {γ : AspPerm} (h : γ ≤ AspPerm.id)
     (hχ : γ.χ = 0) : γ = AspPerm.id := by
   -- Proof written by GPT 5.5.
   have h_id_le : AspPerm.id ≤ γ := by

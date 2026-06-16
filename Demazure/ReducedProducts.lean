@@ -23,19 +23,19 @@ namespace ReducedProducts
 
 /-- The part of $s_\alpha(a,\ell)$ coming from indices above $\ell$ whose
 preimages under $\beta$ lie below $b$. -/
-noncomputable def star_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def star_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   (α.se_finset a l).filter (fun n => β⁻¹ n < b)
 
 /-- The part of $s_\beta(\ell,b)$ coming from indices below $\ell$ whose
 images under $\alpha$ lie above $a$. -/
-noncomputable def star_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def star_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   ((β⁻¹).nw_finset b l).filter (fun n => a ≤ α n)
 
-@[simp] lemma mem_star_hi_error (α β : AspPerm) (a b l n : ℤ) :
+@[simp] private lemma mem_star_hi_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ star_hi_error α β a b l ↔ l ≤ n ∧ α n < a ∧ β⁻¹ n < b := by
   simp only [star_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
 
-@[simp] lemma mem_star_lo_error (α β : AspPerm) (a b l n : ℤ) :
+@[simp] private lemma mem_star_lo_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ star_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ a ≤ α n := by
   simp only [star_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
 
@@ -47,7 +47,7 @@ $s_{\alpha\beta}(a,b)$ and the two remaining quadrants.
 
 *Proof component for Lemma 5.1 (`lem:reducedStar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
+private lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
     α.s a l + β.s l b =
       (α * β).s a b
         + (star_hi_error α β a b l).card
@@ -141,7 +141,7 @@ theorem mul_le_star (α β : AspPerm) : α * β ≤ α ⋆ β := by
 /-- If the Demazure product lies below the ordinary product, then the ordinary
 product is reduced. *Proof component for Lemma 5.1 (`lem:reducedStar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α * β) :
+private lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α * β) :
     AspPerm.ReducedProduct α β := by
   -- Proof written by Codex.
   apply Set.disjoint_left.mpr
@@ -165,7 +165,7 @@ lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ β ≤ α
 /-- A reduced ordinary product is an upper bound for the Demazure product.
 *Proof component for Lemma 5.1 (`lem:reducedStar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma star_le_mul_of_reducedProduct (α β : AspPerm)
+private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
     (h_reduced : AspPerm.ReducedProduct α β) : α ⋆ β ≤ α * β := by
   -- Proof written by Codex.
   apply (AspPerm.sf_le_iff (α ⋆ β) (α * β)).mp
@@ -253,19 +253,19 @@ theorem star_eq_mul_iff_reducedProduct (α β : AspPerm) :
 /-- The left-contraction error below the cutoff $\ell$: indices counted by
 $s_{\alpha\beta}(a,b)$ but omitted from the candidate
 $s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$. -/
-noncomputable def lc_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def lc_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   ((β⁻¹).nw_finset b l).filter (fun n => α n < a)
 
 /-- The left-contraction error above the cutoff $\ell$: indices subtracted by
 $s_{\beta^{-1}}(b,\ell)$ but not counted by $s_\alpha(a,\ell)$. -/
-noncomputable def lc_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def lc_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   ((β⁻¹).se_finset b l).filter (fun n => a ≤ α n)
 
-@[simp] lemma mem_lc_lo_error (α β : AspPerm) (a b l n : ℤ) :
+@[simp] private lemma mem_lc_lo_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ lc_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ α n < a := by
   simp only [lc_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
 
-@[simp] lemma mem_lc_hi_error (α β : AspPerm) (a b l n : ℤ) :
+@[simp] private lemma mem_lc_hi_error (α β : AspPerm) (a b l n : ℤ) :
     n ∈ lc_hi_error α β a b l ↔ l ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
   simp only [lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
 
@@ -277,7 +277,7 @@ $s_{\alpha\beta}(a,b)$ minus these two errors.
 
 *Proof component for Lemma 5.2 (`lem:reducedTri`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
+private lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l =
       (α * β).s a b
         - (lc_lo_error α β a b l).card
@@ -366,7 +366,7 @@ theorem left_contract_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
 of the right factor lies below the left factor in left weak order.
 *Proof component for Lemma 5.2 (`lem:reducedTri`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
+private lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
     (hle : α * β ≤ α ◃ β) : β⁻¹ ≤L α := by
   -- Proof written by Codex.
   rintro ⟨m, n⟩ hβ
@@ -407,9 +407,9 @@ lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
 
 /-- If the inverse of the right factor lies below the left factor in left weak
 order, then ordinary multiplication lies below left contraction.
-*Proof component for Lemma 5.2 (`lem:reducedTri`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
+Proof component of *Lemma 5.2* (`lem:reducedTri`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+private lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
     (hweak : β⁻¹ ≤L α) : α * β ≤ α ◃ β := by
   -- Proof written by Codex.
   intro a b
@@ -605,14 +605,14 @@ def of_mul_reduced {α β γ : AspPerm} (h_mul : α * β = γ)
 
 /-- Construct a reduced fact when ordinary and Demazure multiplication have
 the same value. -/
-def of_mul_star {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_star {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [← ReducedProducts.star_eq_mul_iff_reducedProduct α β, h_star, h_mul]
 
 /-- Construct a reduced fact from an ordinary product and the right weak-order
 inequality for its left factor. -/
-def of_mul_ler {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_ler {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_weak : α ≤R γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rwa [AspPerm.reducedProduct_iff_le_weak_R_mul, h_mul]
@@ -626,7 +626,7 @@ def of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
 
 /-- Construct a reduced fact when the right contraction by the inverse left
 factor collapses to ordinary multiplication. -/
-def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_contract : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.right_contract_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_contract
@@ -634,18 +634,19 @@ def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
 
 /-- Construct a reduced fact when the left contraction by the inverse right
 factor collapses to ordinary multiplication. -/
-def of_mul_lc {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_lc {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_contract : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.left_contract_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_contract
   rwa [AspPerm.reducedProduct_iff_le_weak_L_mul]
 
-def of_reduced_star {α β γ : AspPerm}
+private def of_reduced_star {α β γ : AspPerm}
   (h_red : α.ReducedProduct β) (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
   apply of_mul_reduced _ h_red
   rwa [← (ReducedProducts.star_eq_mul_iff_reducedProduct α β).mpr h_red]
 
-def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ β⁻¹ = α) : ReducedFact α β γ := by
+private def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ β⁻¹ = α) : ReducedFact α β γ
+  := by
   have eq_α : γ * β⁻¹ = α := by
     have := ReducedProducts.left_contract_eq_mul_iff γ β⁻¹
     rw [inv_inv, h_lc] at this
@@ -665,32 +666,32 @@ def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ =
   rw [← h_mul] at h_ler
   exact ReducedFact.mk ((α.reducedProduct_iff_le_weak_R_mul β).mpr h_ler) h_mul
 
-/-- The Demazure product in a reduced fact has the same value as its ordinary
+/-- The Demazure product in a reduced factorization has the same value as its ordinary
 product. -/
 lemma star_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α ⋆ β = γ := by
   rw [(ReducedProducts.star_eq_mul_iff_reducedProduct α β).mpr h.reduced, h.mul_eq]
 
-/-- The left factor of a reduced fact is below the product in right weak
+/-- The left factor of a reduced factorization is below the product in right weak
 order. -/
-lemma ler {α β γ : AspPerm} (h : ReducedFact α β γ) : α ≤R γ := by
+private lemma ler {α β γ : AspPerm} (h : ReducedFact α β γ) : α ≤R γ := by
   convert (AspPerm.reducedProduct_iff_le_weak_R_mul α β).mp h.reduced
   rw [h.mul_eq]
 
-/-- The right factor of a reduced fact is below the product in left weak
+/-- The right factor of a reduced factorization is below the product in left weak
 order. -/
-lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ := by
+private lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ := by
   convert (AspPerm.reducedProduct_iff_le_weak_L_mul α β).mp h.reduced
   rw [h.mul_eq]
 
 /-- Right contraction by the inverse left factor collapses to ordinary
-multiplication in a reduced fact. -/
-lemma rc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
+multiplication in a reduced factorization. -/
+private lemma rc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
   apply (ReducedProducts.right_contract_eq_mul_iff α⁻¹ γ).mpr
   rw [inv_inv]
   exact h.ler
 
 /-- Left contraction by the inverse right factor collapses to ordinary
-multiplication in a reduced fact. -/
+multiplication in a reduced factorization. -/
 lemma lc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : γ ◃ β⁻¹ = γ * β⁻¹ := by
   apply (ReducedProducts.left_contract_eq_mul_iff γ β⁻¹).mpr
   rw [inv_inv]

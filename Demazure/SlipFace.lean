@@ -329,7 +329,7 @@ $$
 
 In Lean, `star_func s t a b` is this integer value, while `s ⋆ t` is the resulting
 `SlipFace`. *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6.* -/
 noncomputable def star_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => (SlipValley s t a b).min
 
@@ -363,7 +363,7 @@ lemma star_dual_eq (s t : SlipFace) (a b : ℤ) :
   rw [this] at ineq
   omega
 
-lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
+private lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
   constructor
   · intro a b
     let v := SlipValley s t (a+1) b
@@ -425,10 +425,7 @@ lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) := by
       linarith [s.nonneg a l, t.nonneg l b]
     exact le_antisymm le_zero ge_zero
 
-/-- The product function `star_func s t` comes from a slipface of shift
-`s.χ + t.χ`. *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/5.* -/
-lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
+private lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
   ((p.func = star_func s t ∧ p.χ = s.χ + t.χ)
   ∧ p.dual.func = star_func t.dual s.dual) := by
   let P := star_func s t
@@ -444,7 +441,9 @@ lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
   exact ⟨D_props_of_star_func s t, D_props_of_star_func t.dual s.dual⟩
 
 /-- The product of two slipfaces, obtained from the minimum formula
-`star_func`. -/
+`star_func`.
+*Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6.* -/
 noncomputable def star (s t : SlipFace) : SlipFace :=
   Classical.choose (star_exists s t)
 
@@ -456,12 +455,15 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.1
 
+/-- The shift is additive under $\star$.
+*Proposition 3.9* (`prop:sfAlgebraDefined`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6.* -/
 @[simp] lemma chi_star (s t : SlipFace) : (s ⋆ t).χ = s.χ + t.χ := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.2
 
 /-- Duality reverses the product `⋆`. *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6.* -/
 @[simp] lemma star_dual (s t : SlipFace) : (s ⋆ t).dual = t.dual ⋆ s.dual := by
   have h := star_exists s t
   have := (Classical.choose_spec h).2
@@ -473,9 +475,8 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
 
 /-! ### Order Structure and Comparison with `⋆`
 
-This section puts the pointwise order on `SlipFace` and records the basic
+This section defines the Bruhat order on `SlipFace` and records the basic
 comparison lemmas relating that order to the product `⋆`.
-The order is the Bruhat order on slipfaces from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). *Definition 3.2.* -/
 
 instance : PartialOrder SlipFace where
@@ -725,7 +726,7 @@ $$
 (s \triangleleft t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[s(a,\ell) - t^\vee(b,\ell)\bigr].
 $$
 *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 noncomputable def lc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
 
@@ -746,10 +747,7 @@ lemma lc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ lc_func s t a b := by
   rw [hs0, ht0] at hmax
   omega
 
-/-- The left contraction function $s \triangleleft t$ satisfies `D_props`.
-*Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), proof component for part 2/5.* -/
-lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
+private lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
   · intro a b
@@ -881,7 +879,7 @@ lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
         have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
         omega
 
-lemma right_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+private lemma rc_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
     t l b - s.dual l a ≤ t m b - s.dual m a := by
   obtain ⟨A₁, hA₁⟩ := t.small_a b
   obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
@@ -926,20 +924,20 @@ lemma right_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
 
 /-- The argmax witnessing the right contraction value $s \triangleright t (a,b)$. -/
 noncomputable def rc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
-  Classical.choose (right_contraction_exists s t a b)
+  Classical.choose (rc_exists s t a b)
 
 /-- The right contraction function
 $$
 (s \triangleright t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[t(\ell,b) - s^\vee(\ell,a)\bigr].
 $$
 *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 noncomputable def rc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => t (rc_wit s t a b) b - s.dual (rc_wit s t a b) a
 
 /-- Every value $t(\ell,b) - s^\vee(\ell,a)$ is at most $s \triangleright t (a,b)$. -/
 lemma rc_val_ge (s t : SlipFace) (a b l : ℤ) : t l b - s.dual l a ≤ rc_func s t a b :=
-  Classical.choose_spec (right_contraction_exists s t a b) l
+  Classical.choose_spec (rc_exists s t a b) l
 
 /-- The right contraction is nonnegative, since for `l ≪ 0` both terms in the
 maximizing expression vanish. -/
@@ -954,10 +952,7 @@ lemma rc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ rc_func s t a b := by
   rw [ht0, hs0] at hmax
   omega
 
-/-- The right contraction function $s \triangleright t$ satisfies `D_props`.
-*Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), proof component for part 3/5.* -/
-lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
+private lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
   · intro a b
@@ -1087,10 +1082,7 @@ lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
           exact Finset.min'_le middleBounds (l - s.χ - t l b) hval_mem
         omega
 
-/-- The left contraction is dual to the right contraction.
-*Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), proof component for part 5/5.* -/
-lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
+private lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
     lc_func s t a b - rc_func t.dual s.dual b a = a - b + s.χ + t.χ := by
   -- Proof written by GPT 5.5.
   let C := a - b + s.χ + t.χ
@@ -1112,10 +1104,7 @@ lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
       lc_val_ge s t a b l
     linarith [s.s_eq a l, t.s'_eq b l, htdd, hmax]
 
-/-- The function `lc_func s t` satisfies the slipface axioms and therefore
-comes from a slipface. *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
-lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
+private lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
     ((p.func = lc_func s t ∧ p.χ = s.χ + t.χ)
     ∧ p.dual.func = rc_func t.dual s.dual) := by
   -- Proof written by GPT 5.5.
@@ -1132,8 +1121,8 @@ lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
   exact ⟨D_props_of_lc_func s t, D_props_of_rc_func t.dual s.dual⟩
 
 /-- The left contraction of two slipfaces, obtained from the maximum formula
-`lc_func`. *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
+`lc_func`. *Definition 3.7 (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
 noncomputable def left_contract (s t : SlipFace) : SlipFace :=
   Classical.choose (lc_exists s t)
 
@@ -1148,13 +1137,16 @@ lemma lc_wit_spec (s t : SlipFace) (a b : ℤ) :
   rw [lc_func_eq]
   rfl
 
+/-- The shift is additive under left contraction.
+*Proposition 3.9* (`prop:sfAlgebraDefined`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 @[simp] lemma chi_lc (s t : SlipFace) : (s ◃ t).χ = s.χ + t.χ := by
   have h := lc_exists s t
   exact (Classical.choose_spec h).1.2
 
 /-- The right contraction of two slipfaces, defined by duality from left
-contraction. *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/5.* -/
+contraction. *Definition 3.7 (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
 noncomputable def right_contract (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
@@ -1172,6 +1164,9 @@ lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
   rw [rc_func_eq]
   rfl
 
+/-- The shift is additive under right contraction.
+*Proposition 3.9* (`prop:sfAlgebraDefined`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 @[simp] lemma chi_rc (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
   dsimp [right_contract, SlipFace.dual]
   rw [chi_lc]
@@ -1180,7 +1175,7 @@ lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
 
 /-- The stated left/right contraction duality.
 *Proposition 3.9 (`prop:sfAlgebraDefined`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
 @[simp] lemma left_contract_dual (s t : SlipFace) :
     (s ◃ t).dual = t.dual ▹ s.dual := by
   dsimp [right_contract]
@@ -1189,7 +1184,7 @@ lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
 /-- The corresponding right/left contraction duality, obtained by applying the
 left/right duality to dual slipfaces.
 *Consequence of Proposition 3.9 (`prop:sfAlgebraDefined`) in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
 @[simp] lemma right_contract_dual (s t : SlipFace) :
     (s ▹ t).dual = t.dual ◃ s.dual := by
   dsimp [right_contract]
@@ -1218,7 +1213,7 @@ lemma bend_set_finite (t : SlipFace) (b : ℤ) : Finite (bend_set t b) := by
   apply Set.Finite.subset _ this
   apply Finset.finite_toSet
 
-lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b ≠ t (l + 1) b) :
+private lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b ≠ t (l + 1) b) :
   ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧ s a m + t m b ≤ s a l + t l b := by
   by_cases h : t (l-1) b = t l b
   · use l
@@ -1276,7 +1271,7 @@ lemma bend_set_witness (s t : SlipFace) (a b : ℤ) :
     have hm_eq : s a m + t m b = s a v.M + t v.M b := le_antisymm hm_le hM_le_m
     rw [hstarM, hm_eq]
 
-lemma bend_set_witness_lc_right_helper (s t : SlipFace) (a b l : ℤ)
+private lemma bend_set_witness_lc_right_helper (s t : SlipFace) (a b l : ℤ)
     (hmax : ∀ n, s a n - t.dual b n ≤ s a l - t.dual b l) :
     ∃ m : ℤ, t m b ≠ t (m+1) b ∧
       s a l - t.dual b l ≤ s a m - t.dual b m := by
@@ -1308,7 +1303,7 @@ decreasing_by
   have hnonneg : 0 ≤ s a (l+1) := s.nonneg a (l+1)
   omega
 
-lemma bend_set_witness_lc_helper (s t : SlipFace) (a b l : ℤ)
+private lemma bend_set_witness_lc_helper (s t : SlipFace) (a b l : ℤ)
     (hl : t l b ≠ t (l + 1) b) :
     ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧
       s a l - t.dual b l ≤ s a m - t.dual b m := by
@@ -1645,7 +1640,9 @@ lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b�
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def submodular : Prop := ∀ a b : ℤ, sf.Δ a b ≥ 0
 
-/-- The set of boxes where the mixed difference `Δ` is equal to `1`. -/
+/-- The set of boxes where the mixed difference `Δ` is equal to `1`,
+as defined in the proof of *Proposition 4.3* (`prop:imageASP`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def Γ : Set (ℤ × ℤ) := {(a, b) | sf.Δ a b = 1}
 
 lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := by

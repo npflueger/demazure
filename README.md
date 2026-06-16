@@ -13,62 +13,62 @@ The code includes full formalizations of the main theorems of [An extended Demaz
 The Lean development in `Demazure/` is organized as follows. Section numbers tell roughly where the material of that file is found in [An extended Demazure product](https://arxiv.org/abs/2206.14227). In some cases, material from one section is spread across multiple files, or not yet formalized, and some formalized theorems are not in that article.
 
 ```text
-+-----------------------------+          +-----------------------------+
-| Utils.lean                  |          | Valley.lean                 |
-| Generic helper lemmas       |          | Tools for tracking minima   |
-|                             |          | and argmins.                |
-+--------------+--------------+          +--------------+--------------+
-               |                                        |
-               |                                        v
-               |                         +--------------+--------------+
-               |                         | SlipFace.lean (§3)          |
-               |                         | Slipfaces and operations    |
-               |                         | on them.                    |
-               |                         +--------------+--------------+
-               |                                        |
-               +------------------------+---------------+
-                                        |
-                                        v
-                         +--------------+--------------+
-                         | AspPerm.lean (§2)           |
-                         | ASP permutations, inversion |
-                         | sets, weak                  |
-                         | orders, ⋆ and ◃ predicates  |
-                         +--------------+--------------+
-                                        |
-                         +--------------+--------------+
-                         |                             |
-                         v                             v
-        +-----------------------------+     +-----------------------------+
-        | InvSet.lean (§2)            |     | Submodular.lean (§4)        |
-        | Abstract ASP inversion sets |     | Submodular slipfaces;       |
-        | and reconstruction          |     | ⋆ and ◃ on ASP.             |
-        +--------------+--------------+     +--------------+--------------+
-                         |                             |
-                         +--------------+--------------+--------+
-                                        |                       |
-                                        v                       v
-                         +-----------------------------+   +-----------------------------+
-                         | Avoiding321.lean            |   | ReducedProducts.lean (§5)   |
-                         | 321-avoiding permutations   |   | Reduced products            |
-                         | and behavior of ⋆ on them   |   | and relations to ⋆ and ◃    |
-                         +--------------+--------------+   +--------------+--------------+
-                                        |                                  |
-                                        v                                  v
-                         +-----------------------------+   +-----------------------------+
-                         | Tableaux.lean               |   | Reduction.lean (§6)         |
-                         | Hecke                       |   | Greedy and stingy           |
-                         | factorizations and          |   | characterizations;          |
-                         | set-valued tableaux         |   | reduction theorems          |
-                         +-----------------------------+   +--------------+--------------+
-                                                                           |
-                                                                           v
-                                                                  +--------+----------------+
-                                                                  | Transpositions.lean (§3, §8)|
-                                                                  | Adjacent transposition  |
-                                                                  | formulas for product    |
-                                                                  | and contraction         |
-                                                                  +-------------------------+
+┌───────────────────────────────┐          ┌───────────────────────────────┐
+│ Utils.lean                    │          │ Valley.lean                   │
+│ Generic helper lemmas         │          │ Tools for tracking minima     │
+│                               │          │ and argmins.                  │
+└───────────────┬───────────────┘          └───────────────┬───────────────┘
+                │                                          │
+                │                                          ▼
+                │                          ┌───────────────┴───────────────┐
+                │                          │ SlipFace.lean (§3)            │
+                │                          │ Slipfaces and operations      │
+                │                          │ on them.                      │
+                │                          └───────────────┬───────────────┘
+                │                                          │
+                └──────────────────────────┬───────────────┘
+                                           │
+                                           ▼
+                           ┌───────────────┴───────────────┐
+                           │ AspPerm.lean (§2)             │
+                           │ ASP permutations, inversion   │
+                           │ sets, weak                    │
+                           │ orders, ⋆ and ◃ predicates    │
+                           └───────────────┬───────────────┘
+                                           │
+              ┌────────────────────────────┴────────────────────────────┐
+              │                                                         │
+              ▼                                                         ▼
+┌───────────────────────────────┐          ┌───────────────────────────────┐
+│ InvSet.lean (§2)              │          │ Submodular.lean (§4)          │
+│ Abstract ASP inversion sets   │          │ Submodular slipfaces;         │
+│ and reconstruction            │          │ ⋆ and ◃ on ASP.               │
+└───────────────┬───────────────┘          └───────────────┬───────────────┘
+                │                                          │
+                └─────────────────────┬────────────────────┤
+                                      │                    │
+                                      ▼                    ▼
+                      ┌───────────────┴───────────────┐    ┌───────────────┴───────────────┐
+                      │ Avoiding321.lean              │    │ ReducedProducts.lean (§5)     │
+                      │ 321-avoiding permutations     │    │ Reduced products              │
+                      │ and behavior of ⋆ on them     │    │ and relations to ⋆ and ◃      │
+                      └───────────────┬───────────────┘    └───────────────┬───────────────┘
+                                      │                                    │
+                                      ▼                                    ▼
+                      ┌───────────────┴───────────────┐    ┌───────────────┴───────────────┐
+                      │ Tableaux.lean                 │    │ Reduction.lean (§6)           │
+                      │ Hecke                         │    │ Greedy and stingy             │
+                      │ factorizations and            │    │ characterizations;            │
+                      │ set-valued tableaux           │    │ reduction theorems            │
+                      └───────────────────────────────┘    └───────────────┬───────────────┘
+                                                                           │
+                                                                           ▼
+                                                           ┌───────────────┴───────────────┐
+                                                           │ Transpositions.lean (§3, §8)  │
+                                                           │ Adjacent transposition        │
+                                                           │ formulas for product          │
+                                                           │ and contraction               │
+                                                           └───────────────────────────────┘
 ```
 
 ## Paper Coverage

@@ -11,6 +11,8 @@ import Demazure.Submodular
 
 This file gives a characterization of the two-term Demazure factorizations of 321-avoiding
 permutations (not necessarily of finite length), which are all automatically in $\mathrm{ASP}$.
+
+This material is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-- The 321-avoidance condition used in this file: every triple `i < j < k`
@@ -30,6 +32,8 @@ structure set_321a_prop (I : Set (ℤ × ℤ)) where
 structure tfas : Type extends AspSet where
   prop_321a : set_321a_prop I
 
+/-!
+  Every 321-avoiding permutation of the integers is almost-sign-preserving. -/
 theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     (h_321a : is_321a τ) : is_asp τ := by
   have ex_src : ∃ u : ℤ, ∀ n : ℤ, ⟨n,u⟩ ∉ inv_set τ := by
@@ -97,7 +101,7 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     simp only [nw_empty, Set.finite_empty]
   exact asp_of_finite_quadrants h_bij.injective se_finite nw_finite
 
-lemma tfree_of_is_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
+private lemma tfree_of_is_321a (τ : ℤ → ℤ) (h_321a : is_321a τ) :
   ∀ u v w : ℤ, ⟨u,v⟩ ∉ inv_set τ ∨ ⟨v,w⟩ ∉ inv_set τ := by
   intro u v w
   by_contra! h
@@ -140,7 +144,7 @@ def tfas_of_perm {τ : AspPerm} (h_321a : is_321a τ) : tfas := ⟨AspSet.of_Asp
   · exact AspSet.AspSet_InvSet_of_AspPerm τ
   · exact tfree_of_is_321a τ h_321a⟩
 
-noncomputable def Perm321a_equiv_BijectiveFunc321a :
+private noncomputable def Perm321a_equiv_BijectiveFunc321a :
   {τ : AspPerm | is_321a τ} ≃ {τ : ℤ → ℤ // Function.Bijective τ ∧ is_321a τ} where
   toFun τ := ⟨τ.val.func, ⟨τ.val.bijective, τ.prop⟩⟩
   invFun := fun ⟨τ, hτ⟩ =>

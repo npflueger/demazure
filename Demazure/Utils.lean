@@ -16,21 +16,16 @@ This file contains small helper lemmas. These are all generic -- they are not sp
 repository's main objects, so they are collected separately here.
 -/
 
-/-! ### Small Finset and Set Helpers
-
-This namespace contains auxiliary lemmas used across the development but not
-specific to ASP permutations or Demazure product. -/
-
 namespace Utils
 
 /-- The integer-valued indicator of a proposition: `1` when `P` holds and
-`0` otherwise. This is the notation `δ[P]` in
+`0` otherwise. This is the notation $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable abbrev oneIf (P : Prop) : ℤ := by
   classical
   exact if P then 1 else 0
 
-/-- The indicator `δ[P]` depends only on the truth value of `P`. -/
+/-- The indicator $\delta(P)$ depends only on the truth value of $P$. -/
 lemma oneIf_congr {P Q : Prop} (h : P ↔ Q) :
     oneIf P = oneIf Q := by
   -- Proof written by GPT 5.5.

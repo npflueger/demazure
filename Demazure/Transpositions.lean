@@ -23,7 +23,7 @@ def NoConsecutive (S : Set ℤ) : Prop :=
   ∀ n : ℤ, n ∈ S → n + 1 ∉ S
 
 /-- A singleton has no consecutive pair. -/
-lemma noConsecutive_singleton (n : ℤ) : NoConsecutive ({n} : Set ℤ) := by
+private lemma noConsecutive_singleton (n : ℤ) : NoConsecutive ({n} : Set ℤ) := by
   -- Proof written by GPT 5.5.
   intro m hm hsucc
   simp only [Set.mem_singleton_iff] at hm hsucc
@@ -35,12 +35,12 @@ noncomputable def sigmaFun (S : Set ℤ) (n : ℤ) : ℤ :=
   open Classical in
   if n ∈ S then n + 1 else if n - 1 ∈ S then n - 1 else n
 
-lemma sigmaFun_of_mem {S : Set ℤ} {n : ℤ} (hn : n ∈ S) :
+private lemma sigmaFun_of_mem {S : Set ℤ} {n : ℤ} (hn : n ∈ S) :
     sigmaFun S n = n + 1 := by
   -- Proof written by GPT 5.5.
   simp only [sigmaFun, hn, if_true]
 
-lemma sigmaFun_of_pred_mem {S : Set ℤ} (hS : NoConsecutive S) {n : ℤ}
+private lemma sigmaFun_of_pred_mem {S : Set ℤ} (hS : NoConsecutive S) {n : ℤ}
     (hn : n - 1 ∈ S) :
     sigmaFun S n = n - 1 := by
   -- Proof written by GPT 5.5.
@@ -49,16 +49,16 @@ lemma sigmaFun_of_pred_mem {S : Set ℤ} (hS : NoConsecutive S) {n : ℤ}
     exact hS (n - 1) hn (by simpa only [sub_add_cancel] using h)
   simp only [sigmaFun, hmem, if_false, hn, if_true]
 
-lemma sigmaFun_of_not_mem {S : Set ℤ} {n : ℤ} (hn : n ∉ S) (hpred : n - 1 ∉ S) :
+private lemma sigmaFun_of_not_mem {S : Set ℤ} {n : ℤ} (hn : n ∉ S) (hpred : n - 1 ∉ S) :
     sigmaFun S n = n := by
   -- Proof written by GPT 5.5.
   simp only [sigmaFun, hn, if_false, hpred]
 
-lemma not_succ_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
+private lemma not_succ_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
     {n : ℤ} (hn : n ∈ S) : n + 1 ∉ S :=
   hS n hn
 
-lemma not_pred_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
+private lemma not_pred_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
     {n : ℤ} (hn : n ∈ S) : n - 1 ∉ S := by
   -- Proof written by GPT 5.5.
   intro hpred
@@ -66,7 +66,7 @@ lemma not_pred_mem_of_noConsecutive {S : Set ℤ} (hS : NoConsecutive S)
   apply hbad
   simpa only [sub_add_cancel] using hn
 
-lemma sigmaFun_involutive {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma sigmaFun_involutive {S : Set ℤ} (hS : NoConsecutive S) :
     Function.Involutive (sigmaFun S) := by
   -- Proof written by GPT 5.5.
   intro n
@@ -78,15 +78,15 @@ lemma sigmaFun_involutive {S : Set ℤ} (hS : NoConsecutive S) :
       omega
     · simp only [sigmaFun, hn, if_false, hpred]
 
-lemma sigmaFun_injective {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma sigmaFun_injective {S : Set ℤ} (hS : NoConsecutive S) :
     Function.Injective (sigmaFun S) :=
   (sigmaFun_involutive hS).injective
 
-lemma sigmaFun_surjective {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma sigmaFun_surjective {S : Set ℤ} (hS : NoConsecutive S) :
     Function.Surjective (sigmaFun S) :=
   (sigmaFun_involutive hS).surjective
 
-lemma sigmaFun_asp (S : Set ℤ) : is_asp (sigmaFun S) := by
+private lemma sigmaFun_asp (S : Set ℤ) : is_asp (sigmaFun S) := by
   -- Proof written by GPT 5.5.
   apply Set.Finite.subset (Set.finite_empty (α := ℤ))
   intro n hn
@@ -105,26 +105,26 @@ noncomputable def sigma (S : Set ℤ) (hS : NoConsecutive S) : AspPerm where
   bijective := ⟨sigmaFun_injective hS, sigmaFun_surjective hS⟩
   asp := sigmaFun_asp S
 
-@[simp] lemma sigma_apply (S : Set ℤ) (hS : NoConsecutive S) (n : ℤ) :
+@[simp] private lemma sigma_apply (S : Set ℤ) (hS : NoConsecutive S) (n : ℤ) :
     sigma S hS n = sigmaFun S n := rfl
 
-lemma sigma_apply_of_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
+private lemma sigma_apply_of_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
     (hn : n ∈ S) : sigma S hS n = n + 1 :=
   sigmaFun_of_mem hn
 
-lemma sigma_apply_of_pred_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
+private lemma sigma_apply_of_pred_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
     (hn : n - 1 ∈ S) : sigma S hS n = n - 1 :=
   sigmaFun_of_pred_mem hS hn
 
-lemma sigma_apply_of_not_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
+private lemma sigma_apply_of_not_mem {S : Set ℤ} {hS : NoConsecutive S} {n : ℤ}
     (hn : n ∉ S) (hpred : n - 1 ∉ S) : sigma S hS n = n :=
   sigmaFun_of_not_mem hn hpred
 
-lemma sigma_involutive {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma sigma_involutive {S : Set ℤ} (hS : NoConsecutive S) :
     Function.Involutive (sigma S hS) :=
   sigmaFun_involutive hS
 
-@[simp] lemma sigma_inv {S : Set ℤ} (hS : NoConsecutive S) :
+@[simp] private lemma sigma_inv {S : Set ℤ} (hS : NoConsecutive S) :
     (sigma S hS)⁻¹ = sigma S hS := by
   -- Proof written by GPT 5.5.
   apply AspPerm.ext.mpr
@@ -220,7 +220,7 @@ private lemma sigma_s_diag (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ) :
 /-- The slipface of $\sigma_S$ is the identity slipface, incremented by 1 on diagonal entries
 corresponding to the inversions.
 -/
-lemma sigma_slipface (S : Set ℤ) (hS : NoConsecutive S) (a b : ℤ) :
+private lemma sigma_slipface (S : Set ℤ) (hS : NoConsecutive S) (a b : ℤ) :
     (sigma S hS).sf a b =
       max 0 (a - b) + Utils.oneIf (a = b ∧ a - 1 ∈ S) := by
   -- Proof written by GPT 5.5.
@@ -363,8 +363,8 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
 
 /-- The bend set for $\sigma_S$ is the singleton $\{b\}$ when $b - 1 \notin S$.
 This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6. -/
+private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∉ S) :
     SlipFace.bend_set (sigma S hS).sf b = {b} := by
   -- Proof written by GPT 5.5.
@@ -380,8 +380,8 @@ lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : �
 
 /-- The bend set for $\sigma_S$ is $\{b - 1, b + 1\}$ when $b - 1 \in S$.
 This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6. -/
+private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∈ S) :
     SlipFace.bend_set (sigma S hS).sf b = {l : ℤ | l = b - 1 ∨ l = b + 1} := by
   -- Proof written by GPT 5.5.
@@ -395,7 +395,7 @@ lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
   · intro hl
     exact Or.inr ⟨hb, hl⟩
 
-@[simp] lemma sigma_sf_dual (S : Set ℤ) (hS : NoConsecutive S) :
+@[simp] private lemma sigma_sf_dual (S : Set ℤ) (hS : NoConsecutive S) :
     (sigma S hS).sf.dual = (sigma S hS).sf := by
   -- Proof written by GPT 5.5.
   rw [AspPerm.sf_dual, sigma_inv hS]
@@ -509,7 +509,7 @@ private lemma asp_s_gt_next_iff (α : AspPerm) (a b : ℤ) :
 The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 *Lemma 3.13 (`lem:starTrans`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b : ℤ) :
     (s ⋆ (sigma S hS).sf) a b =
         s a b
@@ -569,7 +569,7 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
 
 /-- A formula for $s_\alpha \star \sigma_S$, specializing the more general `sf_star_sigma`.
 *Lemma 3.13 (`lem:starTrans`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a b : ℤ) :
     (α.sf ⋆ (sigma S hS).sf) a b =
       α.s a b + Utils.oneIf (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) := by
@@ -591,7 +591,7 @@ theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a
 The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 *Lemma 3.13 (`lem:starTrans`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
 theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
     (s : SlipFace) (a b : ℤ) :
     (s ◃ (sigma S hS).sf) a b =
@@ -655,7 +655,7 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
 
 /-- A formula for $s_\alpha \triangleleft \sigma_S$. This is the ASP specialization of
 `sf_contract_sigma`. *Lemma 3.13 (`lem:starTrans`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
 theorem asp_contract_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
     (α : AspPerm) (a b : ℤ) :
     (α.sf ◃ (sigma S hS).sf) a b =
@@ -683,22 +683,22 @@ permutation in Bruhat order. -/
 def fallingSet (α : AspPerm) (S : Set ℤ) : Set ℤ :=
   {n : ℤ | n ∈ S ∧ α (n + 1) < α n}
 
-lemma noConsecutive_subset {S T : Set ℤ} (hS : NoConsecutive S) (hT : T ⊆ S) :
+private lemma noConsecutive_subset {S T : Set ℤ} (hS : NoConsecutive S) (hT : T ⊆ S) :
     NoConsecutive T := by
   -- Proof written by GPT 5.5.
   intro n hn hsucc
   exact hS n (hT hn) (hT hsucc)
 
-lemma noConsecutive_risingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma noConsecutive_risingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
     NoConsecutive (risingSet α S) :=
   noConsecutive_subset hS (by intro n hn; exact hn.1)
 
-lemma noConsecutive_fallingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
+private lemma noConsecutive_fallingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
     NoConsecutive (fallingSet α S) :=
   noConsecutive_subset hS (by intro n hn; exact hn.1)
 
 /-- The rising and falling parts partition $S$. -/
-lemma risingSet_union_fallingSet (α : AspPerm) (S : Set ℤ) :
+private lemma risingSet_union_fallingSet (α : AspPerm) (S : Set ℤ) :
     risingSet α S ∪ fallingSet α S = S := by
   -- Proof written by GPT 5.5.
   ext n
@@ -712,13 +712,13 @@ lemma risingSet_union_fallingSet (α : AspPerm) (S : Set ℤ) :
     · exact Or.inr ⟨hn, hgt⟩
 
 /-- The falling and rising parts partition $S$. -/
-lemma fallingSet_union_risingSet (α : AspPerm) (S : Set ℤ) :
+private lemma fallingSet_union_risingSet (α : AspPerm) (S : Set ℤ) :
     fallingSet α S ∪ risingSet α S = S := by
   -- Proof written by GPT 5.5.
   rw [Set.union_comm, risingSet_union_fallingSet α S]
 
 /-- The rising and falling parts of $S$ are disjoint. -/
-lemma disjoint_risingSet_fallingSet (α : AspPerm) (S : Set ℤ) :
+private lemma disjoint_risingSet_fallingSet (α : AspPerm) (S : Set ℤ) :
     Disjoint (risingSet α S) (fallingSet α S) := by
   -- Proof written by GPT 5.5.
   apply Set.disjoint_left.mpr
@@ -754,7 +754,7 @@ private lemma fallingSet_singleton_of_lt (α : AspPerm) (n : ℤ)
 
 /-- The inversion set of $\sigma_S$ is exactly the adjacent pairs
 $(n,n+1)$ with $n \in S$. -/
-lemma sigma_inv_set_iff (S : Set ℤ) (hS : NoConsecutive S) (u v : ℤ) :
+private lemma sigma_inv_set_iff (S : Set ℤ) (hS : NoConsecutive S) (u v : ℤ) :
     ⟨u, v⟩ ∈ inv_set (sigma S hS).func ↔ u ∈ S ∧ v = u + 1 := by
   -- Proof written by GPT 5.5.
   simp only [inv_set, Set.mem_setOf_eq, sigma_apply]
@@ -954,7 +954,7 @@ private lemma contract_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsec
   rw [hzero, sub_zero]
 
 /-- *Theorem 8.7 (`thm:alphaStarSigma`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/4.* -/
 theorem starSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ⋆ sigma S hS =
         α * sigma (risingSet α S) (noConsecutive_risingSet α hS) := by
@@ -994,7 +994,7 @@ theorem starSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
           exact hn.2))
 
 /-- *Theorem 8.7 (`thm:alphaStarSigma`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/4.* -/
 theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ◃ sigma S hS =
         α * sigma (fallingSet α S) (noConsecutive_fallingSet α hS) := by
@@ -1041,7 +1041,7 @@ multiplication by $\sigma$ follows the usual rule.
 This is the last sentence of *Theorem A* of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
 *Theorem 8.7 (`thm:alphaStarSigma`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/4.* -/
 theorem star_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ⋆ σ = if α n < α (n + 1) then α * σ else α := by
@@ -1078,7 +1078,7 @@ $\sigma$ follows the usual rule.
 This is the last sentence of *Theorem 1.1 (`thm:tll`)* of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
 *Theorem 8.7 (`thm:alphaStarSigma`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
 theorem contract_of_single_adjacent_inversion (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ◃ σ = if α (n + 1) < α n then α * σ else α := by

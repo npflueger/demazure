@@ -22,9 +22,7 @@ the set of submodular slipfaces is established. This corresponds roughly to Sect
 
 /-- The inversion set $\operatorname{Inv} \tau = \{(u,v) \in \mathbb{Z}^2 : u < v \text{ and }
 \tau(u) > \tau(v)\}$.
-
-In Lean, membership is written `⟨u, v⟩ ∈ inv_set τ`, and the inequality is
-encoded as `τ v < τ u`. *Definition 2.6 (`defn:Inv`) of
+*Definition 2.5 (`defn:Inv`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def inv_set (τ : ℤ → ℤ) : Set (ℤ × ℤ) :=
   {(i,j) : ℤ × ℤ | i < j ∧ τ j < τ i}
@@ -49,7 +47,7 @@ lemma flip_quadrant (f : ℤ → ℤ) (a b : ℤ) :
   · intro ⟨hn1, hn2⟩
     exact ⟨-1 - n, ⟨by omega, by omega⟩, by ring_nf⟩
 
-lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
+private lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
   (southeast_set τ m n).Finite → (southeast_set τ m' n').Finite := by
   let A := southeast_set τ m n
   let B := southeast_set τ m' n'
@@ -81,7 +79,7 @@ lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m 
   refine Set.Finite.subset ?_ h
   exact Set.Finite.union fin_A (Set.Finite.union fin_H fin_V)
 
-lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
+private lemma nw_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n m' n' : ℤ) :
   (northwest_set τ m n).Finite → (northwest_set τ m' n').Finite := by
   have hff : flip_func (flip_func τ) = τ := by
     funext n
@@ -336,11 +334,10 @@ lemma inv_set_inverse (u v : ℤ) :
 
 def rev_map : ℤ × ℤ → ℤ × ℤ := fun ⟨i, j⟩ => ⟨τ j, τ i⟩
 
-/-- The slipface value $s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$.
-
-This is one of the main notation shifts from
-[An extended Demazure product](https://arxiv.org/abs/2206.14227) to Lean: the article
-writes $s_\tau(a,b)$, while the code writes `τ.s a b`. -/
+/-- The slipface associated to an ASP permutation is defined by
+$s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$, in the notation of
+*Equation (4)* (`eq:sa`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+In the repository, this is denoted as `τ.s a b`. -/
 noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 
 /-- The companion counting function $s_{\tau^{-1}}(b,a)$.
@@ -424,7 +421,7 @@ lemma chi_dual' : τ.χ = - (τ⁻¹).χ := by
 
 /-- Shift is additive under ordinary multiplication:
 $\chi_{\alpha\beta} = \chi_\alpha + \chi_\beta$.
-*Equation `eq:chiHom` of
+*Equation (16) (`eq:chiHom`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma chi_mul (α β : AspPerm) : (α * β).χ = α.χ + β.χ := by
   -- Proof written by Codex.
@@ -566,7 +563,7 @@ lemma chi_mul (α β : AspPerm) : (α * β).χ = α.χ + β.χ := by
     hmul_se_image, hmul_nw_image, hse_image, hnw_image]
   exact hcards
 
-lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
+private lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
   constructor
   · intro x y h; simp only [sub_right_inj, Int.reduceNeg] at h
     apply τ.injective at h
@@ -575,7 +572,7 @@ lemma flip_bij (τ : AspPerm) : Function.Bijective (flip_func τ.func) := by
     use -1 - τ⁻¹ (-1 - y)
     simp only [flip_func, Int.reduceNeg, sub_sub_cancel, mul_inv_cancel_eval]
 
-def flip : AspPerm := {
+private def flip : AspPerm := {
   func := fun n => -1 - τ (-1 - n)
   bijective := flip_bij τ
   asp := by
@@ -607,7 +604,7 @@ def flip : AspPerm := {
     exact asp_of_finite_quadrants hinj se_finite nw_finite
 }
 
-lemma flip_inv : τ.flip⁻¹ = τ⁻¹.flip := by
+private lemma flip_inv : τ.flip⁻¹ = τ⁻¹.flip := by
   simp only [ext]; ext n
   suffices τ.flip (τ.flip⁻¹ n) = τ.flip (τ⁻¹.flip n) by
     exact τ.flip.injective this
@@ -615,13 +612,13 @@ lemma flip_inv : τ.flip⁻¹ = τ⁻¹.flip := by
   dsimp [AspPerm.flip]
   simp
 
-lemma flip_flip : τ.flip.flip = τ := by
+private lemma flip_flip : τ.flip.flip = τ := by
   suffices ∀ n, τ.flip.flip n = τ n by
     simp only [ext]; funext n; exact this n
   intro n
   simp only [flip, Int.reduceNeg, sub_sub_cancel]
 
-lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
+private lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
   unfold AspPerm.s AspPerm.s'
   let A := southeast_set τ.flip a b
   let B := northwest_set τ (-a) (-b)
@@ -638,7 +635,7 @@ lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
     A.ncard = ((-1 - ·) '' A).ncard := by simpa using himage_card.symm
     _ = B.ncard := by simp only [Int.reduceNeg, himage]
 
-lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
+private lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
   rw [flip_s, dual_inverse, inv_inv, neg_neg, neg_neg]
 
 lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
@@ -697,6 +694,8 @@ lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
     unfold S
     simp
 
+/-- We have $s_\alpha(a,b+1) = s_\alpha(a,b) - \delta(\alpha(b)<a)$.
+This is Equation (12) (`eq:b+1`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0) := by
   have move_up := b_move_up τ a b (b+1) (by omega)
   suffices {x ∈ Finset.Ico b (b + 1) | τ.func x < a}.card = if τ b < a then 1 else 0 by linarith
@@ -803,6 +802,8 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
     specialize hS (τ x)
     simpa [S, a_le, τx_le] using hS
 
+/-- We have $s_\alpha(a+1,b) = s_\alpha(a,b) + \delta(\alpha^{-1}(a) \ge b)$.
+This is Equation (13) (`eq:a+1`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
   rw [a_move_up τ a (a + 1) b (by omega)]
   by_cases h : τ⁻¹ a ≥ b
@@ -840,6 +841,9 @@ lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b :
   have := a_step_eq_iff τ (τ u) b
   simpa [τ.mul_inv_cancel_eval] using this
 
+/-- The key duality formula for slipfaces of ASP Permutations:
+$s_\alpha(a,b) - s_{\alpha^{-1}}(b,a) = \chi_\alpha + a - b$.
+This is Equation (15) (`eq:saDuality`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
   let h (a b : ℤ) := τ.s a b - (τ⁻¹).s b a - a + b
   have h_zero : h 0 0 = τ.χ := by
@@ -950,9 +954,8 @@ $\tau(n) = n - \chi_\tau$
 $+ \#\{v \in \mathbb{Z} : (n,v) \in \operatorname{Inv} \tau\}$
 $- \#\{u \in \mathbb{Z} : (u,n) \in \operatorname{Inv} \tau\}$.
 
-In Lean the two finite sets are implemented as `τ.outset n` and `τ.inset n`.
-*Proposition 2.10 (`prop:reconstruction`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+*Proposition 2.11 (`prop:reconstruction`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 theorem reconstruction : ∀ n : ℤ,
   τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
   intro n
@@ -966,8 +969,8 @@ theorem reconstruction : ∀ n : ℤ,
   omega
 
 /-- Two ASP permutations are equal if they have the same inversion set and the
-same shift. *Proposition 2.10 (`prop:reconstruction`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), consequence.* -/
+same shift. *Proposition 2.11 (`prop:reconstruction`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), consequence, part 2/2.* -/
 theorem eq_of_inv_set_eq_of_chi_eq (σ τ : AspPerm)
     (h_inv : inv_set σ = inv_set τ) (h_χ : σ.χ = τ.χ) : σ = τ := by
   apply AspPerm.ext.mpr
@@ -1136,8 +1139,8 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
   simp only [sf_func_eq_s, sf_chi_eq] at this
   omega
 
-/-- For a slipface coming from an ASP permutation, the bend set in the second
-coordinate is the set of cut points where `β⁻¹` crosses `b`.
+/-- The bend set is a finite set on which the minimum defining the Demazure product is always
+obtained. It is characterized in
 *Lemma 3.12 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
 lemma bend_set_sf (β : AspPerm) (b : ℤ) :
@@ -1167,6 +1170,8 @@ lemma bend_set_sf (β : AspPerm) (b : ℤ) :
         (β.a_step_eq_iff l b).mp hsame.symm
       exact not_lt_of_ge hright hlt
 
+/-- Formula (14) (`eq:Deltasa`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227),
+characterizing the values of a permutation via the second iterated difference of its slipface. -/
 lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
   let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
   let d2 := τ.s a b - τ.s a (b+1)
@@ -1198,6 +1203,8 @@ lemma Γ_eq : τ.sf.Γ = { ⟨a, b⟩ | τ b = a } := by
   simp only [SlipFace.Γ, τ.Δ_eq, ite_eq_left_iff, zero_ne_one, imp_false,
     Decidable.not_not, Set.mem_setOf_eq]
 
+/-- The slipface of an ASP permuation is submodular.
+*Proposition 4.3* (`prop:imageASP`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), one direction. -/
 lemma submodular : τ.sf.submodular := by
   intro a b
   have Δ_eq := τ.Δ_eq a b
@@ -1206,8 +1213,10 @@ lemma submodular : τ.sf.submodular := by
 /-! ### Ramps, Lamps, and Wing Parameters
 
 This section defines the ramp and lamp regions associated to an ASP
-permutation and develops the auxiliary wing parameters `u` and `v` used to move
-between inequalities for `s` and geometric statements about inversion sets. -/
+permutation. These are Young diagrams assocaited to particular values of a or b,
+useful in characterizing Demazure factorizations of 321-avoiding permutations.
+
+This material is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 
 section RampWings
 variable (τ : AspPerm)
@@ -1266,31 +1275,31 @@ lemma mem_lamp_iff_s_ge (a m n : ℤ) :
 namespace Wings
 variable (b m n : ℤ) (m_pos : m > 0) (n_pos : n > 0)
 
-def R : Set ℤ := {n : ℤ | τ.s n b < m}
+private def R : Set ℤ := {n : ℤ | τ.s n b < m}
 
-lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
+private lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
   have := tend_zero_a (τ := τ) b
   obtain ⟨n, hn⟩ := this
   use n
   unfold R; simp
   linarith [m_pos, hn]
 
-lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
+private lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
   use m + b - τ.χ
   intro n hn
   simp only [R] at hn
   have := lt_of_le_of_lt (τ.s_ge n b) hn
   omega
 
-def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
+private def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
 
-lemma L_nonnempty : (L τ b n).Nonempty := by
+private lemma L_nonnempty : (L τ b n).Nonempty := by
   use b - n - τ.χ
   unfold L; simp only [ge_iff_le, Set.mem_setOf_eq]
   refine le_trans ?_ (τ.s'_ge b (b - n - τ.χ))
   omega
 
-lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
+private lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
   have := tend_zero_b (τ := τ⁻¹) b
   obtain ⟨a, ha⟩ := this
   use a
@@ -1307,7 +1316,7 @@ noncomputable def v (b : ℤ) {m : ℤ} (m_pos : m > 0) : ℤ :=
   τ⁻¹ ( Classical.choose <| Int.exists_greatest_of_bdd
     (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos) )
 
-lemma v_spec (b : ℤ) {m : ℤ} (m_pos : m > 0) :
+private lemma v_spec (b : ℤ) {m : ℤ} (m_pos : m > 0) :
   τ.s (τ (τ.v b m_pos)) b < m
   ∧ ∀ a : ℤ, τ.s a b < m → a ≤ τ (τ.v b m_pos) := by
   let v := τ.v b m_pos
@@ -1379,7 +1388,7 @@ noncomputable def u (b : ℤ) {n : ℤ} (n_pos : n > 0) : ℤ :=
   τ⁻¹ <|Classical.choose <| Int.exists_greatest_of_bdd
     (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
 
-lemma u_spec (b : ℤ) {n : ℤ} (n_pos : n > 0) :
+private lemma u_spec (b : ℤ) {n : ℤ} (n_pos : n > 0) :
   τ.s' b (τ (τ.u b n_pos)) ≥ n
   ∧ ∀ a : ℤ, τ.s' b a ≥ n → a ≤ τ (τ.u b n_pos) := by
   let u := τ.u b n_pos
@@ -1457,8 +1466,8 @@ lemma τu_ge (b : ℤ) {n : ℤ} (n_pos : n > 0)
   have hu_ge : a ≤ τ (τ.u b n_pos) := (τ.u_spec b n_pos).2 a s_ge_n
   omega
 
-/-- A box lies in the ramp exactly when it corresponds to an inversion between
-the wing parameters `u` and `v`. -/
+/-- A box lies in the ramp exactly when a specific inversion belongs to `inv_set τ`,
+given by the functions `u` and `v` above. -/
 theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n > 0) :
   ⟨m, n⟩ ∈ τ.ramp b ↔ ⟨τ.u b n_pos, τ.v b m_pos⟩ ∈ inv_set τ := by
   let u := τ.u b n_pos
@@ -1502,21 +1511,20 @@ This section introduces some infrastructure about inversion sets. -/
 /-- A product $\alpha \beta$ is reduced if
 $\operatorname{Inv}(\alpha) \cap \operatorname{Inv}(\beta^{-1})$ is empty.
 
-Lean keeps this reducedness condition separate from ordinary and Demazure
-multiplication. *Definition 2.8 (`defn:reducedProduct`) of
+*Definition 2.7 (`defn:reducedProduct`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def ReducedProduct (α β : AspPerm) : Prop :=
   Disjoint (inv_set α) (inv_set (β⁻¹).func)
 
 /-- The left weak order: `σ ≤L τ` if and only if $\operatorname{Inv} \sigma \subseteq
-\operatorname{Inv} \tau$. *Definition 2.7 (`defn:weakOrders`), part 1/2, of
+\operatorname{Inv} \tau$. *Definition 2.6 (`defn:weakOrders`), part 1/2, of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def le_weak_L (σ τ : AspPerm) : Prop := inv_set σ ⊆ inv_set τ
 infix:50 " ≤L " => le_weak_L
 
 /-- The right weak order: `σ ≤R τ` if and only if
 $\operatorname{Inv}(\sigma^{-1}) \subseteq \operatorname{Inv}(\tau^{-1})$.
-*Definition 2.7 (`defn:weakOrders`), part 2/2, of
+*Definition 2.6 (`defn:weakOrders`), part 2/2, of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def le_weak_R (σ τ : AspPerm) : Prop := inv_set (σ⁻¹).func ⊆ inv_set (τ⁻¹).func
 infix:50 " ≤R " => le_weak_R
@@ -1528,7 +1536,7 @@ lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹
   exact h_L hx
 
 /-- A product `α β` is reduced exactly when `α` is below `α β` in right
-weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`) of
+weak order. *Lemma 2.8 (`lem:reducedWeakEquivs`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     ReducedProduct α β ↔ α ≤R α * β := by
@@ -1569,7 +1577,7 @@ lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
     exact (not_lt_of_ge (le_of_lt hβ.2)) hmul
 
 /-- A product `α β` is reduced exactly when `β` is below `α β` in left
-weak order. *Lemma 2.9 (`lem:reducedWeakEquivs`) of
+weak order. *Lemma 2.8 (`lem:reducedWeakEquivs`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 lemma reducedProduct_iff_le_weak_L_mul (α β : AspPerm) :
     ReducedProduct α β ↔ β ≤L α * β := by
@@ -1696,6 +1704,11 @@ lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
     rw [eqα, eqβ, eqτ, ← hχ]
     omega
 
+/-- A characterization of Demazure products in terms of the Young diagrams called
+"ramps" and "lamps" above. This is the key input in classifying the Demazure factorizations
+of 321-avoiding permutations.
+
+This theorem is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
   (habMN : a - b + α.χ + β.χ = M - N) :
   dprod_val_ge α β a b M ↔

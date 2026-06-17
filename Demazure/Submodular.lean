@@ -8,7 +8,7 @@ import Demazure.Valley
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# Submodular slip faces
+# Submodular slipfaces
 
 This file establishes that a slipface comes from $\mathrm{ASP}$ if and only if it is submodular, and
 uses this to define the operations $\star$, $\triangleleft$, and $\triangleright$ on $\mathrm{ASP}$.

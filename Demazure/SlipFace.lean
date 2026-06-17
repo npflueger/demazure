@@ -1176,7 +1176,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 /-- The shift is additive under left residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
-@[simp] lemma chi_lc (s t : SlipFace) : (s ◃ t).χ = s.χ + t.χ := by
+@[simp] lemma chi_lres (s t : SlipFace) : (s ◃ t).χ = s.χ + t.χ := by
   have h := lres_exists s t
   exact (Classical.choose_spec h).1.2
 
@@ -1215,16 +1215,16 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 /-- The shift is additive under right residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
-@[simp] lemma chi_rc (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
+@[simp] lemma chi_rres (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
   dsimp [right_residual, SlipFace.dual]
-  rw [chi_lc]
+  rw [chi_lres]
   dsimp [SlipFace.dual]
   omega
 
 /-- The stated left/right residual duality.
 *Proposition 3.9 (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
-@[simp] lemma left_residual_dual (s t : SlipFace) :
+@[simp] lemma lres_dual (s t : SlipFace) :
     (s ◃ t).dual = t.dual ▹ s.dual := by
   dsimp [right_residual]
   rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
@@ -1233,7 +1233,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 left/right duality to dual slipfaces.
 *Consequence of Proposition 3.9 (`prop:sfAlgebraDefined`) in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
-@[simp] lemma right_residual_dual (s t : SlipFace) :
+@[simp] lemma rres_dual (s t : SlipFace) :
     (s ▹ t).dual = t.dual ◃ s.dual := by
   dsimp [right_residual]
   rw [SlipFace.dual_dual]

@@ -976,7 +976,7 @@ theorem submodular_of_right_residual {s t : SlipFace}
     (s ▹ t).submodular := by
   -- Proof written by Codex.
   have hdual : (s ▹ t).dual.submodular := by
-    rw [SlipFace.right_residual_dual]
+    rw [SlipFace.rres_dual]
     exact submodular_of_left_residual (submodular_dual subT) (submodular_dual subS)
   intro a b
   rw [← (s ▹ t).Δ_dual]
@@ -1137,7 +1137,7 @@ lemma inverse_left_residual (α β : AspPerm) :
   -- Proof written by Codex.
   apply AspPerm.eq_of_sf_eq
   rw [← AspPerm.sf_dual]
-  simp only [left_residual_spec, SlipFace.left_residual_dual, AspPerm.sf_dual,
+  simp only [left_residual_spec, SlipFace.lres_dual, AspPerm.sf_dual,
     right_residual_spec]
 
 /-- The shift of left residual is the sum of shifts.
@@ -1145,14 +1145,14 @@ lemma inverse_left_residual (α β : AspPerm) :
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 8/11.* -/
 lemma chi_left_residual (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
-  simp only [left_residual_spec, SlipFace.chi_lc]
+  simp only [left_residual_spec, SlipFace.chi_lres]
 
 /-- The shift of right residual is the sum of shifts.
 *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 9/11.* -/
 lemma chi_right_residual (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
-  simp only [right_residual_spec, SlipFace.chi_rc]
+  simp only [right_residual_spec, SlipFace.chi_rres]
 
 private lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   = (Submodular.AspValley α β a b).min := by

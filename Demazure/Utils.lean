@@ -10,7 +10,7 @@ import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Linarith
 
 /-!
-# Auxiliary Utilities
+# Auxiliary utilities
 
 This file contains small helper lemmas. These are all generic -- they are not specific to this
 repository's main objects, so they are collected separately here.

@@ -8,7 +8,7 @@ import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Order.Interval.Set.Infinite
 
 /-!
-# Inversion Sets
+# Inversion sets
 
 This file gives a characterization of the inversion set of ASP permutations.
 It corresponds to Theorem 2.13 of
@@ -486,7 +486,7 @@ private lemma func_contiguous (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
 
 end σ_diff
 
-/-! ### Reconstructing ASP Permutations from ASP Sets
+/-! ### Reconstructing ASP permutations from ASP sets
 
 Starting from an abstract ASP set `asps` and a shift `χ`, this section proves
 that the reconstructed function is bijective, ASP, and has the expected
@@ -710,7 +710,7 @@ noncomputable def AspPerm_equiv_AspSet :
 /-!
 A set $I \subseteq \mathbb{Z} \times \mathbb{Z}$ is the inversion set of an ASP permutation
 with shift parameter $\chi$ if and only if it satisfies the ASP set properties.
-*Theorem 2.13* (`thm:reconstruction`) from [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+*Theorem 2.13* (`thm:aspSetReconstruction`) from [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem invSets_of_AspPerms (I : Set (ℤ × ℤ)) (χ : ℤ) :
   (∃ τ : AspPerm, inv_set τ = I ∧ τ.χ = χ) ↔  (AspSet_prop I) := by
   constructor

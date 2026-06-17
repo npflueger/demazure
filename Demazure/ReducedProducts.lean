@@ -6,14 +6,14 @@ Authors: Nathan Pflueger
 import Demazure.Submodular
 
 /-!
-# Reduced Products
+# Reduced products
 
 This file compares the Demazure operations with ordinary multiplication on ASP
 permutations. It corresponds roughly to Section 5 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
-/-! ### Reduced Products and Ordinary Products
+/-! ### Reduced products and ordinary products
 
 This file formalizes Section 5 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), comparing the
@@ -250,38 +250,38 @@ theorem star_eq_mul_iff_reducedProduct (α β : AspPerm) :
       (star_le_mul_of_reducedProduct α β h_reduced)
       (mul_le_star α β)
 
-/-- The left-contraction error below the cutoff $\ell$: indices counted by
+/-- The left-residual error below the cutoff $\ell$: indices counted by
 $s_{\alpha\beta}(a,b)$ but omitted from the candidate
 $s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$. -/
-private noncomputable def lc_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def lres_lo_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   ((β⁻¹).nw_finset b l).filter (fun n => α n < a)
 
-/-- The left-contraction error above the cutoff $\ell$: indices subtracted by
+/-- The left-residual error above the cutoff $\ell$: indices subtracted by
 $s_{\beta^{-1}}(b,\ell)$ but not counted by $s_\alpha(a,\ell)$. -/
-private noncomputable def lc_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
+private noncomputable def lres_hi_error (α β : AspPerm) (a b l : ℤ) : Finset ℤ :=
   ((β⁻¹).se_finset b l).filter (fun n => a ≤ α n)
 
-@[simp] private lemma mem_lc_lo_error (α β : AspPerm) (a b l n : ℤ) :
-    n ∈ lc_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ α n < a := by
-  simp only [lc_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
+@[simp] private lemma mem_lres_lo_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ lres_lo_error α β a b l ↔ n < l ∧ b ≤ β⁻¹ n ∧ α n < a := by
+  simp only [lres_lo_error, Finset.mem_filter, AspPerm.mem_nw, ge_iff_le, and_assoc]
 
-@[simp] private lemma mem_lc_hi_error (α β : AspPerm) (a b l n : ℤ) :
-    n ∈ lc_hi_error α β a b l ↔ l ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
-  simp only [lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
+@[simp] private lemma mem_lres_hi_error (α β : AspPerm) (a b l n : ℤ) :
+    n ∈ lres_hi_error α β a b l ↔ l ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
+  simp only [lres_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, and_assoc]
 
-/-- The two nonnegative error terms in the left-contraction counting formula
+/-- The two nonnegative error terms in the left-residual counting formula
 for Lemma 5.2. The candidate in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227),
 $s_\alpha(a,\ell)-s_{\beta^{-1}}(b,\ell)$ is the ordinary-product count
 $s_{\alpha\beta}(a,b)$ minus these two errors.
 
-*Proof component for Lemma 5.2 (`lem:reducedTri`) of
+*Proof component for Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-private lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
+private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l =
       (α * β).s a b
-        - (lc_lo_error α β a b l).card
-        - (lc_hi_error α β a b l).card := by
+        - (lres_lo_error α β a b l).card
+        - (lres_hi_error α β a b l).card := by
   -- Proof written by Codex.
   let A := α.se_finset a l
   let B := (β⁻¹).se_finset b l
@@ -301,13 +301,13 @@ private lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
       omega
     simpa only [P_hi, hC] using hsplit.symm
   have hB_split :
-      B.card = C.card + (lc_hi_error α β a b l).card := by
+      B.card = C.card + (lres_hi_error α β a b l).card := by
     have hsplit := Finset.card_filter_add_card_filter_not
       (s := B) (p := fun n => α n < a)
     have hhi :
-        B.filter (fun n => ¬ α n < a) = lc_hi_error α β a b l := by
+        B.filter (fun n => ¬ α n < a) = lres_hi_error α β a b l := by
       ext n
-      simp only [B, lc_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, not_lt]
+      simp only [B, lres_hi_error, Finset.mem_filter, AspPerm.mem_se, ge_iff_le, not_lt]
     simpa only [C, hhi] using hsplit.symm
   have hP_hi : P.filter (fun n => l ≤ n) = P_hi := by
     ext n
@@ -321,10 +321,10 @@ private lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
       refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, hln⟩
       simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
   have hP_lo :
-      P.filter (fun n => ¬ l ≤ n) = lc_lo_error α β a b l := by
+      P.filter (fun n => ¬ l ≤ n) = lres_lo_error α β a b l := by
     ext n
     simp only [Finset.mem_filter, Finset.mem_image, AspPerm.mem_se, ge_iff_le,
-      AspPerm.mem_nw, AspPerm.mul_apply, P, lc_lo_error]
+      AspPerm.mem_nw, AspPerm.mul_apply, P, lres_lo_error]
     constructor
     · rintro ⟨⟨k, ⟨hbk, hαβk⟩, rfl⟩, hlβk⟩
       refine ⟨⟨by omega, ?_⟩, hαβk⟩
@@ -333,40 +333,40 @@ private lemma lc_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
       refine ⟨⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩, by omega⟩
       simpa only [AspPerm.mul_apply, AspPerm.mul_inv_cancel_eval] using ⟨hbn, hαn⟩
   have hP_split :
-      P.card = P_hi.card + (lc_lo_error α β a b l).card := by
+      P.card = P_hi.card + (lres_lo_error α β a b l).card := by
     have hsplit := Finset.card_filter_add_card_filter_not
       (s := P) (p := fun n => l ≤ n)
     simpa only [hP_hi, hP_lo] using hsplit.symm
   have hcards :
       (A.card : ℤ) - B.card =
         (P.card : ℤ)
-          - (lc_lo_error α β a b l).card
-          - (lc_hi_error α β a b l).card := by
+          - (lres_lo_error α β a b l).card
+          - (lres_hi_error α β a b l).card := by
     omega
   rw [α.s_eq_se_card, (β⁻¹).s_eq_se_card, hmul_card]
   exact hcards
 
-/-- Left contraction lies below ordinary multiplication in Bruhat order.
-*Lemma 5.2 (`lem:reducedTri`) of
+/-- Left residual lies below ordinary multiplication in Bruhat order.
+*Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/4.* -/
-theorem left_contract_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
+theorem left_residual_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
   -- Proof written by Codex.
   apply (AspPerm.sf_le_iff (α ◃ β) (α * β)).mp
-  rw [AspPerm.left_contract_spec]
+  rw [AspPerm.left_residual_spec]
   intro a b
   change (α.sf ◃ β.sf) a b ≤ (α * β).s a b
-  let l := SlipFace.lc_wit α.sf β.sf a b
-  have hcount := lc_diff_eq_mul_sub_errors α β a b l
+  let l := SlipFace.lres_wit α.sf β.sf a b
+  have hcount := lres_diff_eq_mul_sub_errors α β a b l
   dsimp only [l] at hcount
-  rw [SlipFace.lc_wit_spec, AspPerm.sf_dual]
+  rw [SlipFace.lres_wit_spec, AspPerm.sf_dual]
   simp only [AspPerm.sf_func_eq_s]
   omega
 
-/-- If ordinary multiplication lies below left contraction, then the inverse
+/-- If ordinary multiplication lies below left residual, then the inverse
 of the right factor lies below the left factor in left weak order.
-*Proof component for Lemma 5.2 (`lem:reducedTri`) of
+*Proof component for Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-private lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
+private lemma le_weak_L_of_mul_le_left_residual (α β : AspPerm)
     (hle : α * β ≤ α ◃ β) : β⁻¹ ≤L α := by
   -- Proof written by Codex.
   rintro ⟨m, n⟩ hβ
@@ -379,49 +379,49 @@ private lemma le_weak_L_of_mul_le_left_contract (α β : AspPerm)
   have hα_lt : α m < α n := lt_of_le_of_ne hα_le hα_ne
   let a := α n
   let b := β⁻¹ m
-  let l := SlipFace.lc_wit α.sf β.sf a b
-  have hcount := lc_diff_eq_mul_sub_errors α β a b l
+  let l := SlipFace.lres_wit α.sf β.sf a b
+  have hcount := lres_diff_eq_mul_sub_errors α β a b l
   have hlc :
       (α ◃ β).s a b = α.s a l - (β⁻¹).s b l := by
     dsimp only [l]
     change (α ◃ β).sf a b =
-      α.sf a (SlipFace.lc_wit α.sf β.sf a b)
-        - (β⁻¹).sf b (SlipFace.lc_wit α.sf β.sf a b)
-    rw [AspPerm.left_contract_spec, SlipFace.lc_wit_spec, AspPerm.sf_dual]
+      α.sf a (SlipFace.lres_wit α.sf β.sf a b)
+        - (β⁻¹).sf b (SlipFace.lres_wit α.sf β.sf a b)
+    rw [AspPerm.left_residual_spec, SlipFace.lres_wit_spec, AspPerm.sf_dual]
   have hcomp := hle a b
   rw [hlc] at hcomp
   by_cases hln : l ≤ n
-  · have hn : n ∈ lc_hi_error α β a b l :=
-      (mem_lc_hi_error α β a b l n).mpr ⟨hln, hβ.2, le_refl _⟩
-    have hncard : 0 < (lc_hi_error α β a b l).card :=
+  · have hn : n ∈ lres_hi_error α β a b l :=
+      (mem_lres_hi_error α β a b l n).mpr ⟨hln, hβ.2, le_refl _⟩
+    have hncard : 0 < (lres_hi_error α β a b l).card :=
       Finset.card_pos.mpr ⟨n, hn⟩
     omega
-  · have hm : m ∈ lc_lo_error α β a b l := by
-      apply (mem_lc_lo_error α β a b l m).mpr
+  · have hm : m ∈ lres_lo_error α β a b l := by
+      apply (mem_lres_lo_error α β a b l m).mpr
       exact
         ⟨lt_of_lt_of_le hβ.1 (le_of_lt (lt_of_not_ge hln)),
           le_refl _, hα_lt⟩
-    have hmcard : 0 < (lc_lo_error α β a b l).card :=
+    have hmcard : 0 < (lres_lo_error α β a b l).card :=
       Finset.card_pos.mpr ⟨m, hm⟩
     omega
 
 /-- If the inverse of the right factor lies below the left factor in left weak
-order, then ordinary multiplication lies below left contraction.
-Proof component of *Lemma 5.2* (`lem:reducedTri`) of
+order, then ordinary multiplication lies below left residual.
+Proof component of *Lemma 5.2* (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-private lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
+private lemma mul_le_left_residual_of_le_weak_L (α β : AspPerm)
     (hweak : β⁻¹ ≤L α) : α * β ≤ α ◃ β := by
   -- Proof written by Codex.
   intro a b
   have hle_of_errors_empty (l : ℤ)
-      (hlo : lc_lo_error α β a b l = ∅)
-      (hhi : lc_hi_error α β a b l = ∅) :
+      (hlo : lres_lo_error α β a b l = ∅)
+      (hhi : lres_hi_error α β a b l = ∅) :
       (α * β).s a b ≤ (α ◃ β).s a b := by
-    have hcount := lc_diff_eq_mul_sub_errors α β a b l
+    have hcount := lres_diff_eq_mul_sub_errors α β a b l
     simp only [hlo, hhi, Finset.card_empty, Nat.cast_zero, sub_zero] at hcount
-    have hcand := Submodular.lc_candidate_le α β a b l
+    have hcand := Submodular.lres_candidate_le α β a b l
     have hcand' : α.s a l - (β⁻¹).s b l ≤ (α ◃ β).s a b := by
-      simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hcand
+      simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hcand
     rw [← hcount]
     exact hcand'
   obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
@@ -430,38 +430,38 @@ private lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
     have hcard : ((β.se_finset l₀ b).card : ℤ) = 0 := by
       rwa [← β.s_eq_se_card]
     exact_mod_cast hcard
-  have hlo₀ : lc_lo_error α β a b l₀ = ∅ := by
+  have hlo₀ : lres_lo_error α β a b l₀ = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro m hm
-    have hm' := (mem_lc_lo_error α β a b l₀ m).mp hm
+    have hm' := (mem_lres_lo_error α β a b l₀ m).mp hm
     have hβm : β⁻¹ m ∈ β.se_finset l₀ b := by
       simpa only [AspPerm.mem_se, ge_iff_le, AspPerm.mul_inv_cancel_eval] using
         ⟨hm'.2.1, hm'.1⟩
     rw [hse₀] at hβm
     exact Finset.notMem_empty _ hβm
-  by_cases hhi₀_empty : lc_hi_error α β a b l₀ = ∅
+  by_cases hhi₀_empty : lres_hi_error α β a b l₀ = ∅
   · exact hle_of_errors_empty l₀ hlo₀ hhi₀_empty
-  · have hhi₀ : 0 < (lc_hi_error α β a b l₀).card := by
+  · have hhi₀ : 0 < (lres_hi_error α β a b l₀).card := by
       exact Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hhi₀_empty)
-    let H := lc_hi_error α β a b l₀
+    let H := lres_hi_error α β a b l₀
     let n := H.max' (Finset.card_pos.mp hhi₀)
     have hnH : n ∈ H := Finset.max'_mem H (Finset.card_pos.mp hhi₀)
     have hn_data : l₀ ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
-      exact (mem_lc_hi_error α β a b l₀ n).mp hnH
-    have hhi_succ : lc_hi_error α β a b (n + 1) = ∅ := by
+      exact (mem_lres_hi_error α β a b l₀ n).mp hnH
+    have hhi_succ : lres_hi_error α β a b (n + 1) = ∅ := by
       apply Finset.eq_empty_iff_forall_notMem.mpr
       intro n' hn'
-      have hn'_hi := (mem_lc_hi_error α β a b (n + 1) n').mp hn'
+      have hn'_hi := (mem_lres_hi_error α β a b (n + 1) n').mp hn'
       have hn'H : n' ∈ H := by
-        apply (mem_lc_hi_error α β a b l₀ n').mpr
+        apply (mem_lres_hi_error α β a b l₀ n').mpr
         have hnn' : n ≤ n' := by omega
         exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
       have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
       omega
-    have hlo_succ : lc_lo_error α β a b (n + 1) = ∅ := by
+    have hlo_succ : lres_lo_error α β a b (n + 1) = ∅ := by
       apply Finset.eq_empty_iff_forall_notMem.mpr
       intro m hm
-      have hm' := (mem_lc_lo_error α β a b (n + 1) m).mp hm
+      have hm' := (mem_lres_lo_error α β a b (n + 1) m).mp hm
       have hmn : m < n := by
         have hmn_le : m ≤ n := by omega
         apply lt_of_le_of_ne hmn_le
@@ -475,40 +475,40 @@ private lemma mul_le_left_contract_of_le_weak_L (α β : AspPerm)
       omega
     exact hle_of_errors_empty (n + 1) hlo_succ hhi_succ
 
-/-- Left contraction agrees with ordinary multiplication exactly when the
+/-- Left residual agrees with ordinary multiplication exactly when the
 inverse of the right factor is below the left factor in left weak order.
-*Lemma 5.2 (`lem:reducedTri`) of
+*Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/4.* -/
-theorem left_contract_eq_mul_iff (α β : AspPerm) :
+theorem left_residual_eq_mul_iff (α β : AspPerm) :
     α ◃ β = α * β ↔ β⁻¹ ≤L α := by
   -- Proof written by Codex.
   constructor
   · intro h_eq
-    apply le_weak_L_of_mul_le_left_contract α β
+    apply le_weak_L_of_mul_le_left_residual α β
     rw [h_eq]
   · intro hweak
     exact le_antisymm
-      (left_contract_le_mul α β)
-      (mul_le_left_contract_of_le_weak_L α β hweak)
+      (left_residual_le_mul α β)
+      (mul_le_left_residual_of_le_weak_L α β hweak)
 
-/-- Right contraction lies below ordinary multiplication in Bruhat order.
-*Lemma 5.2 (`lem:reducedTri`) of
+/-- Right residual lies below ordinary multiplication in Bruhat order.
+*Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/4.* -/
-theorem right_contract_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
+theorem right_residual_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
   -- Proof written by Codex.
   have hχ : (β⁻¹ ◃ α⁻¹).χ = (β⁻¹ * α⁻¹).χ := by
-    simp only [AspPerm.chi_left_contract, AspPerm.chi_mul]
+    simp only [AspPerm.chi_left_residual, AspPerm.chi_mul]
   have hleχ : β⁻¹ ◃ α⁻¹ ≤χ β⁻¹ * α⁻¹ :=
-    ⟨left_contract_le_mul β⁻¹ α⁻¹, hχ⟩
+    ⟨left_residual_le_mul β⁻¹ α⁻¹, hχ⟩
   have hinv :=
     (AspPerm.le_chi_inv_iff (β⁻¹ ◃ α⁻¹) (β⁻¹ * α⁻¹)).mp hleχ
-  simpa only [AspPerm.inverse_left_contract, inv_inv, mul_inv_rev] using hinv.1
+  simpa only [AspPerm.inverse_left_residual, inv_inv, mul_inv_rev] using hinv.1
 
-/-- Right contraction agrees with ordinary multiplication exactly when the
+/-- Right residual agrees with ordinary multiplication exactly when the
 inverse of the left factor is below the right factor in right weak order.
-*Lemma 5.2 (`lem:reducedTri`) of
+*Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
-theorem right_contract_eq_mul_iff (α β : AspPerm) :
+theorem right_residual_eq_mul_iff (α β : AspPerm) :
     α ▹ β = α * β ↔ α⁻¹ ≤R β := by
   -- Proof written by Codex.
   have h_eq :
@@ -518,17 +518,17 @@ theorem right_contract_eq_mul_iff (α β : AspPerm) :
       calc
         β⁻¹ ◃ α⁻¹ = (α ▹ β)⁻¹ := by
           have hdual := congrArg (fun τ : AspPerm => τ⁻¹)
-            (AspPerm.inverse_left_contract β⁻¹ α⁻¹)
+            (AspPerm.inverse_left_residual β⁻¹ α⁻¹)
           simpa only [inv_inv] using hdual
         _ = (α * β)⁻¹ := by rw [h]
         _ = β⁻¹ * α⁻¹ := by rw [mul_inv_rev]
     · intro h
       calc
         α ▹ β = (β⁻¹ ◃ α⁻¹)⁻¹ := by
-          simpa only [inv_inv] using (AspPerm.inverse_left_contract β⁻¹ α⁻¹).symm
+          simpa only [inv_inv] using (AspPerm.inverse_left_residual β⁻¹ α⁻¹).symm
         _ = (β⁻¹ * α⁻¹)⁻¹ := by rw [h]
         _ = α * β := by simp only [mul_inv_rev, inv_inv]
-  rw [h_eq, left_contract_eq_mul_iff]
+  rw [h_eq, left_residual_eq_mul_iff]
   constructor
   · intro hweak
     simpa only [inv_inv] using AspPerm.le_weak_R_of_L hweak
@@ -546,12 +546,12 @@ theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}
   -- Proof written by Codex.
   let γ := β ◃ α⁻¹
   have hγ_eq : γ = β * α⁻¹ := by
-    apply (left_contract_eq_mul_iff β α⁻¹).mpr
+    apply (left_residual_eq_mul_iff β α⁻¹).mpr
     simpa only [inv_inv] using hweak
   have hγ_red : AspPerm.ReducedProduct γ α := by
-    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_left_contract β α⁻¹
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_left_residual β α⁻¹
   have hγ_nonneg : 0 ≤ γ.χ := by
-    simp only [γ, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    simp only [γ, AspPerm.chi_left_residual, AspPerm.chi_dual]
     omega
   calc
     α = AspPerm.id ⋆ α := (AspPerm.id_star α).symm
@@ -569,12 +569,12 @@ theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
   -- Proof written by Codex.
   let γ := α⁻¹ ▹ β
   have hγ_eq : γ = α⁻¹ * β := by
-    apply (right_contract_eq_mul_iff α⁻¹ β).mpr
+    apply (right_residual_eq_mul_iff α⁻¹ β).mpr
     simpa only [inv_inv] using hweak
   have hγ_red : AspPerm.ReducedProduct α γ := by
-    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_right_contract α⁻¹ β
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_right_residual α⁻¹ β
   have hγ_nonneg : 0 ≤ γ.χ := by
-    simp only [γ, AspPerm.chi_right_contract, AspPerm.chi_dual]
+    simp only [γ, AspPerm.chi_right_residual, AspPerm.chi_dual]
     omega
   calc
     α = α ⋆ AspPerm.id := (AspPerm.star_id α).symm
@@ -586,7 +586,7 @@ theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
 
 end ReducedProducts
 
-/-! ### Reduced Factorizations -/
+/-! ### Reduced factorizations -/
 
 /-- A reduced factorization of `γ` into the ordinary product of `α` and `β`.
 
@@ -624,20 +624,20 @@ def of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
   apply of_mul_reduced h_mul
   rwa [AspPerm.reducedProduct_iff_le_weak_L_mul, h_mul]
 
-/-- Construct a reduced fact when the right contraction by the inverse left
+/-- Construct a reduced fact when the right residual by the inverse left
 factor collapses to ordinary multiplication. -/
 private def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
-    (h_contract : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
+    (h_residual : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rw [ReducedProducts.right_contract_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_contract
+  rw [ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_residual
   rwa [AspPerm.reducedProduct_iff_le_weak_R_mul]
 
-/-- Construct a reduced fact when the left contraction by the inverse right
+/-- Construct a reduced fact when the left residual by the inverse right
 factor collapses to ordinary multiplication. -/
 private def of_mul_lc {α β γ : AspPerm} (h_mul : α * β = γ)
-    (h_contract : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
+    (h_residual : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rw [ReducedProducts.left_contract_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_contract
+  rw [ReducedProducts.left_residual_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_residual
   rwa [AspPerm.reducedProduct_iff_le_weak_L_mul]
 
 private def of_reduced_star {α β γ : AspPerm}
@@ -648,7 +648,7 @@ private def of_reduced_star {α β γ : AspPerm}
 private def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ β⁻¹ = α) : ReducedFact α β γ
   := by
   have eq_α : γ * β⁻¹ = α := by
-    have := ReducedProducts.left_contract_eq_mul_iff γ β⁻¹
+    have := ReducedProducts.left_residual_eq_mul_iff γ β⁻¹
     rw [inv_inv, h_lc] at this
     rw [this.mpr h_lel]
   have h_mul : α * β = γ := by
@@ -658,7 +658,7 @@ private def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ �
 
 def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
   have eq_β : α⁻¹ * γ = β := by
-    have := ReducedProducts.right_contract_eq_mul_iff α⁻¹ γ
+    have := ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ
     rw [inv_inv, h_rc] at this
     rw [this.mpr h_ler]
   have h_mul : α * β = γ := by
@@ -683,17 +683,17 @@ private lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ :
   convert (AspPerm.reducedProduct_iff_le_weak_L_mul α β).mp h.reduced
   rw [h.mul_eq]
 
-/-- Right contraction by the inverse left factor collapses to ordinary
+/-- Right residual by the inverse left factor collapses to ordinary
 multiplication in a reduced factorization. -/
-private lemma rc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
-  apply (ReducedProducts.right_contract_eq_mul_iff α⁻¹ γ).mpr
+private lemma rres_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
+  apply (ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ).mpr
   rw [inv_inv]
   exact h.ler
 
-/-- Left contraction by the inverse right factor collapses to ordinary
+/-- Left residual by the inverse right factor collapses to ordinary
 multiplication in a reduced factorization. -/
-lemma lc_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : γ ◃ β⁻¹ = γ * β⁻¹ := by
-  apply (ReducedProducts.left_contract_eq_mul_iff γ β⁻¹).mpr
+lemma lres_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : γ ◃ β⁻¹ = γ * β⁻¹ := by
+  apply (ReducedProducts.left_residual_eq_mul_iff γ β⁻¹).mpr
   rw [inv_inv]
   exact h.lel
 

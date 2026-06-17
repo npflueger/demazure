@@ -7,7 +7,7 @@ import Demazure.InvSet
 import Demazure.Submodular
 
 /-!
-# 321-Avoiding permutations
+# 321-avoiding permutations
 
 This file gives a characterization of the two-term Demazure factorizations of 321-avoiding
 permutations (not necessarily of finite length), which are all automatically in $\mathrm{ASP}$.
@@ -229,7 +229,7 @@ def is_snk (τ : AspPerm) (v : ℤ) : Prop :=
 lemma snk_of_inv {τ : AspPerm} {u v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set τ) :
   is_snk τ v := by use u
 
-/-! ### Source and Sink Geometry for a Fixed 321-Avoiding Permutation
+/-! ### Source and sink geometry for a fixed 321-avoiding permutation
 
 Fix a 321-avoiding ASP permutation `τ`. This section develops the source/sink
 geometry and the duality identities for `s` and `s'` that drive the later
@@ -582,7 +582,7 @@ lemma split_s' {u v : ℤ} {a b : ℤ}
   have := this (τv_lt_a) (τu_ge_a) (by unfold v'; simpa) (by unfold u'; simpa)
   unfold u' v' at this; simpa using this
 
-/-! ### Passing to Left Weak Order Subpermutations
+/-! ### Passing to left weak order subpermutations
 
 Here `β ≤L τ` is fixed. The lemmas compare the inversion geometry of `β` and
 `τ`, especially the way ramps, sources, sinks, and shifted inversion sets are
@@ -899,7 +899,7 @@ theorem inv_of_lel_iff_ramp
     exact ⟨by linarith, b_le_v⟩
   rw [u_eq, v_eq]
 
-/-! ### Two-Factor Demazure Factorization for 321-Avoiding ASP Permutations
+/-! ### Two-factor Demazure factorization for 321-avoiding ASP permutations
 
 This section proves the inversion-set criterion for a factorization
 `τ = α ⋆ β` in the 321-avoiding setting, first as upper and lower bounds and

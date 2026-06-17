@@ -11,7 +11,7 @@ import Mathlib.Data.Int.Interval
 # Slipfaces
 
 This file defines slipface functions and develops their basic properties, including the $\star$
-(Demazure product) and contractions $\triangleleft$ and $\triangleright$. It corresponds roughly to
+(Demazure product) and residuals $\triangleleft$ and $\triangleright$. It corresponds roughly to
 Section 3 of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
@@ -293,7 +293,7 @@ lemma zero_below {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) :
   have ge_zero : sf a b ≥ 0 := sf.nonneg a b
   exact le_antisymm le_zero ge_zero
 
-/-! ### Slip Valleys and the Product Formula
+/-! ### Slip valleys and the product formula
 
 A `Valley` is an integer function rising on both sides, which therefore has a
 well-defined minimum achieved at finitely many places.
@@ -473,7 +473,7 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   intro a b
   rfl
 
-/-! ### Order Structure and Comparison with `⋆`
+/-! ### Order structure and comparison with `⋆`
 
 This section defines the Bruhat order on `SlipFace` and records the basic
 comparison lemmas relating that order to the product `⋆`.
@@ -542,12 +542,12 @@ lemma ge_star_val_iff (r s t : SlipFace) (a b : ℤ) :
   · rintro ⟨l, hl⟩
     exact le_trans (star_val_le s t a b l) hl
 
-/-! ### Monoid Structure
+/-! ### Monoid structure
 
 The product `⋆` is associative and has the positive-part function as identity,
 giving `SlipFace` a monoid structure. -/
 
-/-- Slipface product is associative. *Lemma 3.11 (`lem:sfAlgebra`) of
+/-- Slipface product is associative. *Lemma 3.12 (`lem:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3.* -/
 lemma star_assoc (r s t : SlipFace) : r ⋆ s ⋆ t = r ⋆ (s ⋆ t) := by
   apply (SF_ext _ _).mpr
@@ -666,12 +666,12 @@ noncomputable instance : Monoid SlipFace where
   one_mul := id_mul
   mul_one := mul_id
 
-/-! ### The contraction operations `◃` and `▹`
+/-! ### The residual operations `◃` and `▹`
 This section develops the basic properties of the operations $s \triangleleft t$
 and $s \triangleright t$ at the level of slipface functions.
 -/
 
-lemma left_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+lemma left_residual_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
   s a l - t.dual b l ≤ s a m - t.dual b m := by
   -- Proof written by Sonnet 4.6.
   obtain ⟨B₁, hB₁⟩ := s.small_b a
@@ -717,51 +717,51 @@ lemma left_contraction_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
 
 
 
-/-- The argmax witnessing the left contraction value $s \triangleleft t (a,b)$. -/
-noncomputable def lc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
-  Classical.choose (left_contraction_exists s t a b)
+/-- The argmax witnessing the left residual value $s \triangleleft t (a,b)$. -/
+noncomputable def lres_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
+  Classical.choose (left_residual_exists s t a b)
 
-/-- The left contraction function
+/-- The left residual function
 $$
 (s \triangleleft t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[s(a,\ell) - t^\vee(b,\ell)\bigr].
 $$
 *Definition 3.7 (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
-noncomputable def lc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
-  fun a b => s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
+noncomputable def lres_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
+  fun a b => s a (lres_wit s t a b) - t.dual b (lres_wit s t a b)
 
 /-- Every value $s(a,\ell) - t^\vee(b,\ell)$ is at most $s \triangleleft t (a,b)$. -/
-lemma lc_val_ge (s t : SlipFace) (a b l : ℤ) : s a l - t.dual b l ≤ lc_func s t a b :=
-  Classical.choose_spec (left_contraction_exists s t a b) l
+lemma lres_val_ge (s t : SlipFace) (a b l : ℤ) : s a l - t.dual b l ≤ lres_func s t a b :=
+  Classical.choose_spec (left_residual_exists s t a b) l
 
-/-- The left contraction is nonnegative, since for `l ≫ 0` both terms in the
+/-- The left residual is nonnegative, since for `l ≫ 0` both terms in the
 maximizing expression vanish. -/
-lemma lc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ lc_func s t a b := by
+lemma lres_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ lres_func s t a b := by
   -- Proof written by GPT 5.5.
   obtain ⟨U₁, hU₁⟩ := s.large_b a
   obtain ⟨U₂, hU₂⟩ := t.dual.large_b b
   let l := max U₁ U₂
   have hs0 : s a l = 0 := hU₁ l (le_max_left _ _)
   have ht0 : t.dual b l = 0 := hU₂ l (le_max_right _ _)
-  have hmax := lc_val_ge s t a b l
+  have hmax := lres_val_ge s t a b l
   rw [hs0, ht0] at hmax
   omega
 
-private lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
+private lemma D_props_of_lres_func (s t : SlipFace) : D_props (lres_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
   · intro a b
-    let l := lc_wit s t a b
-    change s a l - t.dual b l ≤ lc_func s t (a+1) b
-    have hmax : s (a+1) l - t.dual b l ≤ lc_func s t (a+1) b :=
-      lc_val_ge s t (a+1) b l
+    let l := lres_wit s t a b
+    change s a l - t.dual b l ≤ lres_func s t (a+1) b
+    have hmax : s (a+1) l - t.dual b l ≤ lres_func s t (a+1) b :=
+      lres_val_ge s t (a+1) b l
     have hstep : s a l ≤ s (a+1) l := (s.a_step a l).1
     omega
   · intro a b
-    let l := lc_wit s t a (b+1)
-    change s a l - t.dual (b+1) l ≤ lc_func s t a b
-    have hmax : s a l - t.dual b l ≤ lc_func s t a b :=
-      lc_val_ge s t a b l
+    let l := lres_wit s t a (b+1)
+    change s a l - t.dual (b+1) l ≤ lres_func s t a b
+    have hmax : s a l - t.dual b l ≤ lres_func s t a b :=
+      lres_val_ge s t a b l
     have hstep : t.dual b l ≤ t.dual (b+1) l := (t.dual.a_step b l).1
     omega
   · intro a
@@ -771,10 +771,10 @@ private lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
       use B
       intro b hb
       apply le_antisymm
-      · let l := lc_wit s t a b
+      · let l := lres_wit s t a b
         change s a l - t.dual b l ≤ 0
         exact hB b hb l
-      · exact lc_func_nonneg s t a b
+      · exact lres_func_nonneg s t a b
     -- Paper proof: for fixed `a`, consider
     -- `L(a,b) = {l | s(a,l) > t.dual(b,l)}`.  The sets shrink as `b`
     -- increases, `L(a,b₀)` is finite once `s.χ + t.χ + a - b₀ ≤ 0`, and
@@ -825,10 +825,10 @@ private lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
       use A
       intro a ha
       apply le_antisymm
-      · let l := lc_wit s t a b
+      · let l := lres_wit s t a b
         change s a l - t.dual b l ≤ 0
         exact hA a ha l
-      · exact lc_func_nonneg s t a b
+      · exact lres_func_nonneg s t a b
     -- Paper proof, with `a` moving left: `L(a-1,b) ⊆ L(a,b)`, the initial
     -- bad set is finite once `s.χ + t.χ + a - b ≤ 0`, and each fixed `l`
     -- eventually leaves because `s(a,l) = 0` for `a ≪ 0`.
@@ -879,7 +879,7 @@ private lemma D_props_of_lc_func (s t : SlipFace) : D_props (lc_func s t) := by
         have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
         omega
 
-private lemma rc_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+private lemma rres_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
     t l b - s.dual l a ≤ t m b - s.dual m a := by
   obtain ⟨A₁, hA₁⟩ := t.small_a b
   obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
@@ -922,51 +922,51 @@ private lemma rc_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
       have hm_U := hm_max U (Finset.mem_Icc.mpr ⟨L_le_U, le_refl _⟩)
       omega
 
-/-- The argmax witnessing the right contraction value $s \triangleright t (a,b)$. -/
-noncomputable def rc_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
-  Classical.choose (rc_exists s t a b)
+/-- The argmax witnessing the right residual value $s \triangleright t (a,b)$. -/
+noncomputable def rres_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
+  Classical.choose (rres_exists s t a b)
 
-/-- The right contraction function
+/-- The right residual function
 $$
 (s \triangleright t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[t(\ell,b) - s^\vee(\ell,a)\bigr].
 $$
 *Definition 3.7 (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
-noncomputable def rc_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
-  fun a b => t (rc_wit s t a b) b - s.dual (rc_wit s t a b) a
+noncomputable def rres_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
+  fun a b => t (rres_wit s t a b) b - s.dual (rres_wit s t a b) a
 
 /-- Every value $t(\ell,b) - s^\vee(\ell,a)$ is at most $s \triangleright t (a,b)$. -/
-lemma rc_val_ge (s t : SlipFace) (a b l : ℤ) : t l b - s.dual l a ≤ rc_func s t a b :=
-  Classical.choose_spec (rc_exists s t a b) l
+lemma rres_val_ge (s t : SlipFace) (a b l : ℤ) : t l b - s.dual l a ≤ rres_func s t a b :=
+  Classical.choose_spec (rres_exists s t a b) l
 
-/-- The right contraction is nonnegative, since for `l ≪ 0` both terms in the
+/-- The right residual is nonnegative, since for `l ≪ 0` both terms in the
 maximizing expression vanish. -/
-lemma rc_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ rc_func s t a b := by
+lemma rres_func_nonneg (s t : SlipFace) (a b : ℤ) : 0 ≤ rres_func s t a b := by
   -- Proof written by GPT 5.5.
   obtain ⟨A₁, hA₁⟩ := t.small_a b
   obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
   let l := min A₁ A₂
   have ht0 : t l b = 0 := hA₁ l (min_le_left _ _)
   have hs0 : s.dual l a = 0 := hA₂ l (min_le_right _ _)
-  have hmax := rc_val_ge s t a b l
+  have hmax := rres_val_ge s t a b l
   rw [ht0, hs0] at hmax
   omega
 
-private lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
+private lemma D_props_of_rres_func (s t : SlipFace) : D_props (rres_func s t) := by
   -- Proof written by GPT 5.5.
   constructor
   · intro a b
-    let l := rc_wit s t a b
-    change t l b - s.dual l a ≤ rc_func s t (a+1) b
-    have hmax : t l b - s.dual l (a+1) ≤ rc_func s t (a+1) b :=
-      rc_val_ge s t (a+1) b l
+    let l := rres_wit s t a b
+    change t l b - s.dual l a ≤ rres_func s t (a+1) b
+    have hmax : t l b - s.dual l (a+1) ≤ rres_func s t (a+1) b :=
+      rres_val_ge s t (a+1) b l
     have hstep : s.dual l (a+1) ≤ s.dual l a := (s.dual.b_step l a).1
     omega
   · intro a b
-    let l := rc_wit s t a (b+1)
-    change t l (b+1) - s.dual l a ≤ rc_func s t a b
-    have hmax : t l b - s.dual l a ≤ rc_func s t a b :=
-      rc_val_ge s t a b l
+    let l := rres_wit s t a (b+1)
+    change t l (b+1) - s.dual l a ≤ rres_func s t a b
+    have hmax : t l b - s.dual l a ≤ rres_func s t a b :=
+      rres_val_ge s t a b l
     have hstep : t l (b+1) ≤ t l b := (t.b_step l b).1
     omega
   · intro a
@@ -976,10 +976,10 @@ private lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
       use B
       intro b hb
       apply le_antisymm
-      · let l := rc_wit s t a b
+      · let l := rres_wit s t a b
         change t l b - s.dual l a ≤ 0
         exact hB b hb l
-      · exact rc_func_nonneg s t a b
+      · exact rres_func_nonneg s t a b
     -- Paper proof, with `b` moving right: the positive set is finite after
     -- choosing an initial `b`, and each fixed middle `l` eventually leaves
     -- because `t(l,b) = 0` for `b ≫ 0`.
@@ -1038,10 +1038,10 @@ private lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
       use A
       intro a ha
       apply le_antisymm
-      · let l := rc_wit s t a b
+      · let l := rres_wit s t a b
         change t l b - s.dual l a ≤ 0
         exact hA a ha l
-      · exact rc_func_nonneg s t a b
+      · exact rres_func_nonneg s t a b
     -- Paper proof, with `a` moving left: the left tail is zero, the right
     -- tail is controlled by the line inequality, and the middle interval is
     -- finite.
@@ -1082,121 +1082,121 @@ private lemma D_props_of_rc_func (s t : SlipFace) : D_props (rc_func s t) := by
           exact Finset.min'_le middleBounds (l - s.χ - t l b) hval_mem
         omega
 
-private lemma lc_rc_dual_eq (s t : SlipFace) (a b : ℤ) :
-    lc_func s t a b - rc_func t.dual s.dual b a = a - b + s.χ + t.χ := by
+private lemma lres_rres_dual_eq (s t : SlipFace) (a b : ℤ) :
+    lres_func s t a b - rres_func t.dual s.dual b a = a - b + s.χ + t.χ := by
   -- Proof written by GPT 5.5.
   let C := a - b + s.χ + t.χ
-  suffices lc_func s t a b ≤ rc_func t.dual s.dual b a + C ∧
-      rc_func t.dual s.dual b a + C ≤ lc_func s t a b by
+  suffices lres_func s t a b ≤ rres_func t.dual s.dual b a + C ∧
+      rres_func t.dual s.dual b a + C ≤ lres_func s t a b by
     omega
   constructor
-  · let l := lc_wit s t a b
-    change s a l - t.dual b l ≤ rc_func t.dual s.dual b a + C
-    have hmax : s.dual l a - t l b ≤ rc_func t.dual s.dual b a := by
-      have h := rc_val_ge t.dual s.dual b a l
+  · let l := lres_wit s t a b
+    change s a l - t.dual b l ≤ rres_func t.dual s.dual b a + C
+    have hmax : s.dual l a - t l b ≤ rres_func t.dual s.dual b a := by
+      have h := rres_val_ge t.dual s.dual b a l
       rwa [SlipFace.dual_dual t] at h
     linarith [s.s_eq a l, t.s'_eq b l, hmax]
-  · let l := rc_wit t.dual s.dual b a
-    change s.dual l a - (t.dual).dual l b + C ≤ lc_func s t a b
+  · let l := rres_wit t.dual s.dual b a
+    change s.dual l a - (t.dual).dual l b + C ≤ lres_func s t a b
     have htdd : (t.dual).dual l b = t l b := by
       rw [SlipFace.dual_dual t]
-    have hmax : s a l - t.dual b l ≤ lc_func s t a b :=
-      lc_val_ge s t a b l
+    have hmax : s a l - t.dual b l ≤ lres_func s t a b :=
+      lres_val_ge s t a b l
     linarith [s.s_eq a l, t.s'_eq b l, htdd, hmax]
 
-private lemma lc_exists (s t : SlipFace) : ∃ p : SlipFace,
-    ((p.func = lc_func s t ∧ p.χ = s.χ + t.χ)
-    ∧ p.dual.func = rc_func t.dual s.dual) := by
+private lemma lres_exists (s t : SlipFace) : ∃ p : SlipFace,
+    ((p.func = lres_func s t ∧ p.χ = s.χ + t.χ)
+    ∧ p.dual.func = rres_func t.dual s.dual) := by
   -- Proof written by GPT 5.5.
-  let P := lc_func s t
-  let P' := rc_func t.dual s.dual
+  let P := lres_func s t
+  let P' := rres_func t.dual s.dual
   let χ := s.χ + t.χ
   have hdual : ∀ a b : ℤ, P a b - P' b a = a - b + χ := by
     intro a b
-    rw [lc_rc_dual_eq s t a b]
+    rw [lres_rres_dual_eq s t a b]
     omega
   have h := sf_of_D_props hdual
   suffices D_props P ∧ D_props P' by
     exact h this
-  exact ⟨D_props_of_lc_func s t, D_props_of_rc_func t.dual s.dual⟩
+  exact ⟨D_props_of_lres_func s t, D_props_of_rres_func t.dual s.dual⟩
 
-/-- The left contraction of two slipfaces, obtained from the maximum formula
-`lc_func`. *Definition 3.7 (`defn:sfAlgebra`) of
+/-- The left residual of two slipfaces, obtained from the maximum formula
+`lres_func`. *Definition 3.7 (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
-noncomputable def left_contract (s t : SlipFace) : SlipFace :=
-  Classical.choose (lc_exists s t)
+noncomputable def left_residual (s t : SlipFace) : SlipFace :=
+  Classical.choose (lres_exists s t)
 
-infixl:70 " ◃ " => left_contract
+infixl:70 " ◃ " => left_residual
 
-lemma lc_func_eq (s t : SlipFace) : (s ◃ t).func = lc_func s t := by
-  have h := lc_exists s t
+lemma lres_func_eq (s t : SlipFace) : (s ◃ t).func = lres_func s t := by
+  have h := lres_exists s t
   exact (Classical.choose_spec h).1.1
 
-lemma lc_wit_spec (s t : SlipFace) (a b : ℤ) :
-    (s ◃ t) a b = s a (lc_wit s t a b) - t.dual b (lc_wit s t a b) := by
-  rw [lc_func_eq]
+lemma lres_wit_spec (s t : SlipFace) (a b : ℤ) :
+    (s ◃ t) a b = s a (lres_wit s t a b) - t.dual b (lres_wit s t a b) := by
+  rw [lres_func_eq]
   rfl
 
-/-- The shift is additive under left contraction.
+/-- The shift is additive under left residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 @[simp] lemma chi_lc (s t : SlipFace) : (s ◃ t).χ = s.χ + t.χ := by
-  have h := lc_exists s t
+  have h := lres_exists s t
   exact (Classical.choose_spec h).1.2
 
-/-- The right contraction of two slipfaces, defined by duality from left
-contraction. *Definition 3.7 (`defn:sfAlgebra`) of
+/-- The right residual of two slipfaces, defined by duality from left
+residual. *Definition 3.7 (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
-noncomputable def right_contract (s t : SlipFace) : SlipFace :=
+noncomputable def right_residual (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
-infixr:70 " ▹ " => right_contract
+infixr:70 " ▹ " => right_residual
 
-lemma rc_func_eq (s t : SlipFace) : (s ▹ t).func = rc_func s t := by
-  dsimp [right_contract]
+lemma rres_func_eq (s t : SlipFace) : (s ▹ t).func = rres_func s t := by
+  dsimp [right_residual]
   calc
-    (t.dual ◃ s.dual).dual.func = rc_func s.dual.dual t.dual.dual :=
-      (Classical.choose_spec (lc_exists t.dual s.dual)).2
-    _ = rc_func s t := by rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
+    (t.dual ◃ s.dual).dual.func = rres_func s.dual.dual t.dual.dual :=
+      (Classical.choose_spec (lres_exists t.dual s.dual)).2
+    _ = rres_func s t := by rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
 
-lemma rc_wit_spec (s t : SlipFace) (a b : ℤ) :
-    (s ▹ t) a b = t (rc_wit s t a b) b - s.dual (rc_wit s t a b) a := by
-  rw [rc_func_eq]
+lemma rres_wit_spec (s t : SlipFace) (a b : ℤ) :
+    (s ▹ t) a b = t (rres_wit s t a b) b - s.dual (rres_wit s t a b) a := by
+  rw [rres_func_eq]
   rfl
 
-/-- The shift is additive under right contraction.
+/-- The shift is additive under right residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 @[simp] lemma chi_rc (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
-  dsimp [right_contract, SlipFace.dual]
+  dsimp [right_residual, SlipFace.dual]
   rw [chi_lc]
   dsimp [SlipFace.dual]
   omega
 
-/-- The stated left/right contraction duality.
+/-- The stated left/right residual duality.
 *Proposition 3.9 (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
-@[simp] lemma left_contract_dual (s t : SlipFace) :
+@[simp] lemma left_residual_dual (s t : SlipFace) :
     (s ◃ t).dual = t.dual ▹ s.dual := by
-  dsimp [right_contract]
+  dsimp [right_residual]
   rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
 
-/-- The corresponding right/left contraction duality, obtained by applying the
+/-- The corresponding right/left residual duality, obtained by applying the
 left/right duality to dual slipfaces.
 *Consequence of Proposition 3.9 (`prop:sfAlgebraDefined`) in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
-@[simp] lemma right_contract_dual (s t : SlipFace) :
+@[simp] lemma right_residual_dual (s t : SlipFace) :
     (s ▹ t).dual = t.dual ◃ s.dual := by
-  dsimp [right_contract]
+  dsimp [right_residual]
   rw [SlipFace.dual_dual]
 
 /- A small set on which witnesses to the value $s \star t (a,b)$ always occur.
-*Lemma 3.12 (`lem:setL`) of
+*Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/5.* -/
 def bend_set (t : SlipFace) (b : ℤ) : Set ℤ :=
   {l : ℤ | t (l-1) b = t l b ∧ t l b ≠ t (l+1) b}
 
-/- *Lemma 3.12 (`lem:setL`) of
+/- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
 lemma bend_set_finite (t : SlipFace) (b : ℤ) : Finite (bend_set t b) := by
   obtain ⟨A1, hA1⟩ := t.large_a b
@@ -1244,7 +1244,7 @@ decreasing_by
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega
 
-/- *Lemma 3.12 (`lem:setL`) of
+/- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/5.* -/
 lemma bend_set_witness (s t : SlipFace) (a b : ℤ) :
   ∃ l ∈ bend_set t b, (s ⋆ t) a b = s a l + t l b := by
@@ -1271,7 +1271,7 @@ lemma bend_set_witness (s t : SlipFace) (a b : ℤ) :
     have hm_eq : s a m + t m b = s a v.M + t v.M b := le_antisymm hm_le hM_le_m
     rw [hstarM, hm_eq]
 
-private lemma bend_set_witness_lc_right_helper (s t : SlipFace) (a b l : ℤ)
+private lemma bend_set_witness_lres_right_helper (s t : SlipFace) (a b l : ℤ)
     (hmax : ∀ n, s a n - t.dual b n ≤ s a l - t.dual b l) :
     ∃ m : ℤ, t m b ≠ t (m+1) b ∧
       s a l - t.dual b l ≤ s a m - t.dual b m := by
@@ -1293,7 +1293,7 @@ private lemma bend_set_witness_lc_right_helper (s t : SlipFace) (a b l : ℤ)
       have hn := hmax n
       omega
     obtain ⟨m, hm_right, hm_le⟩ :=
-      bend_set_witness_lc_right_helper s t a b (l+1) hmax_next
+      bend_set_witness_lres_right_helper s t a b (l+1) hmax_next
     use m, hm_right
     exact le_trans hle_next hm_le
   · use l, hright
@@ -1303,7 +1303,7 @@ decreasing_by
   have hnonneg : 0 ≤ s a (l+1) := s.nonneg a (l+1)
   omega
 
-private lemma bend_set_witness_lc_helper (s t : SlipFace) (a b l : ℤ)
+private lemma bend_set_witness_lres_helper (s t : SlipFace) (a b l : ℤ)
     (hl : t l b ≠ t (l + 1) b) :
     ∃ m : ℤ, t (m-1) b = t m b ∧ t m b ≠ t (m+1) b ∧
       s a l - t.dual b l ≤ s a m - t.dual b m := by
@@ -1316,7 +1316,7 @@ private lemma bend_set_witness_lc_helper (s t : SlipFace) (a b l : ℤ)
     congr
     omega
   obtain ⟨m, hm_left, hm_right, hm_le⟩ :=
-    bend_set_witness_lc_helper s t a b (l-1) hl'
+    bend_set_witness_lres_helper s t a b (l-1) hl'
   use m, hm_left, hm_right
   have hs_step := s.b_step a (l-1)
   have ht_step := t.a_step (l-1) b
@@ -1344,22 +1344,22 @@ decreasing_by
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega
 
-/- *Lemma 3.12 (`lem:setL`) of
+/- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/
 lemma bend_set_witness_lc (s t : SlipFace) (a b : ℤ) :
     ∃ l ∈ bend_set t b, (s ◃ t) a b = s a l - t.dual b l := by
   -- Proof written by GPT 5.5.
-  let l := lc_wit s t a b
+  let l := lres_wit s t a b
   have hmax : ∀ n, s a n - t.dual b n ≤ s a l - t.dual b l := by
     intro n
-    change s a n - t.dual b n ≤ s a (lc_wit s t a b) - t.dual b (lc_wit s t a b)
-    exact lc_val_ge s t a b n
-  obtain ⟨r, hr_right, hlr⟩ := bend_set_witness_lc_right_helper s t a b l hmax
-  obtain ⟨m, hm_left, hm_right, hrm⟩ := bend_set_witness_lc_helper s t a b r hr_right
+    change s a n - t.dual b n ≤ s a (lres_wit s t a b) - t.dual b (lres_wit s t a b)
+    exact lres_val_ge s t a b n
+  obtain ⟨r, hr_right, hlr⟩ := bend_set_witness_lres_right_helper s t a b l hmax
+  obtain ⟨m, hm_left, hm_right, hrm⟩ := bend_set_witness_lres_helper s t a b r hr_right
   use m
   constructor
   · exact ⟨hm_left, hm_right⟩
-  · rw [lc_wit_spec]
+  · rw [lres_wit_spec]
     apply le_antisymm
     · exact le_trans hlr hrm
     · exact hmax m
@@ -1379,21 +1379,21 @@ lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
   have htval : t₁ l b ≤ t₂ l b := ht l b
   omega
 
-/-- The contraction `(s, t) ↦ s ◃ t.dual` is increasing in `s` and decreasing in
+/-- The residual `(s, t) ↦ s ◃ t.dual` is increasing in `s` and decreasing in
 `t`.
 *Lemma 3.8 (`lem:compatLeq`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
-lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
+lemma left_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ◃ t₂.dual ≤ s₂ ◃ t₁.dual := by
   -- Proof written by GPT 5.5.
   intro a b
-  let l := lc_wit s₁ t₂.dual a b
-  rw [lc_wit_spec]
+  let l := lres_wit s₁ t₂.dual a b
+  rw [lres_wit_spec]
   change s₁ a l - (t₂.dual).dual b l ≤ (s₂ ◃ t₁.dual) a b
   have hmax : s₂ a l - t₁ b l ≤ (s₂ ◃ t₁.dual) a b := by
-    rw [lc_func_eq]
-    have h := lc_val_ge s₂ t₁.dual a b l
+    rw [lres_func_eq]
+    have h := lres_val_ge s₂ t₁.dual a b l
     rwa [SlipFace.dual_dual t₁] at h
   have hsval : s₁ a l ≤ s₂ a l := hs a l
   have htval : t₁ b l ≤ t₂ b l := ht b l
@@ -1401,21 +1401,21 @@ lemma left_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     rw [SlipFace.dual_dual t₂]
   omega
 
-/-- The contraction `(s, t) ↦ t.dual ▹ s` is increasing in `s` and decreasing in
+/-- The residual `(s, t) ↦ t.dual ▹ s` is increasing in `s` and decreasing in
 `t`.
 *Lemma 3.8 (`lem:compatLeq`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
-lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
+lemma right_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     t₂.dual ▹ s₁ ≤ t₁.dual ▹ s₂ := by
   -- Proof written by GPT 5.5.
   intro a b
-  let l := rc_wit t₂.dual s₁ a b
-  rw [rc_wit_spec]
+  let l := rres_wit t₂.dual s₁ a b
+  rw [rres_wit_spec]
   change s₁ l b - (t₂.dual).dual l a ≤ (t₁.dual ▹ s₂) a b
   have hmax : s₂ l b - t₁ l a ≤ (t₁.dual ▹ s₂) a b := by
-    rw [rc_func_eq]
-    have h := rc_val_ge t₁.dual s₂ a b l
+    rw [rres_func_eq]
+    have h := rres_val_ge t₁.dual s₂ a b l
     rwa [SlipFace.dual_dual t₁] at h
   have hsval : s₁ l b ≤ s₂ l b := hs l b
   have htval : t₁ l a ≤ t₂ l a := ht l a
@@ -1423,26 +1423,26 @@ lemma right_contract_mono {s₁ s₂ t₁ t₂ : SlipFace}
     rw [SlipFace.dual_dual t₂]
   omega
 
-/-- The left contraction $u \triangleleft t^∨$ as a Bruhat minimum: the minimum
+/-- The left residual $u \triangleleft t^∨$ as a Bruhat minimum: the minimum
 slipface such that $s \star t ≥ u$.
 *Lemma 3.10 (`lem:sfOpChar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
-lemma ge_star_iff_ge_left_contract (s t u : SlipFace) :
+lemma ge_star_iff_ge_left_residual (s t u : SlipFace) :
     s ≥ u ◃ t.dual ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
   constructor
   · intro h a b
     apply (le_star_val_iff u s t a b).mpr
     intro l
-    have hcontract : u a b - t l b ≤ (u ◃ t.dual) a l := by
-      rw [lc_func_eq]
-      have hval := lc_val_ge u t.dual a l b
+    have hresidual : u a b - t l b ≤ (u ◃ t.dual) a l := by
+      rw [lres_func_eq]
+      have hval := lres_val_ge u t.dual a l b
       rwa [SlipFace.dual_dual t] at hval
     have hs : (u ◃ t.dual) a l ≤ s a l := h a l
     omega
   · intro h a l
-    let b := lc_wit u t.dual a l
-    rw [lc_wit_spec]
+    let b := lres_wit u t.dual a l
+    rw [lres_wit_spec]
     change u a b - (t.dual).dual l b ≤ s a l
     have hstar : u a b ≤ (s ⋆ t) a b := h a b
     have hval : (s ⋆ t) a b ≤ s a l + t l b := star_val_le s t a b l
@@ -1450,26 +1450,26 @@ lemma ge_star_iff_ge_left_contract (s t u : SlipFace) :
       rw [SlipFace.dual_dual t]
     omega
 
-/-- The right contraction $s^∨ \triangleright u$ as a Bruhat minimum: the minimum
+/-- The right residual $s^∨ \triangleright u$ as a Bruhat minimum: the minimum
 slipface such that $s \star t ≥ u$.
 *Lemma 3.10 (`lem:sfOpChar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
-lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
+lemma ge_star_iff_ge_right_residual (s t u : SlipFace) :
     t ≥ s.dual ▹ u ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
   constructor
   · intro h a b
     apply (le_star_val_iff u s t a b).mpr
     intro l
-    have hcontract : u a b - s a l ≤ (s.dual ▹ u) l b := by
-      rw [rc_func_eq]
-      have hval := rc_val_ge s.dual u l b a
+    have hresidual : u a b - s a l ≤ (s.dual ▹ u) l b := by
+      rw [rres_func_eq]
+      have hval := rres_val_ge s.dual u l b a
       rwa [SlipFace.dual_dual s] at hval
     have ht : (s.dual ▹ u) l b ≤ t l b := h l b
     omega
   · intro h l b
-    let a := rc_wit s.dual u l b
-    rw [rc_wit_spec]
+    let a := rres_wit s.dual u l b
+    rw [rres_wit_spec]
     change u a b - (s.dual).dual a l ≤ t l b
     have hstar : u a b ≤ (s ⋆ t) a b := h a b
     have hval : (s ⋆ t) a b ≤ s a l + t l b := star_val_le s t a b l
@@ -1477,10 +1477,10 @@ lemma ge_star_iff_ge_right_contract (s t u : SlipFace) :
       rw [SlipFace.dual_dual s]
     omega
 
-/-- Left contraction associates with the product on the right.
-*Lemma 3.11 (`lem:sfAlgebra`) of
+/-- Left residual associates with the product on the right.
+*Lemma 3.12 (`lem:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
-lemma left_contract_assoc (s t u : SlipFace) :
+lemma left_residual_assoc (s t u : SlipFace) :
     (s ◃ t) ◃ u = s ◃ (t ⋆ u) := by
   -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :
@@ -1488,24 +1488,24 @@ lemma left_contract_assoc (s t u : SlipFace) :
     calc
       v ≥ (s ◃ t) ◃ u ↔ v ⋆ u.dual ≥ s ◃ t := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_contract v u.dual (s ◃ t))
+          (ge_star_iff_ge_left_residual v u.dual (s ◃ t))
       _ ↔ (v ⋆ u.dual) ⋆ t.dual ≥ s := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_contract (v ⋆ u.dual) t.dual s)
+          (ge_star_iff_ge_left_residual (v ⋆ u.dual) t.dual s)
       _ ↔ v ⋆ (t ⋆ u).dual ≥ s := by
         rw [star_assoc, star_dual]
       _ ↔ v ≥ s ◃ (t ⋆ u) := by
         symm
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_contract v (t ⋆ u).dual s)
+          (ge_star_iff_ge_left_residual v (t ⋆ u).dual s)
   apply le_antisymm
   · exact (hmin (s ◃ (t ⋆ u))).mpr (le_refl _)
   · exact (hmin ((s ◃ t) ◃ u)).mp (le_refl _)
 
-/-- Right contraction associates with the product on the left.
-*Lemma 3.11 (`lem:sfAlgebra`) of
+/-- Right residual associates with the product on the left.
+*Lemma 3.12 (`lem:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
-lemma right_contract_assoc (s t u : SlipFace) :
+lemma right_residual_assoc (s t u : SlipFace) :
     s ▹ (t ▹ u) = (s ⋆ t) ▹ u := by
   -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :
@@ -1513,21 +1513,21 @@ lemma right_contract_assoc (s t u : SlipFace) :
     calc
       v ≥ s ▹ (t ▹ u) ↔ s.dual ⋆ v ≥ t ▹ u := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_contract s.dual v (t ▹ u))
+          (ge_star_iff_ge_right_residual s.dual v (t ▹ u))
       _ ↔ t.dual ⋆ (s.dual ⋆ v) ≥ u := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_contract t.dual (s.dual ⋆ v) u)
+          (ge_star_iff_ge_right_residual t.dual (s.dual ⋆ v) u)
       _ ↔ (s ⋆ t).dual ⋆ v ≥ u := by
         rw [← star_assoc, star_dual]
       _ ↔ v ≥ (s ⋆ t) ▹ u := by
         symm
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_contract (s ⋆ t).dual v u)
+          (ge_star_iff_ge_right_residual (s ⋆ t).dual v u)
   apply le_antisymm
   · exact (hmin ((s ⋆ t) ▹ u)).mpr (le_refl _)
   · exact (hmin (s ▹ (t ▹ u))).mp (le_refl _)
 
-/-! ### The Mixed Difference `Δ`
+/-! ### The mixed difference `Δ`
 
 This section studies the discrete mixed difference `Δ`, its behavior under
 duality, and the finite summation identities used later in submodularity

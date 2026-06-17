@@ -19,7 +19,7 @@ This file is largely experimental and is still under development. Use at your ow
 namespace Tableaux
 open ASP321a
 
-/-! ### Links and Two-Factor Data
+/-! ### Links and two-factor data
 
 A `Link` packages the data needed to split a triangle-free ASP set into two
 pieces that behave like the two inversion-set components in a Demazure
@@ -443,7 +443,7 @@ noncomputable def link_equiv_dprod :
 
 end Link
 
-/-! ### Chains and Hecke Factorizations
+/-! ### Chains and Hecke factorizations
 
 This section iterates the two-factor link construction to compare Hecke
 factorizations of a 321-avoiding ASP permutation with chains of inversion-box
@@ -759,7 +759,7 @@ noncomputable def HF_equiv_PChain :
 
 end Chains
 
-/-! ### Set-Valued Tableaux and Label Chains
+/-! ### Set-valued tableaux and label chains
 
 This section recodes chains of box sets by distributing labels `1, ..., n`
 among the boxes of `inv_set τ`. The order condition on labels is exactly the
@@ -893,7 +893,7 @@ noncomputable def setValuedTableauEquivLabelChain (τ : AspPerm) (n : ℕ) :
 
 end SetValuedTableaux
 
-/-! ### Prescribed Chi Data
+/-! ### Prescribed chi data
 
 Fix a list of shifts. This section refines the chain/Hecke-factorization
 correspondence by keeping track of the individual `χ`-values of the factors,

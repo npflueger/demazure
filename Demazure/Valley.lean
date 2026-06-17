@@ -33,7 +33,7 @@ instance : CoeFun Valley (fun _ => ℤ → ℤ) :=
 namespace Valley
 variable (v : Valley)
 
-/-! ### Minima and Rightmost Minimizers
+/-! ### Minima and rightmost minimizers
 
 This namespace develops the basic API for working with a `Valley`: its minimum
 value, the rightmost index where that minimum is attained, and behavior under

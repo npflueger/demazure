@@ -32,8 +32,8 @@ lemma star_left_witness (α β : AspPerm) :
     ReducedFact.of_mul_lel h_mul (Submodular.lel_of_dprod α β)
   suffices α₁ ≤χ α by exact ⟨h_mul, rf.star_eq, this⟩
   constructor
-  · rw [hα₁_def, ← rf.lc_eq]
-    exact (ge_star_iff_ge_left_contract α β (α ⋆ β)).mpr (le_refl _)
+  · rw [hα₁_def, ← rf.lres_eq]
+    exact (ge_star_iff_ge_left_residual α β (α ⋆ β)).mpr (le_refl _)
   · rw [hα₁_def, AspPerm.chi_mul, AspPerm.chi_star, AspPerm.chi_dual]
     rw [add_assoc, add_neg_cancel, add_zero]
 
@@ -124,13 +124,13 @@ theorem reduce_witness (α β γ : AspPerm) (h : α ⋆ β ≥ γ) :
     let β₁ := α₁⁻¹ ▹ γ
     α₁ * β₁ = γ ∧ α₁ ⋆ β₁ = γ ∧ α₁ ≤ α ∧ β₁ ≤ β := by
   set α₁ := γ ◃ β⁻¹
-  have α₁_le : α₁ ≤ α := (ge_star_iff_ge_left_contract α β γ).mpr h
+  have α₁_le : α₁ ≤ α := (ge_star_iff_ge_left_residual α β γ).mpr h
   have h_alpha1_star_ge : α₁ ⋆ β ≥ γ :=
-    (ge_star_iff_ge_left_contract α₁ β γ).mp (le_refl _)
-  have : α₁ ≤R γ := Submodular.ler_of_left_contract γ β⁻¹
+    (ge_star_iff_ge_left_residual α₁ β γ).mp (le_refl _)
+  have : α₁ ≤R γ := Submodular.ler_of_left_residual γ β⁻¹
   set β₁ := α₁⁻¹ ▹ γ with hβ₁_def
   have β₁_le : β₁ ≤ β :=
-    (ge_star_iff_ge_right_contract α₁ β γ).mpr h_alpha1_star_ge
+    (ge_star_iff_ge_right_residual α₁ β γ).mpr h_alpha1_star_ge
   have rf := ReducedFact.of_ler_lc this hβ₁_def
   exact ⟨rf.mul_eq, rf.star_eq, α₁_le, β₁_le⟩
 
@@ -149,10 +149,10 @@ theorem reduce_witness_chi (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ)
   set α₁ := γ ◃ β⁻¹ with hα₁_def
   set β₁ := α₁⁻¹ ▹ γ with hβ₁_def
   have h_chi_alpha : α₁.χ = α.χ := by
-    rw [hα₁_def, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    rw [hα₁_def, AspPerm.chi_left_residual, AspPerm.chi_dual]
     linarith
   have h_chi_beta : β₁.χ = β.χ := by
-    rw [hβ₁_def, AspPerm.chi_right_contract, AspPerm.chi_dual, h_chi_alpha]
+    rw [hβ₁_def, AspPerm.chi_right_residual, AspPerm.chi_dual, h_chi_alpha]
     linarith
   exact ⟨h_mul, h_star, ⟨h_alpha1_le, h_chi_alpha⟩, ⟨h_beta1_le, h_chi_beta⟩⟩
 
@@ -176,117 +176,117 @@ theorem reduce (α β γ : AspPerm) (hχ : α.χ + β.χ = γ.χ) :
     rw [← h_star]
     exact star_mono hα₁_le hβ₁_le
 
-/-! ### Theorem 6.1 (`tllStingy`): stingy characterization of `◃`
+/-! ### Theorem 6.1 (`resLStingy`): stingy characterization of `◃`
 
 The dual story for `◃`, mirroring Theorem B. This is the formula labeled
-`eq:tllGreedyAlpha` in
+`eq:resLGreedyAlpha` in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 
-/-- The contraction `α ◃ β⁻¹` is monotone in `α` for fixed `β`.
+/-- The residual `α ◃ β⁻¹` is monotone in `α` for fixed `β`.
 
-This is the ASP-level lift of `SlipFace.left_contract_mono`. -/
-private lemma left_contract_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
+This is the ASP-level lift of `SlipFace.left_residual_mono`. -/
+private lemma left_residual_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
     α ◃ β⁻¹ ≤ α' ◃ β⁻¹ := by
   -- Proof written by Claude Opus 4.7.
   apply (sf_le_iff (α ◃ β⁻¹) (α' ◃ β⁻¹)).mp
-  rw [left_contract_spec, left_contract_spec, ← sf_dual]
-  exact SlipFace.left_contract_mono ((sf_le_iff α α').mpr hα) (le_refl β.sf)
+  rw [left_residual_spec, left_residual_spec, ← sf_dual]
+  exact SlipFace.left_residual_mono ((sf_le_iff α α').mpr hα) (le_refl β.sf)
 
-/-- The contraction `α ◃ β⁻¹` is anti-monotone in `β`: if `β' ≤ β` then
+/-- The residual `α ◃ β⁻¹` is anti-monotone in `β`: if `β' ≤ β` then
 `α ◃ β⁻¹ ≤ α ◃ β'⁻¹`. -/
-private lemma left_contract_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
+private lemma left_residual_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
     α ◃ β⁻¹ ≤ α ◃ β'⁻¹ := by
   -- Proof written by Claude Opus 4.7.
   apply (sf_le_iff (α ◃ β⁻¹) (α ◃ β'⁻¹)).mp
-  rw [left_contract_spec, left_contract_spec, ← sf_dual, ← sf_dual]
-  exact SlipFace.left_contract_mono (le_refl α.sf) ((sf_le_iff β' β).mpr hβ)
+  rw [left_residual_spec, left_residual_spec, ← sf_dual, ← sf_dual]
+  exact SlipFace.left_residual_mono (le_refl α.sf) ((sf_le_iff β' β).mpr hβ)
 
-/-- Bounding the two factors puts an ordinary product above a left contraction.
-This is the ASP form of the bound labeled `eq:atllbBound` in
+/-- Bounding the two factors puts an ordinary product above a left residual.
+This is the ASP form of the bound labeled `eq:aresLbBound` in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-private lemma left_contract_inv_le_mul {α α' β β' : AspPerm}
+private lemma left_residual_inv_le_mul {α α' β β' : AspPerm}
     (hα : α ≤ α') (hβ : β' ≤ β) : α ◃ β⁻¹ ≤ α' * β'⁻¹ := by
   -- Proof written by GPT 5.5.
-  exact le_trans (left_contract_inv_mono_alpha hα) <|
-    le_trans (left_contract_inv_antimono_beta hβ)
-      (ReducedProducts.left_contract_le_mul α' β'⁻¹)
+  exact le_trans (left_residual_inv_mono_alpha hα) <|
+    le_trans (left_residual_inv_antimono_beta hβ)
+      (ReducedProducts.left_residual_le_mul α' β'⁻¹)
 
-/-- *Theorem 6.1 (`thm:tllStingy`) of
+/-- *Theorem 6.1 (`thm:resLStingy`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3,
-formula `eq:tllGreedyAlpha`.*
+formula `eq:resLGreedyAlpha`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta^{-1}: \alpha_1 \geq_\chi \alpha\}$. -/
-theorem left_contract_stingy_alpha (α β : AspPerm) :
+theorem left_residual_stingy_alpha (α β : AspPerm) :
     IsLeast { α₁ * β⁻¹ | (α₁ : AspPerm) (_ : α ≤χ α₁) } (α ◃ β⁻¹) := by
   -- Proof written by GPT 5.5.
   -- Membership: take α₁ = (α ◃ β⁻¹) * β.
   set α₁ := (α ◃ β⁻¹) * β with hα₁_def
   have h_red : AspPerm.ReducedProduct (α ◃ β⁻¹) β := by
-    have := Submodular.reducedProduct_of_left_contract α β⁻¹
+    have := Submodular.reducedProduct_of_left_residual α β⁻¹
     simpa using this
   have rf : ReducedFact (α ◃ β⁻¹) β α₁ :=
     ReducedFact.of_mul_reduced hα₁_def.symm h_red
   have h_alpha_le_alpha1 : α ≤ α₁ := by
     rw [← rf.star_eq]
-    exact (ge_star_iff_ge_left_contract (α ◃ β⁻¹) β α).mp (le_refl _)
+    exact (ge_star_iff_ge_left_residual (α ◃ β⁻¹) β α).mp (le_refl _)
   have h_chi : α.χ = α₁.χ := by
-    rw [← rf.mul_eq, AspPerm.chi_mul, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    rw [← rf.mul_eq, AspPerm.chi_mul, AspPerm.chi_left_residual, AspPerm.chi_dual]
     ring
   have h_α₁β_eq : α₁ * β⁻¹ = α ◃ β⁻¹ := by
     rw [← rf.mul_eq, mul_assoc, mul_inv_cancel, mul_one]
   refine ⟨⟨α₁, ⟨h_alpha_le_alpha1, h_chi⟩, h_α₁β_eq⟩, ?_⟩
   -- Lower bound: any candidate is ≥ α ◃ β⁻¹.
   rintro τ ⟨α₂, hα₂_le, rfl⟩
-  exact left_contract_inv_le_mul hα₂_le.1 (le_refl β)
+  exact left_residual_inv_le_mul hα₂_le.1 (le_refl β)
 
-/-- *Theorem 6.1 (`thm:tllStingy`) of
+/-- *Theorem 6.1 (`thm:resLStingy`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3,
-formula `eq:tllGreedyBeta`.*
+formula `eq:resLGreedyBeta`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha \beta_1^{-1}: \beta_1 \leq_\chi \beta\}$. -/
-theorem left_contract_stingy_beta (α β : AspPerm) :
+theorem left_residual_stingy_beta (α β : AspPerm) :
     IsLeast { α * β₁⁻¹ | (β₁ : AspPerm) (_ : β₁ ≤χ β) } (α ◃ β⁻¹) := by
   -- Proof written by GPT 5.5.
   set δ := α ◃ β⁻¹ with hδ_def
   set β₁ := δ⁻¹ ▹ α with hβ₁_def
   have h_ler : δ ≤R α := by
     rw [hδ_def]
-    exact Submodular.ler_of_left_contract α β⁻¹
+    exact Submodular.ler_of_left_residual α β⁻¹
   have rf : ReducedFact δ β₁ α :=
     ReducedFact.of_ler_lc h_ler hβ₁_def.symm
   have h_mul : α * β₁⁻¹ = δ := by
     rw [← rf.mul_eq, mul_assoc, mul_inv_cancel, mul_one]
   have h_chi : β₁.χ = β.χ := by
-    rw [hβ₁_def, AspPerm.chi_right_contract, AspPerm.chi_dual,
-      hδ_def, AspPerm.chi_left_contract, AspPerm.chi_dual]
+    rw [hβ₁_def, AspPerm.chi_right_residual, AspPerm.chi_dual,
+      hδ_def, AspPerm.chi_left_residual, AspPerm.chi_dual]
     ring
   have h_β1_le : β₁ ≤ β := by
     rw [hβ₁_def]
-    apply (ge_star_iff_ge_right_contract δ β α).mpr
-    apply (ge_star_iff_ge_left_contract δ β α).mp
+    apply (ge_star_iff_ge_right_residual δ β α).mpr
+    apply (ge_star_iff_ge_left_residual δ β α).mp
     rw [hδ_def]
   refine ⟨⟨β₁, ⟨h_β1_le, h_chi⟩, by simpa [hδ_def] using h_mul⟩, ?_⟩
   -- Lower bound.
   rintro τ ⟨β₂, hβ₂_le, rfl⟩
-  exact left_contract_inv_le_mul (le_refl α) hβ₂_le.1
+  exact left_residual_inv_le_mul (le_refl α) hβ₂_le.1
 
-/-- *Theorem 6.1 (`thm:tllStingy`) of
+/-- *Theorem 6.1 (`thm:resLStingy`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3,
-formula `eq:tllGreedy`.*
+formula `eq:resLGreedy`.*
 
 `α ◃ β⁻¹` is the Bruhat-minimum of the set
 $\{\alpha_1 \beta_1^{-1}: \alpha_1 \geq \alpha,\, \beta_1 \leq \beta\}$. -/
-theorem left_contract_stingy (α β : AspPerm) :
+theorem left_residual_stingy (α β : AspPerm) :
     IsLeast
       { α₁ * β₁⁻¹ | (α₁ : AspPerm) (_ : α ≤ α₁) (β₁ : AspPerm) (_ : β₁ ≤ β) }
       (α ◃ β⁻¹) := by
   -- Proof written by Claude Opus 4.7.
-  obtain ⟨⟨α₁, ⟨hα₁_le, _⟩, h_α₁β_eq⟩, _⟩ := left_contract_stingy_alpha α β
+  obtain ⟨⟨α₁, ⟨hα₁_le, _⟩, h_α₁β_eq⟩, _⟩ := left_residual_stingy_alpha α β
   refine ⟨⟨α₁, hα₁_le, β, le_refl β, h_α₁β_eq⟩, ?_⟩
   rintro τ ⟨α₂, hα₂_ge, β₂, hβ₂_le, rfl⟩
-  exact left_contract_inv_le_mul hα₂_ge hβ₂_le
+  exact left_residual_inv_le_mul hα₂_ge hβ₂_le
 
 /-! ### Theorem 6.5 (`reduceSeveral`): three- and many-fold reduction
 

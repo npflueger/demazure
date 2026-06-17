@@ -10,11 +10,11 @@ import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Ring
 
 /-!
-# ASP Permutations
+# ASP permutations
 
 This file defines ASP permutations, their inversion sets, associated slipfaces,
 the Bruhat order, and some properties laying the groundwork for the Demazure product $\star$ and
-contractions $\triangleleft$ and $\triangleright$. These three operations are not yet defined in
+residuals $\triangleleft$ and $\triangleright$. These three operations are not yet defined in
 this file; that is deferred until `Submodular.lean`, where the bijection between $\mathrm{ASP}$ and
 the set of submodular slipfaces is established. This corresponds roughly to Section 2 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
@@ -1141,7 +1141,7 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
 
 /-- The bend set is a finite set on which the minimum defining the Demazure product is always
 obtained. It is characterized in
-*Lemma 3.12 (`lem:setL`) of
+*Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
 lemma bend_set_sf (β : AspPerm) (b : ℤ) :
     SlipFace.bend_set β.sf b = {l : ℤ | β⁻¹ (l - 1) < b ∧ b ≤ β⁻¹ l} := by
@@ -1210,7 +1210,7 @@ lemma submodular : τ.sf.submodular := by
   have Δ_eq := τ.Δ_eq a b
   by_cases h : τ b = a <;> simp [h, Δ_eq]
 
-/-! ### Ramps, Lamps, and Wing Parameters
+/-! ### Ramps, lamps, and wing parameters
 
 This section defines the ramp and lamp regions associated to an ASP
 permutation. These are Young diagrams associated to particular values of `a` or `b`,

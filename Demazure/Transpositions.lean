@@ -11,7 +11,7 @@ import Demazure.Reduction
 This file characterizes the behavior of involutions $\sigma_S$ under the operations $\star$ and
 $\triangleleft$. Its main purpose is to prove Theorem 8.7 from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), as well as the last sentences of
-Theorem A and the theorem labeled `thm:tll`, which describe the special case of $\sigma_S$ for
+Theorem A and the theorem labeled `thm:resL`, which describe the special case of $\sigma_S$ for
 $S = \{n\}$ a singleton.
 -/
 
@@ -362,7 +362,7 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
       exact ⟨hσbprev_lt, hb_le_σb⟩
 
 /-- The bend set for $\sigma_S$ is the singleton $\{b\}$ when $b - 1 \notin S$.
-This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
+This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:starTrans`) in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6. -/
 private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∉ S) :
@@ -379,7 +379,7 @@ private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S
     exact Or.inl ⟨hb, hl⟩
 
 /-- The bend set for $\sigma_S$ is $\{b - 1, b + 1\}$ when $b - 1 \in S$.
-This is one case of the computation of `L` in the proof of Lemma 3.13 (`lem:starTrans`) in
+This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:starTrans`) in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6. -/
 private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∈ S) :
@@ -432,7 +432,7 @@ private lemma star_step_min_eq_oneIf (s : SlipFace) (a b : ℤ) :
       rw [hright]
       exact min_eq_right (by omega)
 
-private lemma lc_step_max_eq_oneIf (s : SlipFace) (a b : ℤ) :
+private lemma lres_step_max_eq_oneIf (s : SlipFace) (a b : ℤ) :
     max (s a (b - 1) - 1) (s a (b + 1)) =
       s a b - Utils.oneIf (s a (b - 1) = s a b ∧ s a b > s a (b + 1)) := by
   -- Proof written by GPT 5.5.
@@ -508,7 +508,7 @@ private lemma asp_s_gt_next_iff (α : AspPerm) (a b : ℤ) :
 /-- The slipface $s \star \sigma_S$ is given by adding 1 to a certain pattern of entries of $s$.
 The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
-*Lemma 3.13 (`lem:starTrans`) of
+*Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b : ℤ) :
     (s ⋆ (sigma S hS).sf) a b =
@@ -568,7 +568,7 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
     simp only [hb, false_and, Utils.oneIf, if_false, add_zero]
 
 /-- A formula for $s_\alpha \star \sigma_S$, specializing the more general `sf_star_sigma`.
-*Lemma 3.13 (`lem:starTrans`) of
+*Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a b : ℤ) :
     (α.sf ⋆ (sigma S hS).sf) a b =
@@ -590,9 +590,9 @@ theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a
 
 The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
-*Lemma 3.13 (`lem:starTrans`) of
+*Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
-theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
+theorem sf_residual_sigma (S : Set ℤ) (hS : NoConsecutive S)
     (s : SlipFace) (a b : ℤ) :
     (s ◃ (sigma S hS).sf) a b =
         s a b
@@ -611,17 +611,17 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
       have hmax : max 0 (b - (b + 1)) = 0 := max_eq_left (by omega)
       have hne : b ≠ b + 1 := by omega
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
-    have hlc_max :
+    have hlres_max :
         (s ◃ (sigma S hS).sf) a b =
           max (s a (b - 1) - 1) (s a (b + 1)) := by
       have hge_left :
           s a (b - 1) - 1 ≤ (s ◃ (sigma S hS).sf) a b := by
-        simpa only [SlipFace.lc_func_eq, ht_left] using
-          SlipFace.lc_val_ge s (sigma S hS).sf a b (b - 1)
+        simpa only [SlipFace.lres_func_eq, ht_left] using
+          SlipFace.lres_val_ge s (sigma S hS).sf a b (b - 1)
       have hge_right :
           s a (b + 1) ≤ (s ◃ (sigma S hS).sf) a b := by
-        simpa only [SlipFace.lc_func_eq, ht_right, sub_zero] using
-          SlipFace.lc_val_ge s (sigma S hS).sf a b (b + 1)
+        simpa only [SlipFace.lres_func_eq, ht_right, sub_zero] using
+          SlipFace.lres_val_ge s (sigma S hS).sf a b (b + 1)
       have hmax_le :
           max (s a (b - 1) - 1) (s a (b + 1)) ≤
             (s ◃ (sigma S hS).sf) a b :=
@@ -629,7 +629,7 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
       obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lc s (sigma S hS).sf a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
       simp only [Set.mem_setOf_eq] at hl
-      have hlc_le :
+      have hlres_le :
           (s ◃ (sigma S hS).sf) a b ≤ max (s a (b - 1) - 1) (s a (b + 1)) := by
         rcases hl with rfl | rfl
         · have hval' : (s ◃ (sigma S hS).sf) a b = s a (b - 1) - 1 := by
@@ -640,8 +640,8 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
             simpa only [ht_right, sub_zero] using hval
           rw [hval']
           exact le_max_right _ _
-      exact le_antisymm hlc_le hmax_le
-    rw [hlc_max, lc_step_max_eq_oneIf]
+      exact le_antisymm hlres_le hmax_le
+    rw [hlres_max, lres_step_max_eq_oneIf]
     simp only [hb, true_and]
   · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lc s (sigma S hS).sf a b
     rw [bend_set_sigma_of_not_pred_mem S hS hb] at hl
@@ -654,14 +654,14 @@ theorem sf_contract_sigma (S : Set ℤ) (hS : NoConsecutive S)
     simp only [hb, false_and, Utils.oneIf, if_false, sub_zero]
 
 /-- A formula for $s_\alpha \triangleleft \sigma_S$. This is the ASP specialization of
-`sf_contract_sigma`. *Lemma 3.13 (`lem:starTrans`) of
+`sf_residual_sigma`. *Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
-theorem asp_contract_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
+theorem asp_residual_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
     (α : AspPerm) (a b : ℤ) :
     (α.sf ◃ (sigma S hS).sf) a b =
       α.s a b - Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) := by
   -- Proof written by GPT 5.5.
-  rw [sf_contract_sigma S hS α.sf a b]
+  rw [sf_residual_sigma S hS α.sf a b]
   simp only [AspPerm.sf_func_eq_s]
   have hiff :
       (b - 1 ∈ S ∧ α.s a (b - 1) = α.s a b ∧ α.s a b > α.s a (b + 1)) ↔
@@ -933,14 +933,14 @@ private lemma star_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsecutiv
     omega
   rw [hzero, add_zero]
 
-private lemma contract_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S)
+private lemma residual_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S)
     (hα : ∀ n, n ∈ S → α n < α (n + 1)) :
     α ◃ sigma S hS = α := by
   -- Proof written by GPT 5.5.
   apply AspPerm.eq_of_sf_eq
   apply (SF_ext _ _).mpr
   intro a b
-  rw [AspPerm.left_contract_spec, asp_contract_sigma_sf S hS α a b]
+  rw [AspPerm.left_residual_spec, asp_residual_sigma_sf S hS α a b]
   simp only [AspPerm.sf_func_eq_s]
   have hzero :
       Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) = 0 := by
@@ -995,7 +995,7 @@ theorem starSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
 
 /-- *Theorem 8.7 (`thm:alphaStarSigma`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/4.* -/
-theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
+theorem residualSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ◃ sigma S hS =
         α * sigma (fallingSet α S) (noConsecutive_fallingSet α hS) := by
   -- Proof written by GPT 5.5.
@@ -1023,13 +1023,13 @@ theorem contractSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ◃ sigma S hS = α ◃ (sigma R hR * sigma F hF) := by rw [hMulRF]
     _ = α ◃ (sigma R hR ⋆ sigma F hF) := by rw [hStarMulRF]
     _ = (α ◃ sigma R hR) ◃ sigma F hF :=
-      (AspPerm.left_contract_assoc α _ _).symm
+      (AspPerm.left_residual_assoc α _ _).symm
     _ = α ◃ sigma F hF := by
-      rw [contract_sigma_eq_self α R hR]
+      rw [residual_sigma_eq_self α R hR]
       intro n hn
       exact hn.2
     _ = α * sigma F hF := by
-      exact (ReducedProducts.left_contract_eq_mul_iff α _).mpr
+      exact (ReducedProducts.left_residual_eq_mul_iff α _).mpr
         (sigma_le_weak_L_of_falling α F hF (by
           intro n hn
           exact hn.2))
@@ -1071,15 +1071,15 @@ theorem star_simple (α σ : AspPerm) (n : ℤ)
       exact (by omega : n ≠ n + 1) (α.injective heq)
     omega
 
-/-- The simple-transposition case of left contraction: if $\sigma \in \mathrm{ASP}$
-has shift zero and its only inversion is $(n,n+1)$, then right contraction by
+/-- The simple-transposition case of left residual: if $\sigma \in \mathrm{ASP}$
+has shift zero and its only inversion is $(n,n+1)$, then right residual by
 $\sigma$ follows the usual rule.
 
-This is the last sentence of *Theorem 1.1 (`thm:tll`)* of
+This is the last sentence of *Theorem 1.1 (`thm:resL`)* of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), supplied by
 *Theorem 8.7 (`thm:alphaStarSigma`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
-theorem contract_simple (α σ : AspPerm) (n : ℤ)
+theorem residual_simple (α σ : AspPerm) (n : ℤ)
     (hχ : σ.χ = 0) (hInv : inv_set σ = {⟨n, n + 1⟩}) :
     α ◃ σ = if α (n + 1) < α n then α * σ else α := by
   -- Proof written by GPT 5.5.
@@ -1095,11 +1095,11 @@ theorem contract_simple (α σ : AspPerm) (n : ℤ)
     calc
       α ◃ sigma T hT =
           α * sigma (fallingSet α T) (noConsecutive_fallingSet α hT) :=
-            contractSigma α T hT
+            residualSigma α T hT
       _ = α * sigma T hT := by
         rw [sigma_eq_of_set_eq hFall (noConsecutive_fallingSet α hT) hT]
   · rw [if_neg hα]
-    apply contract_sigma_eq_self
+    apply residual_sigma_eq_self
     intro m hm
     have hm_eq : m = n := by simpa only [T, Set.mem_singleton_iff] using hm
     subst m

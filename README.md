@@ -67,7 +67,7 @@ The Lean development in `Demazure/` is organized as follows. Section numbers tel
                                                            │ Transpositions.lean (§3, §8)  │
                                                            │ Adjacent transposition        │
                                                            │ formulas for product          │
-                                                           │ and contraction               │
+                                                           │ and residual                  │
                                                            └───────────────────────────────┘
 ```
 

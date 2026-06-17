@@ -8,7 +8,7 @@ import Demazure.Valley
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# Submodular Slip Faces
+# Submodular slip faces
 
 This file establishes that a slipface comes from $\mathrm{ASP}$ if and only if it is submodular, and
 uses this to define the operations $\star$, $\triangleleft$, and $\triangleright$ on $\mathrm{ASP}$.
@@ -16,7 +16,7 @@ It corresponds roughly to Section 4 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
-/-! ### Submodular Slipfaces and Recovery of ASP Permutations
+/-! ### Submodular slipfaces and recovery of ASP permutations
 
 This section shows that submodular slipfaces are exactly those arising from
 ASP permutations. -/
@@ -364,7 +364,7 @@ theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, �
     exact α.submodular
 
 
-/-! ### Closure of Submodularity Under Product
+/-! ### Closure of submodularity under product
 
 This section proves that the slipface product of submodular slipfaces is
 submodular. -/
@@ -656,161 +656,161 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
   subst M
   simp only [M_le_βb, ↓reduceIte, sub_add_cancel]
 
-/-! ### Closure of Submodularity Under Contraction
+/-! ### Closure of submodularity under residuals
 
-This section proves that the slipface contraction operations preserve
+This section proves that the slipface residual operations preserve
 submodularity.
 
 [An extended Demazure product](https://arxiv.org/abs/2206.14227) phrases the argument using the
 rightmost maximizing witness $M_{\alpha \triangleleft \beta}(a,b)$. That maximum may be $\infty$
-when the left contraction value is zero, since the set of maximizing witnesses may be unbounded
+when the left residual value is zero, since the set of maximizing witnesses may be unbounded
 above. Rather than extending $\mathbb{Z}$ to include $\infty$, we instead keep the whole witness
 set and express cutoff conditions on $M$ by quantifying over witnesses: a bound $M \leq m$ becomes
 a bound on every witness, while $M > m$ becomes the existence of a witness above $m$. -/
 
 /-- The set of witnesses attaining the maximum in
 $s_\alpha \triangleleft s_\beta(a,b)$. -/
-private def lc_witness_set (α β : AspPerm) (a b : ℤ) : Set ℤ :=
+private def lres_witness_set (α β : AspPerm) (a b : ℤ) : Set ℤ :=
   {l | (α.sf ◃ β.sf) a b = α.s a l - (β⁻¹).s b l}
 
-private lemma lc_wit_mem_lc_witness_set (α β : AspPerm) (a b : ℤ) :
-    SlipFace.lc_wit α.sf β.sf a b ∈ lc_witness_set α β a b := by
-  dsimp [lc_witness_set]
-  rw [SlipFace.lc_wit_spec, AspPerm.sf_dual]
+private lemma lres_wit_mem_lres_witness_set (α β : AspPerm) (a b : ℤ) :
+    SlipFace.lres_wit α.sf β.sf a b ∈ lres_witness_set α β a b := by
+  dsimp [lres_witness_set]
+  rw [SlipFace.lres_wit_spec, AspPerm.sf_dual]
   simp only [AspPerm.sf_func_eq_s]
 
-private lemma lc_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
-    (lc_witness_set α β a b).Nonempty :=
-  ⟨SlipFace.lc_wit α.sf β.sf a b, lc_wit_mem_lc_witness_set α β a b⟩
+private lemma lres_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
+    (lres_witness_set α β a b).Nonempty :=
+  ⟨SlipFace.lres_wit α.sf β.sf a b, lres_wit_mem_lres_witness_set α β a b⟩
 
-/-- Every candidate value for left contraction is at most its maximum. -/
-lemma lc_candidate_le (α β : AspPerm) (a b l : ℤ) :
+/-- Every candidate value for left residual is at most its maximum. -/
+lemma lres_candidate_le (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l ≤ (α.sf ◃ β.sf) a b := by
-  rw [SlipFace.lc_func_eq]
-  simpa only [AspPerm.sf_dual, AspPerm.sf_func_eq_s] using SlipFace.lc_val_ge α.sf β.sf a b l
+  rw [SlipFace.lres_func_eq]
+  simpa only [AspPerm.sf_dual, AspPerm.sf_func_eq_s] using SlipFace.lres_val_ge α.sf β.sf a b l
 
-/-- Witness-set form of the left-contraction step in the first coordinate:
+/-- Witness-set form of the left-residual step in the first coordinate:
 the step is flat exactly when a witness for the new value lies to the right of
 the cutoff. -/
-private lemma lc_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lres_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b ↔
-      ∃ l ∈ lc_witness_set α β (a + 1) b, α⁻¹ a < l := by
+      ∃ l ∈ lres_witness_set α β (a + 1) b, α⁻¹ a < l := by
   -- Proof written by Codex.
   constructor
   · intro hflat
-    let l := SlipFace.lc_wit α.sf β.sf a b
-    have hl : l ∈ lc_witness_set α β a b :=
-      lc_wit_mem_lc_witness_set α β a b
+    let l := SlipFace.lres_wit α.sf β.sf a b
+    have hl : l ∈ lres_witness_set α β a b :=
+      lres_wit_mem_lres_witness_set α β a b
     have hcut : α⁻¹ a < l := by
       by_contra hcut
       have hge : α⁻¹ a ≥ l := by omega
       have hstep : α.s (a + 1) l = α.s a l + 1 := by
         rw [α.a_step a l]
         simp only [if_pos hge]
-      have hmax := lc_candidate_le α β (a + 1) b l
-      dsimp [lc_witness_set] at hl
+      have hmax := lres_candidate_le α β (a + 1) b l
+      dsimp [lres_witness_set] at hl
       omega
     refine ⟨l, ?_, hcut⟩
     have hstep : α.s (a + 1) l = α.s a l :=
       (α.a_step_eq_iff a l).mpr hcut
-    dsimp [lc_witness_set] at hl ⊢
+    dsimp [lres_witness_set] at hl ⊢
     rw [hflat, hstep]
     exact hl
   · rintro ⟨l, hl, hcut⟩
     have hstep : α.s (a + 1) l = α.s a l :=
       (α.a_step_eq_iff a l).mpr hcut
-    have hmax := lc_candidate_le α β a b l
+    have hmax := lres_candidate_le α β a b l
     have hmono := ((α.sf ◃ β.sf).a_step a b).1
-    dsimp [lc_witness_set] at hl
+    dsimp [lres_witness_set] at hl
     apply le_antisymm
     · rw [hl, hstep]
       exact hmax
     · exact hmono
 
-/-- Witness-set form of the left-contraction step in the first coordinate:
+/-- Witness-set form of the left-residual step in the first coordinate:
 the step rises by one exactly when every witness for the new value is at or
 left of the cutoff. -/
-private lemma lc_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lres_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b + 1 ↔
-      ∀ l ∈ lc_witness_set α β (a + 1) b, l ≤ α⁻¹ a := by
+      ∀ l ∈ lres_witness_set α β (a + 1) b, l ≤ α⁻¹ a := by
   -- Proof written by Codex.
   constructor
   · intro hone l hl
     by_contra hnot
     have hcut : α⁻¹ a < l := by omega
     have hflat :=
-      (lc_a_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
+      (lres_a_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
     omega
   · intro hall
     have hstep := (α.sf ◃ β.sf).a_step a b
     have hne : (α.sf ◃ β.sf) (a + 1) b ≠ (α.sf ◃ β.sf) a b := by
       intro hflat
       obtain ⟨l, hl, hcut⟩ :=
-        (lc_a_step_eq_iff_exists_witness α β a b).mp hflat
+        (lres_a_step_eq_iff_exists_witness α β a b).mp hflat
       exact (not_lt_of_ge (hall l hl)) hcut
     omega
 
-/-- Witness-set form of the left-contraction step in the second coordinate:
+/-- Witness-set form of the left-residual step in the second coordinate:
 the step is flat exactly when an old witness lies to the right of the cutoff.
 Here the cutoff is `β b`, from applying the first-coordinate step formula to
 the dual slipface $s_{\beta^{-1}}$. -/
-private lemma lc_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lres_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b ↔
-      ∃ l ∈ lc_witness_set α β a b, β b < l := by
+      ∃ l ∈ lres_witness_set α β a b, β b < l := by
   -- Proof written by Codex.
   constructor
   · intro hflat
-    let l := SlipFace.lc_wit α.sf β.sf a (b + 1)
-    have hl : l ∈ lc_witness_set α β a (b + 1) :=
-      lc_wit_mem_lc_witness_set α β a (b + 1)
+    let l := SlipFace.lres_wit α.sf β.sf a (b + 1)
+    have hl : l ∈ lres_witness_set α β a (b + 1) :=
+      lres_wit_mem_lres_witness_set α β a (b + 1)
     have hcut : β b < l := by
       by_contra hcut
       have hge : β b ≥ l := by omega
       have hstep : (β⁻¹).s (b + 1) l = (β⁻¹).s b l + 1 := by
         rw [(β⁻¹).a_step b l]
         simp only [inv_inv, if_pos hge]
-      have hmax := lc_candidate_le α β a b l
-      dsimp [lc_witness_set] at hl
+      have hmax := lres_candidate_le α β a b l
+      dsimp [lres_witness_set] at hl
       omega
     refine ⟨l, ?_, hcut⟩
     have hstep : (β⁻¹).s (b + 1) l = (β⁻¹).s b l := by
       apply ((β⁻¹).a_step_eq_iff b l).mpr
       simpa only [inv_inv] using hcut
-    dsimp [lc_witness_set] at hl ⊢
+    dsimp [lres_witness_set] at hl ⊢
     rw [← hflat, ← hstep]
     exact hl
   · rintro ⟨l, hl, hcut⟩
     have hstep : (β⁻¹).s (b + 1) l = (β⁻¹).s b l := by
       apply ((β⁻¹).a_step_eq_iff b l).mpr
       simpa only [inv_inv] using hcut
-    have hmax := lc_candidate_le α β a (b + 1) l
+    have hmax := lres_candidate_le α β a (b + 1) l
     have hmono := ((α.sf ◃ β.sf).b_step a b).1
-    dsimp [lc_witness_set] at hl
+    dsimp [lres_witness_set] at hl
     apply le_antisymm
     · exact hmono
     · rw [hl, ← hstep]
       exact hmax
 
-/-- Witness-set form of the left-contraction step in the second coordinate:
+/-- Witness-set form of the left-residual step in the second coordinate:
 the step drops by one exactly when every old witness is at or left of the
 cutoff. -/
-private lemma lc_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
+private lemma lres_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
     (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b - 1 ↔
-      ∀ l ∈ lc_witness_set α β a b, l ≤ β b := by
+      ∀ l ∈ lres_witness_set α β a b, l ≤ β b := by
   -- Proof written by Codex.
   constructor
   · intro hone l hl
     by_contra hnot
     have hcut : β b < l := by omega
     have hflat :=
-      (lc_b_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
+      (lres_b_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
     omega
   · intro hall
     have hstep := (α.sf ◃ β.sf).b_step a b
     have hne : (α.sf ◃ β.sf) a (b + 1) ≠ (α.sf ◃ β.sf) a b := by
       intro hflat
       obtain ⟨l, hl, hcut⟩ :=
-        (lc_b_step_eq_iff_exists_witness α β a b).mp hflat
+        (lres_b_step_eq_iff_exists_witness α β a b).mp hflat
       exact (not_lt_of_ge (hall l hl)) hcut
     omega
 
@@ -819,19 +819,19 @@ right. This replaces the inequality from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227)
 $M_{\alpha \triangleleft \beta}(a+1,b) \leq
 M_{\alpha \triangleleft \beta}(a,b)$. -/
-private lemma lc_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
-    (hl : l ∈ lc_witness_set α β (a + 1) b) :
-    ∃ l' ∈ lc_witness_set α β a b, l ≤ l' := by
+private lemma lres_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
+    (hl : l ∈ lres_witness_set α β (a + 1) b) :
+    ∃ l' ∈ lres_witness_set α β a b, l ≤ l' := by
   -- Proof written by Codex.
   have old_of_high :
-      ∀ {m}, m ∈ lc_witness_set α β (a + 1) b → α⁻¹ a < m →
-        m ∈ lc_witness_set α β a b := by
+      ∀ {m}, m ∈ lres_witness_set α β (a + 1) b → α⁻¹ a < m →
+        m ∈ lres_witness_set α β a b := by
     intro m hm hcut
     have hflat :=
-      (lc_a_step_eq_iff_exists_witness α β a b).mpr ⟨m, hm, hcut⟩
+      (lres_a_step_eq_iff_exists_witness α β a b).mpr ⟨m, hm, hcut⟩
     have hstep : α.s (a + 1) m = α.s a m :=
       (α.a_step_eq_iff a m).mpr hcut
-    dsimp [lc_witness_set] at hm ⊢
+    dsimp [lres_witness_set] at hm ⊢
     rw [← hflat, ← hstep]
     exact hm
   by_cases hcut : α⁻¹ a < l
@@ -839,7 +839,7 @@ private lemma lc_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
   have hle : l ≤ α⁻¹ a := by omega
   by_cases hflat : (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b
   · obtain ⟨l', hl', hcut'⟩ :=
-      (lc_a_step_eq_iff_exists_witness α β a b).mp hflat
+      (lres_a_step_eq_iff_exists_witness α β a b).mp hflat
     exact ⟨l', old_of_high hl' hcut', by omega⟩
   · have hbounds := (α.sf ◃ β.sf).a_step a b
     have hone : (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b + 1 := by
@@ -848,7 +848,7 @@ private lemma lc_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
       rw [α.a_step a l]
       simp only [if_pos hle]
     refine ⟨l, ?_, le_refl l⟩
-    dsimp [lc_witness_set] at hl ⊢
+    dsimp [lres_witness_set] at hl ⊢
     rw [hstep] at hl
     omega
 
@@ -857,20 +857,20 @@ right. This replaces the inequality from
 [An extended Demazure product](https://arxiv.org/abs/2206.14227)
 $M_{\alpha \triangleleft \beta}(a,b) \leq
 M_{\alpha \triangleleft \beta}(a,b+1)$. -/
-private lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
-    (hl : l ∈ lc_witness_set α β a b) :
-    ∃ l' ∈ lc_witness_set α β a (b + 1), l ≤ l' := by
+private lemma lres_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
+    (hl : l ∈ lres_witness_set α β a b) :
+    ∃ l' ∈ lres_witness_set α β a (b + 1), l ≤ l' := by
   -- Proof written by Codex.
   have new_of_high :
-      ∀ {m}, m ∈ lc_witness_set α β a b → β b < m →
-        m ∈ lc_witness_set α β a (b + 1) := by
+      ∀ {m}, m ∈ lres_witness_set α β a b → β b < m →
+        m ∈ lres_witness_set α β a (b + 1) := by
     intro m hm hcut
     have hflat :=
-      (lc_b_step_eq_iff_exists_witness α β a b).mpr ⟨m, hm, hcut⟩
+      (lres_b_step_eq_iff_exists_witness α β a b).mpr ⟨m, hm, hcut⟩
     have hstep : (β⁻¹).s (b + 1) m = (β⁻¹).s b m := by
       apply ((β⁻¹).a_step_eq_iff b m).mpr
       simpa only [inv_inv] using hcut
-    dsimp [lc_witness_set] at hm ⊢
+    dsimp [lres_witness_set] at hm ⊢
     rw [hflat, hstep]
     exact hm
   by_cases hcut : β b < l
@@ -878,7 +878,7 @@ private lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
   have hle : l ≤ β b := by omega
   by_cases hflat : (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b
   · obtain ⟨l', hl', hcut'⟩ :=
-      (lc_b_step_eq_iff_exists_witness α β a b).mp hflat
+      (lres_b_step_eq_iff_exists_witness α β a b).mp hflat
     exact ⟨l', new_of_high hl' hcut', by omega⟩
   · have hbounds := (α.sf ◃ β.sf).b_step a b
     have hdrop : (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b - 1 := by
@@ -887,22 +887,22 @@ private lemma lc_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
       rw [(β⁻¹).a_step b l]
       simp only [inv_inv, if_pos hle]
     refine ⟨l, ?_, le_refl l⟩
-    dsimp [lc_witness_set] at hl ⊢
+    dsimp [lres_witness_set] at hl ⊢
     rw [hstep]
     omega
 
 /-- Moving the first coordinate down through several steps transports a witness
 weakly to the right. -/
-private lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
-    (hac : a ≤ c) (hl : l ∈ lc_witness_set α β c b) :
-    ∃ l' ∈ lc_witness_set α β a b, l ≤ l' := by
+private lemma lres_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
+    (hac : a ≤ c) (hl : l ∈ lres_witness_set α β c b) :
+    ∃ l' ∈ lres_witness_set α β a b, l ≤ l' := by
   -- Proof written by Codex.
   let n : ℕ := (c - a).toNat
   have hc : c = a + n := by omega
   rw [hc] at hl
   suffices ∀ n : ℕ, ∀ l,
-      l ∈ lc_witness_set α β (a + n) b →
-        ∃ l' ∈ lc_witness_set α β a b, l ≤ l' by
+      l ∈ lres_witness_set α β (a + n) b →
+        ∃ l' ∈ lres_witness_set α β a b, l ≤ l' by
     exact this n l hl
   intro n
   induction n with
@@ -912,24 +912,24 @@ private lemma lc_witness_move_a_down_of_le (α β : AspPerm) (a c b l : ℤ)
     exact ⟨l, hl, le_refl l⟩
   | succ n ih =>
     intro l hl
-    have hl_step : l ∈ lc_witness_set α β ((a + n) + 1) b := by
+    have hl_step : l ∈ lres_witness_set α β ((a + n) + 1) b := by
       simpa only [Nat.cast_succ, Nat.cast_add, Nat.cast_one, add_assoc] using hl
-    obtain ⟨m, hm, hlm⟩ := lc_witness_move_a_down α β (a + n) b l hl_step
+    obtain ⟨m, hm, hlm⟩ := lres_witness_move_a_down α β (a + n) b l hl_step
     obtain ⟨l', hl', hml'⟩ := ih m hm
     exact ⟨l', hl', le_trans hlm hml'⟩
 
 /-- Moving the second coordinate up through several steps transports a witness
 weakly to the right. -/
-private lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
-    (hbc : b ≤ c) (hl : l ∈ lc_witness_set α β a b) :
-    ∃ l' ∈ lc_witness_set α β a c, l ≤ l' := by
+private lemma lres_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
+    (hbc : b ≤ c) (hl : l ∈ lres_witness_set α β a b) :
+    ∃ l' ∈ lres_witness_set α β a c, l ≤ l' := by
   -- Proof written by Codex.
   let n : ℕ := (c - b).toNat
   have hc : c = b + n := by omega
   rw [hc]
   suffices ∀ n : ℕ, ∀ l,
-      l ∈ lc_witness_set α β a b →
-        ∃ l' ∈ lc_witness_set α β a (b + n), l ≤ l' by
+      l ∈ lres_witness_set α β a b →
+        ∃ l' ∈ lres_witness_set α β a (b + n), l ≤ l' by
     exact this n l hl
   intro n
   induction n with
@@ -940,14 +940,14 @@ private lemma lc_witness_move_b_up_of_le (α β : AspPerm) (a b c l : ℤ)
   | succ n ih =>
     intro l hl
     obtain ⟨m, hm, hlm⟩ := ih l hl
-    obtain ⟨l', hl', hml'⟩ := lc_witness_move_b_up α β a (b + n) m hm
+    obtain ⟨l', hl', hml'⟩ := lres_witness_move_b_up α β a (b + n) m hm
     refine ⟨l', ?_, le_trans hlm hml'⟩
     simpa only [Nat.cast_succ, Nat.cast_add, Nat.cast_one, add_assoc] using hl'
 
-/-- The left contraction $s \triangleleft t$ of submodular slipfaces is
-submodular. *Theorem 4.10 (`thm:tllExists`) of
+/-- The left residual $s \triangleleft t$ of submodular slipfaces is
+submodular. *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/11.* -/
-theorem submodular_of_left_contract {s t : SlipFace}
+theorem submodular_of_left_residual {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ◃ t).submodular := by
   -- Proof written by Codex.
@@ -963,21 +963,21 @@ theorem submodular_of_left_contract {s t : SlipFace}
   intro hflat
   rw [← α_spec, ← β_spec] at hflat ⊢
   obtain ⟨l, hl, hcut⟩ :=
-    (lc_b_step_eq_iff_exists_witness α β (a + 1) b).mp hflat.symm
-  obtain ⟨l', hl', hl_le_l'⟩ := lc_witness_move_a_down α β a b l hl
+    (lres_b_step_eq_iff_exists_witness α β (a + 1) b).mp hflat.symm
+  obtain ⟨l', hl', hl_le_l'⟩ := lres_witness_move_a_down α β a b l hl
   have hcut' : β b < l' := lt_of_lt_of_le hcut hl_le_l'
-  exact ((lc_b_step_eq_iff_exists_witness α β a b).mpr ⟨l', hl', hcut'⟩).symm
+  exact ((lres_b_step_eq_iff_exists_witness α β a b).mpr ⟨l', hl', hcut'⟩).symm
 
-/-- The right contraction $s \triangleright t$ of submodular slipfaces is
-submodular. *Theorem 4.10 (`thm:tllExists`) of
+/-- The right residual $s \triangleright t$ of submodular slipfaces is
+submodular. *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/11.* -/
-theorem submodular_of_right_contract {s t : SlipFace}
+theorem submodular_of_right_residual {s t : SlipFace}
     (subS : s.submodular) (subT : t.submodular) :
     (s ▹ t).submodular := by
   -- Proof written by Codex.
   have hdual : (s ▹ t).dual.submodular := by
-    rw [SlipFace.right_contract_dual]
-    exact submodular_of_left_contract (submodular_dual subT) (submodular_dual subS)
+    rw [SlipFace.right_residual_dual]
+    exact submodular_of_left_residual (submodular_dual subT) (submodular_dual subS)
   intro a b
   rw [← (s ▹ t).Δ_dual]
   exact hdual b a
@@ -987,7 +987,7 @@ end Submodular
 /-! ### The operations $\star,\; \triangleleft,\; \triangleright$ on `AspPerm`
 
 Using the slipface construction above, this section defines Demazure product
-and the two contraction operationson ASP permutations and proves its basic
+and the two residual operationson ASP permutations and proves its basic
 structural properties. -/
 
 namespace AspPerm
@@ -1020,12 +1020,12 @@ private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.s
     rw [← hσ] at hτ
     rw [τ.eq_of_sf_eq hτ]
 
-/-- The slipface left contraction of two ASP permutations is represented by a
+/-- The slipface left residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
+private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
   intro α β
   have : (α.sf ◃ β.sf).submodular := by
-    exact Submodular.submodular_of_left_contract (α.submodular) (β.submodular)
+    exact Submodular.submodular_of_left_residual (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.sf ◃ β.sf)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
@@ -1035,12 +1035,12 @@ private lemma lc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf 
     rw [← hσ] at hτ
     rw [τ.eq_of_sf_eq hτ]
 
-/-- The slipface right contraction of two ASP permutations is represented by a
+/-- The slipface right residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma rc_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
+private lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
   intro α β
   have : (α.sf ▹ β.sf).submodular := by
-    exact Submodular.submodular_of_right_contract (α.submodular) (β.submodular)
+    exact Submodular.submodular_of_right_residual (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.sf ▹ β.sf)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
@@ -1069,39 +1069,39 @@ $s_{\alpha \star \beta} = s_\alpha \star s_\beta$.
 
 infixl:70 " ⋆ " => star
 
-/-- Left contraction on ASP permutations, characterized by
+/-- Left residual on ASP permutations, characterized by
 $s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
 
 In Lean this operation is written `α ◃ β`. -/
-noncomputable def left_contract (α β : AspPerm) : AspPerm :=
-  Classical.choose (lc_exists α β)
+noncomputable def left_residual (α β : AspPerm) : AspPerm :=
+  Classical.choose (lres_exists α β)
 
-/-- Left contraction on ASP permutations is characterized by
+/-- Left residual on ASP permutations is characterized by
 $s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
-*Theorem 4.10 (`thm:tllExists`) of
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/11.* -/
-@[simp] lemma left_contract_spec (α β : AspPerm) :
-    (left_contract α β).sf = α.sf ◃ β.sf :=
-  (Classical.choose_spec (lc_exists α β)).1
+@[simp] lemma left_residual_spec (α β : AspPerm) :
+    (left_residual α β).sf = α.sf ◃ β.sf :=
+  (Classical.choose_spec (lres_exists α β)).1
 
-infixl:70 " ◃ " => left_contract
+infixl:70 " ◃ " => left_residual
 
-/-- Right contraction on ASP permutations, characterized by
+/-- Right residual on ASP permutations, characterized by
 $s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
 
 In Lean this operation is written `α ▹ β`. -/
-noncomputable def right_contract (α β : AspPerm) : AspPerm :=
-  Classical.choose (rc_exists α β)
+noncomputable def right_residual (α β : AspPerm) : AspPerm :=
+  Classical.choose (rres_exists α β)
 
-/-- Right contraction on ASP permutations is characterized by
+/-- Right residual on ASP permutations is characterized by
 $s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
-*Theorem 4.10 (`thm:tllExists`) of
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/11.* -/
-@[simp] lemma right_contract_spec (α β : AspPerm) :
-    (right_contract α β).sf = α.sf ▹ β.sf :=
-  (Classical.choose_spec (rc_exists α β)).1
+@[simp] lemma right_residual_spec (α β : AspPerm) :
+    (right_residual α β).sf = α.sf ▹ β.sf :=
+  (Classical.choose_spec (rres_exists α β)).1
 
-infixr:70 " ▹ " => right_contract
+infixr:70 " ▹ " => right_residual
 
 /-- Demazure product on ASP permutations is associative.
 *Theorem 4.4 (`thm:starExists1`) of
@@ -1111,48 +1111,48 @@ lemma star_assoc : ∀ α β γ : AspPerm, (α ⋆ β) ⋆ γ = α ⋆ (β ⋆ �
   apply AspPerm.eq_of_sf_eq
   simp only [star_spec, SlipFace.star_assoc]
 
-/-- Left contraction associates with Demazure product on ASP permutations.
-*Theorem 4.10 (`thm:tllExists`) of
+/-- Left residual associates with Demazure product on ASP permutations.
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/11.* -/
-lemma left_contract_assoc (α β γ : AspPerm) :
+lemma left_residual_assoc (α β γ : AspPerm) :
     (α ◃ β) ◃ γ = α ◃ (β ⋆ γ) := by
   -- Proof written by Codex.
   apply AspPerm.eq_of_sf_eq
-  simp only [left_contract_spec, star_spec, SlipFace.left_contract_assoc]
+  simp only [left_residual_spec, star_spec, SlipFace.left_residual_assoc]
 
-/-- Right contraction associates with Demazure product on ASP permutations.
-*Theorem 4.10 (`thm:tllExists`) of
+/-- Right residual associates with Demazure product on ASP permutations.
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/11.* -/
-lemma right_contract_assoc (α β γ : AspPerm) :
+lemma right_residual_assoc (α β γ : AspPerm) :
     α ▹ (β ▹ γ) = (α ⋆ β) ▹ γ := by
   -- Proof written by Codex.
   apply AspPerm.eq_of_sf_eq
-  simp only [right_contract_spec, star_spec, SlipFace.right_contract_assoc]
+  simp only [right_residual_spec, star_spec, SlipFace.right_residual_assoc]
 
-/-- Inversion swaps left contraction for right contraction.
-*Theorem 4.10 (`thm:tllExists`) of
+/-- Inversion swaps left residual for right residual.
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 7/11.* -/
-lemma inverse_left_contract (α β : AspPerm) :
+lemma inverse_left_residual (α β : AspPerm) :
     (α ◃ β)⁻¹ = β⁻¹ ▹ α⁻¹ := by
   -- Proof written by Codex.
   apply AspPerm.eq_of_sf_eq
   rw [← AspPerm.sf_dual]
-  simp only [left_contract_spec, SlipFace.left_contract_dual, AspPerm.sf_dual,
-    right_contract_spec]
+  simp only [left_residual_spec, SlipFace.left_residual_dual, AspPerm.sf_dual,
+    right_residual_spec]
 
-/-- The shift of left contraction is the sum of shifts.
-*Theorem 4.10 (`thm:tllExists`) of
+/-- The shift of left residual is the sum of shifts.
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 8/11.* -/
-lemma chi_left_contract (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
+lemma chi_left_residual (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
-  simp only [left_contract_spec, SlipFace.chi_lc]
+  simp only [left_residual_spec, SlipFace.chi_lc]
 
-/-- The shift of right contraction is the sum of shifts.
-*Theorem 4.10 (`thm:tllExists`) of
+/-- The shift of right residual is the sum of shifts.
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 9/11.* -/
-lemma chi_right_contract (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
+lemma chi_right_residual (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
-  simp only [right_contract_spec, SlipFace.chi_rc]
+  simp only [right_residual_spec, SlipFace.chi_rc]
 
 private lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
   = (Submodular.AspValley α β a b).min := by
@@ -1180,23 +1180,23 @@ theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
     exact (Submodular.AspValley α β a b).min_spec l
 
 /-- The max-minus characteriztion of the $\triangleleft$ operator on \mathrm{ASP}.
-This is part of *Theorem 1.1* (`thm:tll`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-theorem lc_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
+This is part of *Theorem 1.1* (`thm:resL`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem lres_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
     IsGreatest {α.s a l - β⁻¹.s b l | l : ℤ} ((α ◃ β).s a b) := by
   constructor
-  · use SlipFace.lc_wit α.sf β.sf a b
-    convert Eq.symm <| SlipFace.lc_wit_spec α.sf β.sf a b
+  · use SlipFace.lres_wit α.sf β.sf a b
+    convert Eq.symm <| SlipFace.lres_wit_spec α.sf β.sf a b
     · rfl
     · rw [β.sf_dual]
       rfl
-    · rw [← left_contract_spec α β]
+    · rw [← left_residual_spec α β]
       rfl
   · rintro x ⟨l, rfl⟩
-    convert SlipFace.lc_val_ge α.sf β.sf a b l
+    convert SlipFace.lres_val_ge α.sf β.sf a b l
     · rfl
     · rw [β.sf_dual]
       rfl
-    · rw [← SlipFace.lc_func_eq α.sf β.sf, ← left_contract_spec α β]
+    · rw [← SlipFace.lres_func_eq α.sf β.sf, ← left_residual_spec α β]
       rfl
 
 /-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`) of
@@ -1334,7 +1334,7 @@ slipfaces. -/
 lemma sf_le_iff (α β : AspPerm) : α.sf ≤ β.sf ↔ α ≤ β := Iff.rfl
 
 /-- Inversion preserves Bruhat comparisons between ASP permutations of the
-same shift. *Lemma 2.4 (`lem:bruhatInverse`) of
+same shift. *Lemma 2.1 (`lem:bruhatInverse`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 theorem le_chi_inv_iff (α β : AspPerm) : α ≤χ β ↔ α⁻¹ ≤χ β⁻¹ := by
   -- Proof written by Codex.
@@ -1373,35 +1373,35 @@ lemma star_mono {α₁ α₂ β₁ β₂ : AspPerm}
     ((sf_le_iff α₁ α₂).mpr hα)
     ((sf_le_iff β₁ β₂).mpr hβ)
 
-/-- The left contraction $\tau \triangleleft \beta^{-1}$ is the Bruhat
+/-- The left residual $\tau \triangleleft \beta^{-1}$ is the Bruhat
 minimum of the ASP permutations $\alpha$ such that $\alpha \star \beta \geq \tau$.
-*Theorem 4.10 (`thm:tllExists`) of
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 10/11.* -/
-lemma ge_star_iff_ge_left_contract (α β τ : AspPerm) :
+lemma ge_star_iff_ge_left_residual (α β τ : AspPerm) :
     α ≥ τ ◃ β⁻¹ ↔ α ⋆ β ≥ τ := by
   change (τ ◃ β⁻¹).sf ≤ α.sf ↔ τ.sf ≤ (α ⋆ β).sf
-  simpa only [left_contract_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_left_contract α.sf β.sf τ.sf)
+  simpa only [left_residual_spec, star_spec, sf_dual] using
+    (SlipFace.ge_star_iff_ge_left_residual α.sf β.sf τ.sf)
 
-/-- The right contraction $\alpha^{-1} \triangleright \tau$ is the Bruhat
+/-- The right residual $\alpha^{-1} \triangleright \tau$ is the Bruhat
 minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$.
-*Theorem 4.10 (`thm:tllExists`) of
+*Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 11/11.* -/
-lemma ge_star_iff_ge_right_contract (α β τ : AspPerm) :
+lemma ge_star_iff_ge_right_residual (α β τ : AspPerm) :
     β ≥ α⁻¹ ▹ τ ↔ α ⋆ β ≥ τ := by
   change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
-  simpa only [right_contract_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_right_contract α.sf β.sf τ.sf)
+  simpa only [right_residual_spec, star_spec, sf_dual] using
+    (SlipFace.ge_star_iff_ge_right_residual α.sf β.sf τ.sf)
 
-/-- The left contraction $\alpha \triangleleft \beta^{-1}$ is the minimum permutation $\gamma$
+/-- The left residual $\alpha \triangleleft \beta^{-1}$ is the minimum permutation $\gamma$
   such that $\gamma \star \beta \ge \alpha$.
-  This is the first sentence of *Theorem 1.1* (`thm:tll`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-theorem lc_eq_min (α β : AspPerm) :
+  This is the first sentence of *Theorem 1.1* (`thm:resL`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem lres_eq_min (α β : AspPerm) :
   IsLeast {γ : AspPerm | γ ⋆ β ≥ α } (α ◃ β⁻¹) := by
   constructor
-  · apply (ge_star_iff_ge_left_contract (α ◃ β⁻¹) β α).mp (le_refl _)
+  · apply (ge_star_iff_ge_left_residual (α ◃ β⁻¹) β α).mp (le_refl _)
   · intro γ h
-    exact (ge_star_iff_ge_left_contract γ β α).mpr h
+    exact (ge_star_iff_ge_left_residual γ β α).mpr h
 
 /-- Comparison `τ ≤ α ⋆ β` is equivalent to the lower Demazure-product
 inequalities defining `τ.le_dprod α β`. -/
@@ -1467,7 +1467,7 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
 
 end AspPerm
 
-/-! ### Weak-Order Consequences of Demazure Product
+/-! ### Weak-order consequences of Demazure product
 
 The final results in this file record the weak-order inequalities satisfied by
 the factors of a Demazure product. -/
@@ -1529,12 +1529,12 @@ theorem ler_of_dprod (α β : AspPerm) : α ≤R α ⋆ β := by
   rw [this]
   exact lel_of_dprod β⁻¹ α⁻¹
 
-/-! ### Weak-Order Consequences of Contraction -/
+/-! ### Weak-order consequences of residuals -/
 
-/-- Left contraction forms a reduced product with the inverse of its right
-factor. *Lemma 4.14 (`lem:invTri`) of
+/-- Left residual forms a reduced product with the inverse of its right
+factor. *Lemma 4.14 (`lem:invRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
-theorem reducedProduct_of_left_contract (α β : AspPerm) :
+theorem reducedProduct_of_left_residual (α β : AspPerm) :
     AspPerm.ReducedProduct (α ◃ β) β⁻¹ := by
   -- Proof written by Codex.
   unfold AspPerm.ReducedProduct
@@ -1547,22 +1547,22 @@ theorem reducedProduct_of_left_contract (α β : AspPerm) :
   have hflat_s : (α ◃ β).s a (u + 1) = (α ◃ β).s a u := by
     exact ((α ◃ β).b_step_eq_iff a u).mpr (by rfl)
   have hdrop : (α.sf ◃ β.sf) a (v + 1) = (α.sf ◃ β.sf) a v - 1 := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hdrop_s
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hdrop_s
   have hflat : (α.sf ◃ β.sf) a (u + 1) = (α.sf ◃ β.sf) a u := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hflat_s
-  have hv_wit := (lc_b_step_one_iff_forall_witness α β a v).mp hdrop
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hflat_s
+  have hv_wit := (lres_b_step_one_iff_forall_witness α β a v).mp hdrop
   obtain ⟨l, hl, hβu⟩ :=
-    (lc_b_step_eq_iff_exists_witness α β a u).mp hflat
+    (lres_b_step_eq_iff_exists_witness α β a u).mp hflat
   obtain ⟨l', hl', hll'⟩ :=
-    lc_witness_move_b_up_of_le α β a u v l (le_of_lt huv.1) hl
+    lres_witness_move_b_up_of_le α β a u v l (le_of_lt huv.1) hl
   have hl'_le : l' ≤ β v := hv_wit l' hl'
   have : β u < β v := lt_of_lt_of_le (lt_of_lt_of_le hβu hll') hl'_le
   exact (not_lt_of_ge (le_of_lt hβ.2)) this
 
-/-- Left contraction is below its left factor in right weak order.
-*Lemma 4.14 (`lem:invTri`) of
+/-- Left residual is below its left factor in right weak order.
+*Lemma 4.14 (`lem:invRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
-theorem ler_of_left_contract (α β : AspPerm) : α ◃ β ≤R α := by
+theorem ler_of_left_residual (α β : AspPerm) : α ◃ β ≤R α := by
   -- Proof written by Codex.
   rintro ⟨u, v⟩ huv
   let b := (α ◃ β)⁻¹ u
@@ -1571,37 +1571,37 @@ theorem ler_of_left_contract (α β : AspPerm) : α ◃ β ≤R α := by
   have hone_s : (α ◃ β).s (u + 1) b = (α ◃ β).s u b + 1 := by
     exact ((α ◃ β).a_step_one_iff u b).mpr (by rfl)
   have hflat : (α.sf ◃ β.sf) (v + 1) b = (α.sf ◃ β.sf) v b := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hflat_s
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hflat_s
   have hone : (α.sf ◃ β.sf) (u + 1) b = (α.sf ◃ β.sf) u b + 1 := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_contract_spec] using hone_s
+    simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hone_s
   obtain ⟨l, hl, hαv⟩ :=
-    (lc_a_step_eq_iff_exists_witness α β v b).mp hflat
-  have hu_wit := (lc_a_step_one_iff_forall_witness α β u b).mp hone
+    (lres_a_step_eq_iff_exists_witness α β v b).mp hflat
+  have hu_wit := (lres_a_step_one_iff_forall_witness α β u b).mp hone
   have huv_lt : u < v := huv.1
   have huv_le : u + 1 ≤ v + 1 := by omega
   obtain ⟨l', hl', hll'⟩ :=
-    lc_witness_move_a_down_of_le α β (u + 1) (v + 1) b l huv_le hl
+    lres_witness_move_a_down_of_le α β (u + 1) (v + 1) b l huv_le hl
   refine ⟨huv.1, ?_⟩
   exact lt_of_lt_of_le (lt_of_lt_of_le hαv hll') (hu_wit l' hl')
 
-/-- Right contraction forms a reduced product with the inverse of its left
-factor. *Corollary 4.15 (`cor:reducedTlr`) of
+/-- Right residual forms a reduced product with the inverse of its left
+factor. *Corollary 4.15 (`cor:reducedResR`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
-theorem reducedProduct_of_right_contract (α β : AspPerm) :
+theorem reducedProduct_of_right_residual (α β : AspPerm) :
     AspPerm.ReducedProduct α⁻¹ (α ▹ β) := by
   -- Proof written by Codex.
   have hred : AspPerm.ReducedProduct (β⁻¹ ◃ α⁻¹) α := by
-    simpa only [inv_inv] using reducedProduct_of_left_contract β⁻¹ α⁻¹
+    simpa only [inv_inv] using reducedProduct_of_left_residual β⁻¹ α⁻¹
   have hswap :=
     (AspPerm.reducedProduct_inv_swap (β⁻¹ ◃ α⁻¹) α).mp hred
-  simpa only [AspPerm.inverse_left_contract, inv_inv] using hswap
+  simpa only [AspPerm.inverse_left_residual, inv_inv] using hswap
 
-/-- Right contraction is below its right factor in left weak order.
-*Corollary 4.15 (`cor:reducedTlr`) of
+/-- Right residual is below its right factor in left weak order.
+*Corollary 4.15 (`cor:reducedResR`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
-theorem lel_of_right_contract (α β : AspPerm) : α ▹ β ≤L β := by
+theorem lel_of_right_residual (α β : AspPerm) : α ▹ β ≤L β := by
   -- Proof written by Codex.
-  have h := AspPerm.le_weak_L_of_R (ler_of_left_contract β⁻¹ α⁻¹)
-  simpa only [AspPerm.inverse_left_contract, inv_inv] using h
+  have h := AspPerm.le_weak_L_of_R (ler_of_left_residual β⁻¹ α⁻¹)
+  simpa only [AspPerm.inverse_left_residual, inv_inv] using h
 
 end Submodular

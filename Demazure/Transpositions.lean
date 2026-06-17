@@ -592,7 +592,7 @@ The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 *Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
-theorem sf_residual_sigma (S : Set ℤ) (hS : NoConsecutive S)
+theorem sf_lres_sigma (S : Set ℤ) (hS : NoConsecutive S)
     (s : SlipFace) (a b : ℤ) :
     (s ◃ (sigma S hS).sf) a b =
         s a b
@@ -661,7 +661,7 @@ theorem asp_residual_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
     (α.sf ◃ (sigma S hS).sf) a b =
       α.s a b - Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) := by
   -- Proof written by GPT 5.5.
-  rw [sf_residual_sigma S hS α.sf a b]
+  rw [sf_lres_sigma S hS α.sf a b]
   simp only [AspPerm.sf_func_eq_s]
   have hiff :
       (b - 1 ∈ S ∧ α.s a (b - 1) = α.s a b ∧ α.s a b > α.s a (b + 1)) ↔

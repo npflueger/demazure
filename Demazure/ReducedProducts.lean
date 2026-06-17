@@ -615,14 +615,14 @@ inequality for its left factor. -/
 private def of_mul_ler {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_weak : α ≤R γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rwa [AspPerm.reducedProduct_iff_le_weak_R_mul, h_mul]
+  rwa [AspPerm.reduced_iff_leR, h_mul]
 
 /-- Construct a reduced fact from an ordinary product and the left weak-order
 inequality for its right factor. -/
 def of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_weak : β ≤L γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rwa [AspPerm.reducedProduct_iff_le_weak_L_mul, h_mul]
+  rwa [AspPerm.reduced_iff_leL, h_mul]
 
 /-- Construct a reduced fact when the right residual by the inverse left
 factor collapses to ordinary multiplication. -/
@@ -630,7 +630,7 @@ private def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_residual
-  rwa [AspPerm.reducedProduct_iff_le_weak_R_mul]
+  rwa [AspPerm.reduced_iff_leR]
 
 /-- Construct a reduced fact when the left residual by the inverse right
 factor collapses to ordinary multiplication. -/
@@ -638,7 +638,7 @@ private def of_mul_lc {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.left_residual_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_residual
-  rwa [AspPerm.reducedProduct_iff_le_weak_L_mul]
+  rwa [AspPerm.reduced_iff_leL]
 
 private def of_reduced_star {α β γ : AspPerm}
   (h_red : α.ReducedProduct β) (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
@@ -654,7 +654,7 @@ private def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ �
   have h_mul : α * β = γ := by
     rw [← eq_α, mul_assoc, inv_mul_cancel, mul_one]
   rw [← h_mul] at h_lel
-  exact ReducedFact.mk ((α.reducedProduct_iff_le_weak_L_mul β).mpr h_lel) h_mul
+  exact ReducedFact.mk ((AspPerm.reduced_iff_leL α β).mpr h_lel) h_mul
 
 def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
   have eq_β : α⁻¹ * γ = β := by
@@ -664,7 +664,7 @@ def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ =
   have h_mul : α * β = γ := by
     rw [← eq_β, ← mul_assoc, mul_inv_cancel, one_mul]
   rw [← h_mul] at h_ler
-  exact ReducedFact.mk ((α.reducedProduct_iff_le_weak_R_mul β).mpr h_ler) h_mul
+  exact ReducedFact.mk ((AspPerm.reduced_iff_leR α β).mpr h_ler) h_mul
 
 /-- The Demazure product in a reduced factorization has the same value as its ordinary
 product. -/
@@ -674,13 +674,13 @@ lemma star_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α ⋆ β = γ :
 /-- The left factor of a reduced factorization is below the product in right weak
 order. -/
 private lemma ler {α β γ : AspPerm} (h : ReducedFact α β γ) : α ≤R γ := by
-  convert (AspPerm.reducedProduct_iff_le_weak_R_mul α β).mp h.reduced
+  convert (AspPerm.reduced_iff_leR α β).mp h.reduced
   rw [h.mul_eq]
 
 /-- The right factor of a reduced factorization is below the product in left weak
 order. -/
 private lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ := by
-  convert (AspPerm.reducedProduct_iff_le_weak_L_mul α β).mp h.reduced
+  convert (AspPerm.reduced_iff_leL α β).mp h.reduced
   rw [h.mul_eq]
 
 /-- Right residual by the inverse left factor collapses to ordinary

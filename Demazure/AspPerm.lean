@@ -1538,7 +1538,7 @@ lemma le_weak_R_of_L {σ τ : AspPerm} (h_L : σ ≤L τ) : σ⁻¹ ≤R τ⁻¹
 /-- A product `α β` is reduced exactly when `α` is below `α β` in right
 weak order. *Lemma 2.8 (`lem:reducedWeakEquivs`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
-lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
+lemma reduced_iff_leR (α β : AspPerm) :
     ReducedProduct α β ↔ α ≤R α * β := by
   -- Proof written by Codex.
   constructor
@@ -1579,7 +1579,7 @@ lemma reducedProduct_iff_le_weak_R_mul (α β : AspPerm) :
 /-- A product `α β` is reduced exactly when `β` is below `α β` in left
 weak order. *Lemma 2.8 (`lem:reducedWeakEquivs`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
-lemma reducedProduct_iff_le_weak_L_mul (α β : AspPerm) :
+lemma reduced_iff_leL (α β : AspPerm) :
     ReducedProduct α β ↔ β ≤L α * β := by
   -- Proof written by Codex.
   constructor

@@ -183,7 +183,7 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
 
 /-- Construct a slipface from a pair of functions satisfying `D_props` and the
 duality relation `s a b - t b a = a - b + χ`. *Lemma 3.6 (`lem:dualCrit`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),* part 1/2. -/
 lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
     (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
@@ -255,6 +255,9 @@ lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
     rw [hsf_func, hsf_χ]
     linarith [h b a]
 
+/-- Every slipface function and its dual satisfies the `D_props`, denoted (D1) and (D2).
+*Lemma 3.6 (`lem:dualCrit`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227),* part 2/2. -/
 lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func := by
   constructor
   · constructor
@@ -328,8 +331,9 @@ $$
 $$
 
 In Lean, `star_func s t a b` is this integer value, while `s ⋆ t` is the resulting
-`SlipFace`. *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6.* -/
+`SlipFace`.
+See *Definition 3.7 (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 noncomputable def star_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => (SlipValley s t a b).min
 
@@ -442,8 +446,8 @@ private lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
 
 /-- The product of two slipfaces, obtained from the minimum formula
 `star_func`.
-*Definition 3.7* (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6.* -/
+See *Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 noncomputable def star (s t : SlipFace) : SlipFace :=
   Classical.choose (star_exists s t)
 
@@ -454,6 +458,26 @@ infixl:70 " ⋆ " => star
 lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.1
+
+/-- The formula for the Demazure product of Slipfaces:
+$s \star t(a,b) = \min_{l \in \mathbb{Z}} (s(a,l) + t(l,b))$.
+This is unpacking the formal definition of $\star$ to put it more transporently in the form of *Definition 3.7* (`defn:sfAlgebra`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3. -/
+lemma star_eq_min (s t : SlipFace) (a b : ℤ) :
+  IsLeast { s a l + t l b | l : ℤ } ( (s ⋆ t) a b ) := by
+  let v := SlipValley s t a b
+  have : (s ⋆ t) a b = s a v.M + t v.M b := by
+    calc
+      (s ⋆ t) a b = v.min := by
+        rw [star_func_eq]
+        rfl
+      _ = s a v.M + t v.M b := by
+        rw [← v.f_M]
+        rfl
+  rw [this]
+  constructor
+  · use v.M
+  · rintro x ⟨l, rfl⟩
+    exact (v.M_spec l).1
 
 /-- The shift is additive under $\star$.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
@@ -725,8 +749,8 @@ noncomputable def lres_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
 $$
 (s \triangleleft t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[s(a,\ell) - t^\vee(b,\ell)\bigr].
 $$
-*Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
+See *Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def lres_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => s a (lres_wit s t a b) - t.dual b (lres_wit s t a b)
 
@@ -930,8 +954,8 @@ noncomputable def rres_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
 $$
 (s \triangleright t)(a,b) = \max_{\ell \in \mathbb{Z}} \bigl[t(\ell,b) - s^\vee(\ell,a)\bigr].
 $$
-*Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
+*Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def rres_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
   fun a b => t (rres_wit s t a b) b - s.dual (rres_wit s t a b) a
 
@@ -1121,8 +1145,8 @@ private lemma lres_exists (s t : SlipFace) : ∃ p : SlipFace,
   exact ⟨D_props_of_lres_func s t, D_props_of_rres_func t.dual s.dual⟩
 
 /-- The left residual of two slipfaces, obtained from the maximum formula
-`lres_func`. *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
+`lres_func`. See *Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def left_residual (s t : SlipFace) : SlipFace :=
   Classical.choose (lres_exists s t)
 
@@ -1137,6 +1161,18 @@ lemma lres_wit_spec (s t : SlipFace) (a b : ℤ) :
   rw [lres_func_eq]
   rfl
 
+/-- The left residual $s \triangleleft t$ of slipfaces satisfies the defining equation
+$(s ◃ t)(a,b) = \max_{\ell \in \mathbb{Z}} (s(a,\ell) - t^\vee(b,\ell))$.
+This is simply an unwinding of the formal definition to obtain the formula as stated in
+*Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/lemma lres_eq_max (s t : SlipFace) (a b : ℤ) :
+    IsGreatest {s a l - t.dual b l | l : ℤ} ((s ◃ t) a b) := by
+    constructor
+    · exact ⟨_, Eq.symm (lres_wit_spec s t a b)⟩
+    · rintro x ⟨l, rfl⟩
+      rw [lres_func_eq]
+      apply lres_val_ge
+
 /-- The shift is additive under left residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
@@ -1145,8 +1181,8 @@ lemma lres_wit_spec (s t : SlipFace) (a b : ℤ) :
   exact (Classical.choose_spec h).1.2
 
 /-- The right residual of two slipfaces, defined by duality from left
-residual. *Definition 3.7 (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
+residual. See *Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def right_residual (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
@@ -1163,6 +1199,18 @@ lemma rres_wit_spec (s t : SlipFace) (a b : ℤ) :
     (s ▹ t) a b = t (rres_wit s t a b) b - s.dual (rres_wit s t a b) a := by
   rw [rres_func_eq]
   rfl
+
+/-- The right residual $s \triangleright t$ of slipfaces satisfies the defining equation
+$(s ▹ t)(a,b) = \max_{\ell \in \mathbb{Z}} (t(\ell,b) - s^\vee(\ell,a))$.
+This is simply an unwinding of the formal definition to obtain the formula as stated in
+*Definition 3.7* (`defn:sfAlgebra`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/lemma rres_eq_max (s t : SlipFace) (a b : ℤ) :
+    IsGreatest {t l b - s.dual l a | l : ℤ} ((s ▹ t) a b) := by
+    constructor
+    · exact ⟨_, Eq.symm (rres_wit_spec s t a b)⟩
+    · rintro x ⟨l, rfl⟩
+      rw [rres_func_eq]
+      apply rres_val_ge
 
 /-- The shift is additive under right residual.
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of

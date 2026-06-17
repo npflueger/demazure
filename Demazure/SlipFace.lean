@@ -695,7 +695,7 @@ This section develops the basic properties of the operations $s \triangleleft t$
 and $s \triangleright t$ at the level of slipface functions.
 -/
 
-lemma left_residual_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+lemma lres_wit_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
   s a l - t.dual b l ≤ s a m - t.dual b m := by
   -- Proof written by Sonnet 4.6.
   obtain ⟨B₁, hB₁⟩ := s.small_b a
@@ -743,7 +743,7 @@ lemma left_residual_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
 
 /-- The argmax witnessing the left residual value $s \triangleleft t (a,b)$. -/
 noncomputable def lres_wit (s t : SlipFace) (a b : ℤ) : ℤ :=
-  Classical.choose (left_residual_exists s t a b)
+  Classical.choose (lres_wit_exists s t a b)
 
 /-- The left residual function
 $$
@@ -756,7 +756,7 @@ noncomputable def lres_func (s t : SlipFace) : ℤ → ℤ → ℤ :=
 
 /-- Every value $s(a,\ell) - t^\vee(b,\ell)$ is at most $s \triangleleft t (a,b)$. -/
 lemma lres_val_ge (s t : SlipFace) (a b l : ℤ) : s a l - t.dual b l ≤ lres_func s t a b :=
-  Classical.choose_spec (left_residual_exists s t a b) l
+  Classical.choose_spec (lres_wit_exists s t a b) l
 
 /-- The left residual is nonnegative, since for `l ≫ 0` both terms in the
 maximizing expression vanish. -/
@@ -1147,10 +1147,10 @@ private lemma lres_exists (s t : SlipFace) : ∃ p : SlipFace,
 /-- The left residual of two slipfaces, obtained from the maximum formula
 `lres_func`. See *Definition 3.7* (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-noncomputable def left_residual (s t : SlipFace) : SlipFace :=
+noncomputable def lres (s t : SlipFace) : SlipFace :=
   Classical.choose (lres_exists s t)
 
-infixl:70 " ◃ " => left_residual
+infixl:70 " ◃ " => lres
 
 lemma lres_func_eq (s t : SlipFace) : (s ◃ t).func = lres_func s t := by
   have h := lres_exists s t
@@ -1183,13 +1183,13 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 /-- The right residual of two slipfaces, defined by duality from left
 residual. See *Definition 3.7* (`defn:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-noncomputable def right_residual (s t : SlipFace) : SlipFace :=
+noncomputable def rres (s t : SlipFace) : SlipFace :=
   (t.dual ◃ s.dual).dual
 
-infixr:70 " ▹ " => right_residual
+infixr:70 " ▹ " => rres
 
 lemma rres_func_eq (s t : SlipFace) : (s ▹ t).func = rres_func s t := by
-  dsimp [right_residual]
+  dsimp [rres]
   calc
     (t.dual ◃ s.dual).dual.func = rres_func s.dual.dual t.dual.dual :=
       (Classical.choose_spec (lres_exists t.dual s.dual)).2
@@ -1216,7 +1216,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 *Proposition 3.9* (`prop:sfAlgebraDefined`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 @[simp] lemma chi_rres (s t : SlipFace) : (s ▹ t).χ = s.χ + t.χ := by
-  dsimp [right_residual, SlipFace.dual]
+  dsimp [rres, SlipFace.dual]
   rw [chi_lres]
   dsimp [SlipFace.dual]
   omega
@@ -1226,7 +1226,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
 @[simp] lemma lres_dual (s t : SlipFace) :
     (s ◃ t).dual = t.dual ▹ s.dual := by
-  dsimp [right_residual]
+  dsimp [rres]
   rw [SlipFace.dual_dual s, SlipFace.dual_dual t]
 
 /-- The corresponding right/left residual duality, obtained by applying the
@@ -1235,7 +1235,7 @@ left/right duality to dual slipfaces.
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
 @[simp] lemma rres_dual (s t : SlipFace) :
     (s ▹ t).dual = t.dual ◃ s.dual := by
-  dsimp [right_residual]
+  dsimp [rres]
   rw [SlipFace.dual_dual]
 
 /- A small set on which witnesses to the value $s \star t (a,b)$ always occur.
@@ -1394,7 +1394,7 @@ decreasing_by
 
 /- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/
-lemma bend_set_witness_lc (s t : SlipFace) (a b : ℤ) :
+lemma bend_set_witness_lres (s t : SlipFace) (a b : ℤ) :
     ∃ l ∈ bend_set t b, (s ◃ t) a b = s a l - t.dual b l := by
   -- Proof written by GPT 5.5.
   let l := lres_wit s t a b
@@ -1431,7 +1431,7 @@ lemma star_mono {s₁ s₂ t₁ t₂ : SlipFace}
 `t`.
 *Lemma 3.8 (`lem:compatLeq`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
-lemma left_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
+lemma lres_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     s₁ ◃ t₂.dual ≤ s₂ ◃ t₁.dual := by
   -- Proof written by GPT 5.5.
@@ -1453,7 +1453,7 @@ lemma left_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
 `t`.
 *Lemma 3.8 (`lem:compatLeq`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
-lemma right_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
+lemma rres_mono {s₁ s₂ t₁ t₂ : SlipFace}
     (hs : s₁ ≤ s₂) (ht : t₁ ≤ t₂) :
     t₂.dual ▹ s₁ ≤ t₁.dual ▹ s₂ := by
   -- Proof written by GPT 5.5.
@@ -1528,7 +1528,7 @@ lemma ge_star_iff_ge_rres (s t u : SlipFace) :
 /-- Left residual associates with the product on the right.
 *Lemma 3.12 (`lem:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
-lemma left_residual_assoc (s t u : SlipFace) :
+lemma lres_assoc (s t u : SlipFace) :
     (s ◃ t) ◃ u = s ◃ (t ⋆ u) := by
   -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :
@@ -1553,7 +1553,7 @@ lemma left_residual_assoc (s t u : SlipFace) :
 /-- Right residual associates with the product on the left.
 *Lemma 3.12 (`lem:sfAlgebra`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
-lemma right_residual_assoc (s t u : SlipFace) :
+lemma rres_assoc (s t u : SlipFace) :
     s ▹ (t ▹ u) = (s ⋆ t) ▹ u := by
   -- Proof written by GPT 5.5.
   have hmin (v : SlipFace) :

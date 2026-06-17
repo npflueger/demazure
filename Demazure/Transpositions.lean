@@ -626,7 +626,7 @@ theorem sf_residual_sigma (S : Set ℤ) (hS : NoConsecutive S)
           max (s a (b - 1) - 1) (s a (b + 1)) ≤
             (s ◃ (sigma S hS).sf) a b :=
         max_le hge_left hge_right
-      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lc s (sigma S hS).sf a b
+      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).sf a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
       simp only [Set.mem_setOf_eq] at hl
       have hlres_le :
@@ -643,7 +643,7 @@ theorem sf_residual_sigma (S : Set ℤ) (hS : NoConsecutive S)
       exact le_antisymm hlres_le hmax_le
     rw [hlres_max, lres_step_max_eq_oneIf]
     simp only [hb, true_and]
-  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lc s (sigma S hS).sf a b
+  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).sf a b
     rw [bend_set_sigma_of_not_pred_mem S hS hb] at hl
     simp only [Set.mem_singleton_iff] at hl
     subst l
@@ -940,7 +940,7 @@ private lemma residual_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsec
   apply AspPerm.eq_of_sf_eq
   apply (SF_ext _ _).mpr
   intro a b
-  rw [AspPerm.left_residual_spec, asp_residual_sigma_sf S hS α a b]
+  rw [AspPerm.lres_spec, asp_residual_sigma_sf S hS α a b]
   simp only [AspPerm.sf_func_eq_s]
   have hzero :
       Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) = 0 := by
@@ -1023,13 +1023,13 @@ theorem residualSigma (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S) :
     α ◃ sigma S hS = α ◃ (sigma R hR * sigma F hF) := by rw [hMulRF]
     _ = α ◃ (sigma R hR ⋆ sigma F hF) := by rw [hStarMulRF]
     _ = (α ◃ sigma R hR) ◃ sigma F hF :=
-      (AspPerm.left_residual_assoc α _ _).symm
+      (AspPerm.lres_assoc α _ _).symm
     _ = α ◃ sigma F hF := by
       rw [residual_sigma_eq_self α R hR]
       intro n hn
       exact hn.2
     _ = α * sigma F hF := by
-      exact (ReducedProducts.left_residual_eq_mul_iff α _).mpr
+      exact (ReducedProducts.lres_eq_mul_iff α _).mpr
         (sigma_le_weak_L_of_falling α F hF (by
           intro n hn
           exact hn.2))

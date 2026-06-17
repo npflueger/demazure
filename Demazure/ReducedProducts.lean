@@ -349,10 +349,10 @@ private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
 /-- Left residual lies below ordinary multiplication in Bruhat order.
 *Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/4.* -/
-theorem left_residual_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
+theorem lres_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
   -- Proof written by Codex.
   apply (AspPerm.sf_le_iff (α ◃ β) (α * β)).mp
-  rw [AspPerm.left_residual_spec]
+  rw [AspPerm.lres_spec]
   intro a b
   change (α.sf ◃ β.sf) a b ≤ (α * β).s a b
   let l := SlipFace.lres_wit α.sf β.sf a b
@@ -366,7 +366,7 @@ theorem left_residual_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
 of the right factor lies below the left factor in left weak order.
 *Proof component for Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
-private lemma le_weak_L_of_mul_le_left_residual (α β : AspPerm)
+private lemma le_weak_L_of_mul_le_lres (α β : AspPerm)
     (hle : α * β ≤ α ◃ β) : β⁻¹ ≤L α := by
   -- Proof written by Codex.
   rintro ⟨m, n⟩ hβ
@@ -387,7 +387,7 @@ private lemma le_weak_L_of_mul_le_left_residual (α β : AspPerm)
     change (α ◃ β).sf a b =
       α.sf a (SlipFace.lres_wit α.sf β.sf a b)
         - (β⁻¹).sf b (SlipFace.lres_wit α.sf β.sf a b)
-    rw [AspPerm.left_residual_spec, SlipFace.lres_wit_spec, AspPerm.sf_dual]
+    rw [AspPerm.lres_spec, SlipFace.lres_wit_spec, AspPerm.sf_dual]
   have hcomp := hle a b
   rw [hlc] at hcomp
   by_cases hln : l ≤ n
@@ -409,7 +409,7 @@ private lemma le_weak_L_of_mul_le_left_residual (α β : AspPerm)
 order, then ordinary multiplication lies below left residual.
 Proof component of *Lemma 5.2* (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-private lemma mul_le_left_residual_of_le_weak_L (α β : AspPerm)
+private lemma mul_le_lres_of_le_weak_L (α β : AspPerm)
     (hweak : β⁻¹ ≤L α) : α * β ≤ α ◃ β := by
   -- Proof written by Codex.
   intro a b
@@ -421,7 +421,7 @@ private lemma mul_le_left_residual_of_le_weak_L (α β : AspPerm)
     simp only [hlo, hhi, Finset.card_empty, Nat.cast_zero, sub_zero] at hcount
     have hcand := Submodular.lres_candidate_le α β a b l
     have hcand' : α.s a l - (β⁻¹).s b l ≤ (α ◃ β).s a b := by
-      simpa only [← AspPerm.sf_func_eq_s, AspPerm.left_residual_spec] using hcand
+      simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hcand
     rw [← hcount]
     exact hcand'
   obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
@@ -479,36 +479,36 @@ private lemma mul_le_left_residual_of_le_weak_L (α β : AspPerm)
 inverse of the right factor is below the left factor in left weak order.
 *Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/4.* -/
-theorem left_residual_eq_mul_iff (α β : AspPerm) :
+theorem lres_eq_mul_iff (α β : AspPerm) :
     α ◃ β = α * β ↔ β⁻¹ ≤L α := by
   -- Proof written by Codex.
   constructor
   · intro h_eq
-    apply le_weak_L_of_mul_le_left_residual α β
+    apply le_weak_L_of_mul_le_lres α β
     rw [h_eq]
   · intro hweak
     exact le_antisymm
-      (left_residual_le_mul α β)
-      (mul_le_left_residual_of_le_weak_L α β hweak)
+      (lres_le_mul α β)
+      (mul_le_lres_of_le_weak_L α β hweak)
 
 /-- Right residual lies below ordinary multiplication in Bruhat order.
 *Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/4.* -/
-theorem right_residual_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
+theorem rres_le_mul (α β : AspPerm) : α ▹ β ≤ α * β := by
   -- Proof written by Codex.
   have hχ : (β⁻¹ ◃ α⁻¹).χ = (β⁻¹ * α⁻¹).χ := by
-    simp only [AspPerm.chi_left_residual, AspPerm.chi_mul]
+    simp only [AspPerm.chi_lres, AspPerm.chi_mul]
   have hleχ : β⁻¹ ◃ α⁻¹ ≤χ β⁻¹ * α⁻¹ :=
-    ⟨left_residual_le_mul β⁻¹ α⁻¹, hχ⟩
+    ⟨lres_le_mul β⁻¹ α⁻¹, hχ⟩
   have hinv :=
     (AspPerm.le_chi_inv_iff (β⁻¹ ◃ α⁻¹) (β⁻¹ * α⁻¹)).mp hleχ
-  simpa only [AspPerm.inverse_left_residual, inv_inv, mul_inv_rev] using hinv.1
+  simpa only [AspPerm.inverse_lres, inv_inv, mul_inv_rev] using hinv.1
 
 /-- Right residual agrees with ordinary multiplication exactly when the
 inverse of the left factor is below the right factor in right weak order.
 *Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/4.* -/
-theorem right_residual_eq_mul_iff (α β : AspPerm) :
+theorem rres_eq_mul_iff (α β : AspPerm) :
     α ▹ β = α * β ↔ α⁻¹ ≤R β := by
   -- Proof written by Codex.
   have h_eq :
@@ -518,17 +518,17 @@ theorem right_residual_eq_mul_iff (α β : AspPerm) :
       calc
         β⁻¹ ◃ α⁻¹ = (α ▹ β)⁻¹ := by
           have hdual := congrArg (fun τ : AspPerm => τ⁻¹)
-            (AspPerm.inverse_left_residual β⁻¹ α⁻¹)
+            (AspPerm.inverse_lres β⁻¹ α⁻¹)
           simpa only [inv_inv] using hdual
         _ = (α * β)⁻¹ := by rw [h]
         _ = β⁻¹ * α⁻¹ := by rw [mul_inv_rev]
     · intro h
       calc
         α ▹ β = (β⁻¹ ◃ α⁻¹)⁻¹ := by
-          simpa only [inv_inv] using (AspPerm.inverse_left_residual β⁻¹ α⁻¹).symm
+          simpa only [inv_inv] using (AspPerm.inverse_lres β⁻¹ α⁻¹).symm
         _ = (β⁻¹ * α⁻¹)⁻¹ := by rw [h]
         _ = α * β := by simp only [mul_inv_rev, inv_inv]
-  rw [h_eq, left_residual_eq_mul_iff]
+  rw [h_eq, lres_eq_mul_iff]
   constructor
   · intro hweak
     simpa only [inv_inv] using AspPerm.le_weak_R_of_L hweak
@@ -546,12 +546,12 @@ theorem le_of_le_weak_L_of_chi_le {α β : AspPerm}
   -- Proof written by Codex.
   let γ := β ◃ α⁻¹
   have hγ_eq : γ = β * α⁻¹ := by
-    apply (left_residual_eq_mul_iff β α⁻¹).mpr
+    apply (lres_eq_mul_iff β α⁻¹).mpr
     simpa only [inv_inv] using hweak
   have hγ_red : AspPerm.ReducedProduct γ α := by
-    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_left_residual β α⁻¹
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_lres β α⁻¹
   have hγ_nonneg : 0 ≤ γ.χ := by
-    simp only [γ, AspPerm.chi_left_residual, AspPerm.chi_dual]
+    simp only [γ, AspPerm.chi_lres, AspPerm.chi_dual]
     omega
   calc
     α = AspPerm.id ⋆ α := (AspPerm.id_star α).symm
@@ -569,12 +569,12 @@ theorem le_of_le_weak_R_of_chi_le {α β : AspPerm}
   -- Proof written by Codex.
   let γ := α⁻¹ ▹ β
   have hγ_eq : γ = α⁻¹ * β := by
-    apply (right_residual_eq_mul_iff α⁻¹ β).mpr
+    apply (rres_eq_mul_iff α⁻¹ β).mpr
     simpa only [inv_inv] using hweak
   have hγ_red : AspPerm.ReducedProduct α γ := by
-    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_right_residual α⁻¹ β
+    simpa only [γ, inv_inv] using Submodular.reducedProduct_of_rres α⁻¹ β
   have hγ_nonneg : 0 ≤ γ.χ := by
-    simp only [γ, AspPerm.chi_right_residual, AspPerm.chi_dual]
+    simp only [γ, AspPerm.chi_rres, AspPerm.chi_dual]
     omega
   calc
     α = α ⋆ AspPerm.id := (AspPerm.star_id α).symm
@@ -626,18 +626,18 @@ def of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
 
 /-- Construct a reduced fact when the right residual by the inverse left
 factor collapses to ordinary multiplication. -/
-private def of_mul_rc {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_rres {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rw [ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_residual
+  rw [ReducedProducts.rres_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_residual
   rwa [AspPerm.reduced_iff_leR]
 
 /-- Construct a reduced fact when the left residual by the inverse right
 factor collapses to ordinary multiplication. -/
-private def of_mul_lc {α β γ : AspPerm} (h_mul : α * β = γ)
+private def of_mul_lres {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
-  rw [ReducedProducts.left_residual_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_residual
+  rw [ReducedProducts.lres_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_residual
   rwa [AspPerm.reduced_iff_leL]
 
 private def of_reduced_star {α β γ : AspPerm}
@@ -645,21 +645,23 @@ private def of_reduced_star {α β γ : AspPerm}
   apply of_mul_reduced _ h_red
   rwa [← (ReducedProducts.star_eq_mul_iff_reducedProduct α β).mpr h_red]
 
-private def of_lel_rc {α β γ : AspPerm} (h_lel : β ≤L γ) (h_lc : γ ◃ β⁻¹ = α) : ReducedFact α β γ
+private def of_lel_lres {α β γ : AspPerm}
+    (h_lel : β ≤L γ) (h_lres : γ ◃ β⁻¹ = α) : ReducedFact α β γ
   := by
   have eq_α : γ * β⁻¹ = α := by
-    have := ReducedProducts.left_residual_eq_mul_iff γ β⁻¹
-    rw [inv_inv, h_lc] at this
+    have := ReducedProducts.lres_eq_mul_iff γ β⁻¹
+    rw [inv_inv, h_lres] at this
     rw [this.mpr h_lel]
   have h_mul : α * β = γ := by
     rw [← eq_α, mul_assoc, inv_mul_cancel, mul_one]
   rw [← h_mul] at h_lel
   exact ReducedFact.mk ((AspPerm.reduced_iff_leL α β).mpr h_lel) h_mul
 
-def of_ler_lc {α β γ : AspPerm} (h_ler : α ≤R γ) (h_rc : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
+def of_ler_rres {α β γ : AspPerm}
+    (h_ler : α ≤R γ) (h_rres : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
   have eq_β : α⁻¹ * γ = β := by
-    have := ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ
-    rw [inv_inv, h_rc] at this
+    have := ReducedProducts.rres_eq_mul_iff α⁻¹ γ
+    rw [inv_inv, h_rres] at this
     rw [this.mpr h_ler]
   have h_mul : α * β = γ := by
     rw [← eq_β, ← mul_assoc, mul_inv_cancel, one_mul]
@@ -686,14 +688,14 @@ private lemma lel {α β γ : AspPerm} (h : ReducedFact α β γ) : β ≤L γ :
 /-- Right residual by the inverse left factor collapses to ordinary
 multiplication in a reduced factorization. -/
 private lemma rres_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : α⁻¹ ▹ γ = α⁻¹ * γ := by
-  apply (ReducedProducts.right_residual_eq_mul_iff α⁻¹ γ).mpr
+  apply (ReducedProducts.rres_eq_mul_iff α⁻¹ γ).mpr
   rw [inv_inv]
   exact h.ler
 
 /-- Left residual by the inverse right factor collapses to ordinary
 multiplication in a reduced factorization. -/
 lemma lres_eq {α β γ : AspPerm} (h : ReducedFact α β γ) : γ ◃ β⁻¹ = γ * β⁻¹ := by
-  apply (ReducedProducts.left_residual_eq_mul_iff γ β⁻¹).mpr
+  apply (ReducedProducts.lres_eq_mul_iff γ β⁻¹).mpr
   rw [inv_inv]
   exact h.lel
 

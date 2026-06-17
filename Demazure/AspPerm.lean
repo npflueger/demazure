@@ -1172,7 +1172,7 @@ lemma bend_set_sf (β : AspPerm) (b : ℤ) :
 
 /-- Formula (14) (`eq:Deltasa`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227),
 characterizing the values of a permutation via the second iterated difference of its slipface. -/
-lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
+lemma Delta_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
   let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
   let d2 := τ.s a b - τ.s a (b+1)
   suffices d1 - d2 = if τ b = a then 1 else 0 by
@@ -1200,15 +1200,15 @@ lemma Δ_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
 
 lemma Γ_eq : τ.sf.Γ = { ⟨a, b⟩ | τ b = a } := by
   ext ⟨a, b⟩
-  simp only [SlipFace.Γ, τ.Δ_eq, ite_eq_left_iff, zero_ne_one, imp_false,
+  simp only [SlipFace.Γ, τ.Delta_eq, ite_eq_left_iff, zero_ne_one, imp_false,
     Decidable.not_not, Set.mem_setOf_eq]
 
 /-- The slipface of an ASP permutation is submodular.
 *Proposition 4.3* (`prop:imageASP`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), one direction. -/
 lemma submodular : τ.sf.submodular := by
   intro a b
-  have Δ_eq := τ.Δ_eq a b
-  by_cases h : τ b = a <;> simp [h, Δ_eq]
+  have Delta_eq := τ.Delta_eq a b
+  by_cases h : τ b = a <;> simp [h, Delta_eq]
 
 /-! ### Ramps, lamps, and wing parameters
 

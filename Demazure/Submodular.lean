@@ -999,9 +999,9 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
     congr
   ext n
   have : β.sf.Δ (β n) n = 1 := by
-    simpa using β.Δ_eq (β n) n
+    simpa using β.Delta_eq (β n) n
   rw [← eq_sf] at this
-  rw [α.Δ_eq (β n) n] at this
+  rw [α.Delta_eq (β n) n] at this
   contrapose! this with neq
   simp only [neq, ↓reduceIte, ne_eq, zero_ne_one, not_false_eq_true]
 

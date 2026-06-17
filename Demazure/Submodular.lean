@@ -1381,7 +1381,7 @@ lemma ge_star_iff_ge_left_residual (α β τ : AspPerm) :
     α ≥ τ ◃ β⁻¹ ↔ α ⋆ β ≥ τ := by
   change (τ ◃ β⁻¹).sf ≤ α.sf ↔ τ.sf ≤ (α ⋆ β).sf
   simpa only [left_residual_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_left_residual α.sf β.sf τ.sf)
+    (SlipFace.ge_star_iff_ge_lres α.sf β.sf τ.sf)
 
 /-- The right residual $\alpha^{-1} \triangleright \tau$ is the Bruhat
 minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$.
@@ -1391,7 +1391,7 @@ lemma ge_star_iff_ge_right_residual (α β τ : AspPerm) :
     β ≥ α⁻¹ ▹ τ ↔ α ⋆ β ≥ τ := by
   change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
   simpa only [right_residual_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_right_residual α.sf β.sf τ.sf)
+    (SlipFace.ge_star_iff_ge_rres α.sf β.sf τ.sf)
 
 /-- The left residual $\alpha \triangleleft \beta^{-1}$ is the minimum permutation $\gamma$
   such that $\gamma \star \beta \ge \alpha$.

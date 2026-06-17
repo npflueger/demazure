@@ -1475,7 +1475,7 @@ lemma right_residual_mono {s₁ s₂ t₁ t₂ : SlipFace}
 slipface such that $s \star t ≥ u$.
 *Lemma 3.10 (`lem:sfOpChar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
-lemma ge_star_iff_ge_left_residual (s t u : SlipFace) :
+lemma ge_star_iff_ge_lres (s t u : SlipFace) :
     s ≥ u ◃ t.dual ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
   constructor
@@ -1502,7 +1502,7 @@ lemma ge_star_iff_ge_left_residual (s t u : SlipFace) :
 slipface such that $s \star t ≥ u$.
 *Lemma 3.10 (`lem:sfOpChar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
-lemma ge_star_iff_ge_right_residual (s t u : SlipFace) :
+lemma ge_star_iff_ge_rres (s t u : SlipFace) :
     t ≥ s.dual ▹ u ↔ s ⋆ t ≥ u := by
   -- Proof written by GPT 5.5.
   constructor
@@ -1536,16 +1536,16 @@ lemma left_residual_assoc (s t u : SlipFace) :
     calc
       v ≥ (s ◃ t) ◃ u ↔ v ⋆ u.dual ≥ s ◃ t := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_residual v u.dual (s ◃ t))
+          (ge_star_iff_ge_lres v u.dual (s ◃ t))
       _ ↔ (v ⋆ u.dual) ⋆ t.dual ≥ s := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_residual (v ⋆ u.dual) t.dual s)
+          (ge_star_iff_ge_lres (v ⋆ u.dual) t.dual s)
       _ ↔ v ⋆ (t ⋆ u).dual ≥ s := by
         rw [star_assoc, star_dual]
       _ ↔ v ≥ s ◃ (t ⋆ u) := by
         symm
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_left_residual v (t ⋆ u).dual s)
+          (ge_star_iff_ge_lres v (t ⋆ u).dual s)
   apply le_antisymm
   · exact (hmin (s ◃ (t ⋆ u))).mpr (le_refl _)
   · exact (hmin ((s ◃ t) ◃ u)).mp (le_refl _)
@@ -1561,16 +1561,16 @@ lemma right_residual_assoc (s t u : SlipFace) :
     calc
       v ≥ s ▹ (t ▹ u) ↔ s.dual ⋆ v ≥ t ▹ u := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_residual s.dual v (t ▹ u))
+          (ge_star_iff_ge_rres s.dual v (t ▹ u))
       _ ↔ t.dual ⋆ (s.dual ⋆ v) ≥ u := by
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_residual t.dual (s.dual ⋆ v) u)
+          (ge_star_iff_ge_rres t.dual (s.dual ⋆ v) u)
       _ ↔ (s ⋆ t).dual ⋆ v ≥ u := by
         rw [← star_assoc, star_dual]
       _ ↔ v ≥ (s ⋆ t) ▹ u := by
         symm
         simpa only [SlipFace.dual_dual] using
-          (ge_star_iff_ge_right_residual (s ⋆ t).dual v u)
+          (ge_star_iff_ge_rres (s ⋆ t).dual v u)
   apply le_antisymm
   · exact (hmin ((s ⋆ t) ▹ u)).mpr (le_refl _)
   · exact (hmin (s ▹ (t ▹ u))).mp (le_refl _)

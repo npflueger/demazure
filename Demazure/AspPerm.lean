@@ -1139,6 +1139,44 @@ lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
   simp only [sf_func_eq_s, sf_chi_eq] at this
   omega
 
+/-! ### Public `.sf` API (Stage A wrappers)
+
+These restate the raw `.s` lemmas about the slipface `τ.sf`. Because
+`τ.sf a b` is definitionally `τ.s a b`, each is a thin `:= τ.<raw>` proof.
+Downstream code should use these; the raw `.s` versions will become private.
+(Temporary `_sf` suffix; renamed in the terminal pass.) -/
+
+lemma s_eq_se_card_sf (a b : ℤ) : τ.sf a b = (τ.se_finset a b).card := τ.s_eq_se_card a b
+lemma s_nonneg_sf (a b : ℤ) : τ.sf a b ≥ 0 := τ.s_nonneg a b
+lemma s_ge_sf (a b : ℤ) : τ.sf a b ≥ a - b + τ.χ := τ.s_ge a b
+lemma a_step_sf (a b : ℤ) :
+    τ.sf (a + 1) b = τ.sf a b + (if τ⁻¹ a ≥ b then 1 else 0) := τ.a_step a b
+lemma b_step_sf (a b : ℤ) :
+    τ.sf a (b + 1) = τ.sf a b - (if τ b < a then 1 else 0) := τ.b_step a b
+lemma a_step_one_iff_sf (a b : ℤ) : τ.sf (a + 1) b = τ.sf a b + 1 ↔ τ⁻¹ a ≥ b :=
+  τ.a_step_one_iff a b
+lemma a_step_one_iff'_sf (u b : ℤ) : τ.sf (τ u + 1) b = τ.sf (τ u) b + 1 ↔ u ≥ b :=
+  τ.a_step_one_iff' u b
+lemma a_step_eq_iff_sf (a b : ℤ) : τ.sf (a + 1) b = τ.sf a b ↔ τ⁻¹ a < b :=
+  τ.a_step_eq_iff a b
+lemma a_step_eq_iff'_sf (u b : ℤ) : τ.sf (τ u + 1) b = τ.sf (τ u) b ↔ u < b :=
+  τ.a_step_eq_iff' u b
+lemma b_step_one_iff_sf (a b : ℤ) : τ.sf a (b + 1) = τ.sf a b - 1 ↔ τ b < a :=
+  τ.b_step_one_iff a b
+lemma b_step_eq_iff_sf (a b : ℤ) : τ.sf a (b + 1) = τ.sf a b ↔ τ b ≥ a :=
+  τ.b_step_eq_iff a b
+lemma s_noninc_sf (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
+    τ.sf a b ≥ τ.sf a b' ∧
+      (τ.sf a b = τ.sf a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := τ.s_noninc a b_le_b'
+lemma s_nondec_sf {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
+    τ.sf a b ≤ τ.sf a' b ∧
+      (τ.sf a b = τ.sf a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := τ.s_nondec a_le_a' b
+lemma duality_sf (a b : ℤ) : τ.sf a b - (τ⁻¹).sf b a = τ.χ + a - b := τ.duality a b
+lemma s_eq_sf (a b : ℤ) : τ.sf a b = (τ⁻¹).sf b a + τ.χ + a - b := τ.s_eq a b
+lemma s'_eq_sf (a b : ℤ) : (τ⁻¹).sf a b = τ.sf b a - τ.χ + a - b := τ.s'_eq a b
+lemma tend_zero_a_sf (b : ℤ) : ∃ a : ℤ, τ.sf a b = 0 := τ.tend_zero_a b
+lemma tend_zero_b_sf (a : ℤ) : ∃ b : ℤ, τ.sf a b = 0 := τ.tend_zero_b a
+
 /-- The bend set is a finite set on which the minimum defining the Demazure product is always
 obtained. It is characterized in
 *Lemma 3.13 (`lem:setL`) of
@@ -1651,34 +1689,34 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
 
 -- This means that `(α ⋆ β).s a b ≥ n`.
 def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
-  ∀ l : ℤ, α.s a l + β.s l b ≥ n
+  ∀ l : ℤ, α.sf a l + β.sf l b ≥ n
 
 def le_dprod (τ α β : AspPerm) : Prop :=
-  ∀ a b : ℤ, dprod_val_ge α β a b (τ.s a b)
+  ∀ a b : ℤ, dprod_val_ge α β a b (τ.sf a b)
 
 def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
-  ∃ l : ℤ, α.s a l + β.s l b ≤ n
+  ∃ l : ℤ, α.sf a l + β.sf l b ≤ n
 
 def ge_dprod (τ α β : AspPerm) : Prop :=
-  ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
+  ∀ a b : ℤ, dprod_val_le α β a b (τ.sf a b)
 
 def eq_dprod (τ α β : AspPerm) : Prop :=
   τ.le_dprod α β ∧ τ.ge_dprod α β
 
 lemma chi_ge_of_dprod_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
   α.χ + β.χ ≥ τ.χ := by
-  rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
-  rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
+  rcases α⁻¹.tend_zero_a_sf 0 with ⟨l, hl⟩
+  rcases β⁻¹.tend_zero_a_sf l with ⟨c, hc⟩
   have eq := h_ge 0 c l
-  rw [α.s_eq, β.s_eq] at eq
-  linarith [τ.s_ge 0 c]
+  rw [α.s_eq_sf, β.s_eq_sf] at eq
+  linarith [τ.s_ge_sf 0 c]
 
 lemma chi_le_of_dprod_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
   α.χ + β.χ ≤ τ.χ := by
-  rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
+  rcases τ⁻¹.tend_zero_a_sf 0 with ⟨c, hc⟩
   rcases h_le 0 c with ⟨l, hl⟩
-  rw [τ.s_eq] at hl
-  linarith [α.s_ge 0 l, β.s_ge l c]
+  rw [τ.s_eq_sf] at hl
+  linarith [α.s_ge_sf 0 l, β.s_ge_sf l c]
 
 lemma chi_eq_of_drop_eq {τ α β : AspPerm} (h_eq : τ.eq_dprod α β) :
   α.χ + β.χ = τ.χ :=
@@ -1689,18 +1727,18 @@ lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
   have hχ : α.χ + β.χ = τ.χ := chi_eq_of_drop_eq h_eq
   constructor
   · intro a b l
-    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
-    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
-    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
+    have eqα : α⁻¹.sf l b = l - b + α.sf b l - α.χ := by have := α.s'_eq_sf l b; omega
+    have eqβ : β⁻¹.sf a l = a - l + β.sf l a - β.χ := by have := β.s'_eq_sf a l; omega
+    have eqτ : τ⁻¹.sf a b = a - b + τ.sf b a - τ.χ := by have := τ.s'_eq_sf a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     have := h_eq.1 b a l
     omega
   · intro a b
     rcases h_eq.2 b a with ⟨l, hl⟩
     use l
-    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
-    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
-    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
+    have eqα : α⁻¹.sf l b = l - b + α.sf b l - α.χ := by have := α.s'_eq_sf l b; omega
+    have eqβ : β⁻¹.sf a l = a - l + β.sf l a - β.χ := by have := β.s'_eq_sf a l; omega
+    have eqτ : τ⁻¹.sf a b = a - b + τ.sf b a - τ.χ := by have := τ.s'_eq_sf a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     omega
 
@@ -1727,7 +1765,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     have sα := mem_ramp_iff_s_ge α⁻¹ a n' m'
     have sβ := mem_ramp_iff_s_ge β b m n
     rw [sα, sβ]
-    unfold dprod_val_ge at dprod
+    replace dprod : ∀ l, α.s a l + β.s l b ≥ M := dprod
     contrapose! dprod with ineqs
     let l := b + m - n  - β.χ
     use l
@@ -1742,8 +1780,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     have : α.s a l + β.s l b ≤ M-1 := by
       linarith [add_le_add (α.s_ge a l) hβ]
     exact Int.lt_of_le_sub_one this
-  · unfold dprod_val_ge
-    intro hramp l
+  · intro hramp l
     contrapose! hramp with ineq
     obtain ineq : α.s a l + β.s l b ≤ M - 1 := Int.le_sub_one_of_lt ineq
     have ineq' : α⁻¹.s l a + β⁻¹.s b l ≤ N -1 := by

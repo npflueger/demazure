@@ -421,7 +421,7 @@ private lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β
 
 /-- Compare the minima and rightmost minimizers of two valleys that differ by
 `1` below a cutoff and agree above it. *Lemma 4.6 (`lem:fg`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma sediment (v w : Valley) {A : ℤ}
   (low : ∀ l : ℤ, l ≤ A → w.f l = v.f l + 1) (high : ∀ l : ℤ, l > A → w.f l = v.f l) :
   ((v.M ≤ A → w.min = v.min + 1)
@@ -1157,7 +1157,7 @@ lemma chi_rres (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
 /-- The min-plus characterization of the Demazure product on \mathrm{ASP}.
 This is part of *Theorem A* (`thm:starExists`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
-    IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
+    IsLeast {α.sf a l + β.sf l b | l : ℤ} ((α ⋆ β).sf a b) := by
   have h := SlipFace.star_eq_min α.sf β.sf a b
   rwa [← star_spec α β] at h
 
@@ -1284,10 +1284,10 @@ lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
 
 -- The `PartialOrder` on `AspPerm` is only now defined because we needed `eq_of_sf_eq`.
 instance : PartialOrder AspPerm where
-  le (σ τ : AspPerm) := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
+  le (σ τ : AspPerm) := ∀ a b : ℤ, σ.sf a b ≤ τ.sf a b
   le_refl := by
     intro σ a b
-    exact Int.le_refl (σ.s a b)
+    exact Int.le_refl (σ.sf a b)
   le_trans := by
     intro σ τ υ h₁ h₂ a b
     exact Int.le_trans (h₁ a b) (h₂ a b)
@@ -1317,7 +1317,7 @@ theorem le_chi_inv_iff (α β : AspPerm) : α ≤χ β ↔ α⁻¹ ≤χ β⁻¹
     intro σ τ h
     constructor
     · intro a b
-      rw [σ.s'_eq a b, τ.s'_eq a b, h.2]
+      rw [σ.s'_eq_sf a b, τ.s'_eq_sf a b, h.2]
       linarith [h.1 b a]
     · simp only [chi_dual, h.2]
   constructor
@@ -1331,10 +1331,11 @@ order. This is the $\chi = 0$ case of the minimum-shift observation after Defini
 lemma id_le_of_chi_nonneg {τ : AspPerm} (hχ : 0 ≤ τ.χ) : AspPerm.id ≤ τ := by
   -- Proof written by Codex.
   intro a b
+  change AspPerm.id.s a b ≤ τ.sf a b
   rw [id_s_eq]
   apply max_le
-  · linarith [τ.s_ge a b]
-  · exact τ.s_nonneg a b
+  · linarith [τ.s_ge_sf a b]
+  · exact τ.s_nonneg_sf a b
 
 /-- Demazure product on ASP permutations is Bruhat-increasing in both
 arguments. This lifts the slipface comparison of Lemma 3.8 in

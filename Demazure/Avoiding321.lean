@@ -1431,8 +1431,8 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     omega
   · intro no_excess a b
     contrapose! no_excess with ne_le
-    dsimp [AspPerm.dprod_val_le] at ne_le; push Not at ne_le
-    have ge : α.dprod_val_ge β a b (τ.s a b + 1) := by
+    dsimp only [AspPerm.dprod_val_le] at ne_le; push Not at ne_le
+    have ge : α.dprod_val_ge β a b (τ.sf a b + 1) := by
       intro x
       specialize ne_le x
       linarith

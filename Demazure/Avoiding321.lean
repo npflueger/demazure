@@ -404,7 +404,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
   have h_cast : ((southeast_set τ a b).ncard : ℤ) =
       ((southeast_set τ a v).ncard : ℤ) + ((southeast_set τ (τ v) b).ncard : ℤ) := by
     exact_mod_cast h_ncard
-  simpa [AspPerm.s_func_eq_s_raw, AspPerm.s_raw, add_comm] using h_cast.symm
+  simpa [AspPerm.s_eq_ncard, add_comm] using h_cast.symm
 
 lemma uv_duality {u : ℤ} {a b : ℤ}
   (u_lt_b : u < b) (τu_ge_a : τ u ≥ a)
@@ -417,7 +417,7 @@ lemma uv_duality {u : ℤ} {a b : ℤ}
   let τv_lt_a : τ (τ.v b m_pos) < a := τ.τv_lt b m_pos s_ge_m
   constructor
   · suffices τ.s a (τ.v b m_pos) = m' by
-      simp only [AspPerm.inv_mul_cancel_eval, τ⁻¹.dual_inverse_raw, inv_inv]
+      simp only [AspPerm.inv_mul_cancel_eval, inv_inv]
       exact this
     have split := split_s h_321a u_lt_b b_le_v τv_lt_a τu_ge_a
     have : τ.s (τ (τ.v b m_pos)) b = m - 1 := by
@@ -488,7 +488,7 @@ lemma uv_duality_ge {a b : ℤ}
       exact ⟨x_ge_b, lt_trans τx_lt_τv τv_lt_a⟩
     · have τiw_ge_b : τ⁻¹ w ≥ b := by
         apply τ⁻¹.τu_ge a m'_pos (a := b)
-        suffices m' ≤ τ.s a b by simpa [τ⁻¹.dual_inverse_raw]
+        suffices m' ≤ τ.s a b by simpa [inv_inv]
         linarith
       exact ⟨le_trans τiw_ge_b x_ge_τiw, τx_lt_a⟩
   have union_eq : A ∪ B = S := by
@@ -793,8 +793,8 @@ theorem eq_s_of_lel
 
 lemma eq_s'_of_lel
   {u b v : ℤ} (uv_inv : ⟨u, v⟩ ∈ inv_set β) (b_le_v : b ≤ v) :
-  β.s'_raw b (β u) = τ.s'_raw b (τ u) := by
-  rw [β.s'_eq_nw_card_raw b (β u), τ.s'_eq_nw_card_raw b (τ u)]
+  β⁻¹.s b (β u) = τ⁻¹.s b (τ u) := by
+  rw [β.s_dual_eq_nw_card b (β u), τ.s_dual_eq_nw_card b (τ u)]
   suffices hnw : β.nw_finset (β u) b = τ.nw_finset (τ u) b by rw [hnw]
   ext x
   suffices x < b → (β x ≥ β u ↔ τ x ≥ τ u) by
@@ -822,15 +822,15 @@ lemma uv_eq_of_lel
   let v := τ.v b m_pos
   intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
   have u_crit :=  (τ.u_crit b n_pos u).mp (by rfl)
-  have s'_eq_raw : τ.s'_raw b (τ u) = n := u_crit.1
+  have s'_eq : τ⁻¹.s b (τ u) = n := u_crit.1
   have u_lt_b : u < b := u_crit.2
   have v_crit := (τ.v_crit b m_pos v).mp (by rfl)
   have s_eq : τ.s (τ v) b = m - 1 := v_crit.1
   have b_le_v : b ≤ v := v_crit.2
   have m_eq : β.s (β v) b = m-1 := by
     rw [eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
-  have n_eq : β.s'_raw b (β u) = n := by
-    rw [eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq_raw]
+  have n_eq : β⁻¹.s b (β u) = n := by
+    rw [eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
   exact ⟨ (β.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
     (β.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
 
@@ -843,15 +843,15 @@ lemma uv_eq_of_lel'
   let v := β.v b m_pos
   intro uv_inv; obtain uv_inv : ⟨u, v⟩ ∈ inv_set β := uv_inv
   have u_crit :=  (β.u_crit b n_pos u).mp (by rfl)
-  have s'_eq_raw : β.s'_raw b (β u) = n := u_crit.1
+  have s'_eq : β⁻¹.s b (β u) = n := u_crit.1
   have u_lt_b : u < b := u_crit.2
   have v_crit := (β.v_crit b m_pos v).mp (by rfl)
   have s_eq : β.s (β v) b = m - 1 := v_crit.1
   have b_le_v : b ≤ v := v_crit.2
   have m_eq : τ.s (τ v) b = m-1 := by
     rw [← eq_s_of_lel h_321a h_L uv_inv u_lt_b, s_eq]
-  have n_eq : τ.s'_raw b (τ u) = n := by
-    rw [← eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq_raw]
+  have n_eq : τ⁻¹.s b (τ u) = n := by
+    rw [← eq_s'_of_lel h_321a h_L uv_inv b_le_v, s'_eq]
   exact ⟨ (τ.u_crit b n_pos u).mpr ⟨n_eq, u_lt_b⟩,
     (τ.v_crit b m_pos v).mpr ⟨m_eq, b_le_v⟩ ⟩
 
@@ -885,19 +885,19 @@ theorem lel_lamp {α : AspPerm} (h_R : α ≤R τ)
 theorem inv_of_lel_iff_ramp
   {u b v : ℤ} (u_lt_b : u < b) (b_le_v : b ≤ v) :
   let m := τ.s (τ v) b + 1
-  let n := τ.s'_raw b (τ u)
+  let n := τ⁻¹.s b (τ u)
   ⟨u, v⟩ ∈ inv_set β ↔ ⟨m, n⟩ ∈ β.ramp b
   := by
   intro m n
   have m_pos : m > 0 := by linarith [τ.s_nonneg (τ v) b]
-  have n_pos : n > 0 := τ.s'_pos_of_lt_raw u_lt_b
+  have n_pos : n > 0 := by linarith [τ.s'_pos_of_lt u_lt_b]
   rw [← lel_ramp h_321a h_L b m_pos n_pos]
   have u_eq: u = τ.u b n_pos := by
     rw [τ.u_crit b n_pos u]
     exact ⟨rfl, u_lt_b⟩
   have v_eq: v = τ.v b m_pos := by
     rw [τ.v_crit b m_pos v]
-    exact ⟨by change τ.s (τ v) b = m - 1; linarith, b_le_v⟩
+    exact ⟨by linarith, b_le_v⟩
   rw [u_eq, v_eq]
 
 /-! ### Two-factor Demazure factorization for 321-avoiding ASP permutations
@@ -938,7 +938,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
   · right
     apply (inv_of_lel_iff_ramp h_321a h_L
       u_lt_b b_le_v).mpr
-    convert hβ <;> first | rw [m_eq] | exact τ.s'_raw_eq_s_dual b (τ u)
+    simpa [m_eq] using hβ
   · left
     have := α⁻¹.ramp_lamp_dual a (N+1-n) (M+1-m)
     rw [inv_inv] at this
@@ -948,8 +948,7 @@ lemma inversion_in_union (a b u v : ℤ) (dprod : α.dprod_val_ge β a b (τ.s a
           (τ⁻¹.s u a + 1, τ.s a v) ∈ α⁻¹.ramp a := by
       have := inv_of_lel_iff_ramp (τ := τ⁻¹) (β := α⁻¹)
         (inv_is_321a h_321a) h_R τv_lt_a τu_ge_a
-      rw [τ⁻¹.dual_inverse_raw, inv_inv] at this
-      simpa [AspPerm.s_func_eq_s_raw] using this
+      simpa [inv_inv] using this
     have : τ⁻¹.s u a + 1 = N + 1 - n ∧ τ.s a v = M + 1 - m := by
       constructor
       · have : τ⁻¹ (τ u) < b ∧ τ⁻¹ (τ v) ≥ b := by
@@ -968,9 +967,8 @@ lemma union_sufficient (a b : ℤ)
    α.dprod_val_ge β a b (τ.s a b)
   := by
   let M := τ.s a b
-  let N := τ.s'_raw b a
+  let N := τ⁻¹.s b a
   have habMN : a - b + α.χ + β.χ = M - N := by
-    have : N = τ⁻¹.s b a := τ.s'_raw_eq_s_dual b a
     linarith [τ.duality a b]
   apply (α.ramp_dprod_legos β a b M N habMN).mpr
   rintro m ⟨m_ge_1, m_le_M⟩ n ⟨n_ge_1, n_le_N⟩
@@ -993,7 +991,7 @@ lemma union_sufficient (a b : ℤ)
   let v' := τ⁻¹.v a n'_ge_1
   have u'_eq : τ v = u' := by
     apply (τ⁻¹.u_crit a m'_ge_1 (τ v)).mpr
-    simp only [τ⁻¹.dual_inverse_raw, inv_inv, τ.inv_mul_cancel_eval]
+    simp only [inv_inv, τ.inv_mul_cancel_eval]
     constructor
     · suffices m + τ.s a v = M + 1 by change τ.s a v = m'; linarith
       have := split_s h_321a (τ.u_lt b n_ge_1) (τ.v_ge b m_ge_1)
@@ -1011,7 +1009,6 @@ lemma union_sufficient (a b : ℤ)
       have := τ.s'_b_τu b n_ge_1
       rw [this] at split
       convert split using 1
-      exact τ.s'_raw_eq_s_dual b a
     · exact τ.τu_ge b n_ge_1 n_le_N
   have lamp_equiv : ⟨u', v'⟩ ∈ inv_set α⁻¹.func
     ↔ ⟨m', n'⟩ ∈ α.lamp a := lel_lamp h_321a h_R a m'_ge_1 n'_ge_1
@@ -1046,7 +1043,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
     have h_ncard : (southeast_set τ a b).ncard = 0 := by
       exact (Set.ncard_eq_zero (s := southeast_set τ a b) (hs := τ.se_finite a b)).2 h_empty
     have h_cast : ((southeast_set τ a b).ncard : ℤ) = 0 := by exact_mod_cast h_ncard
-    simpa [AspPerm.s_func_eq_s_raw, AspPerm.s_raw] using h_cast
+    simpa [AspPerm.s_eq_ncard] using h_cast
   rw [τ_zero]
   let N := τ⁻¹.s b a + 1
   have habMN : a - b + α.χ + β.χ = 1 - N := by
@@ -1083,8 +1080,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
     have := (inv_of_lel_iff_ramp h_321a h_L u_lt_b v₂_ge_b).mp uv₂_inv
     refine β.ramp_closed b ?_ ?_ this
     · linarith [τ.s_nonneg (τ v₂) b]
-    · rw [τ.dual_inverse_raw]
-      exact n_le
+    · exact n_le
   · right
     suffices ⟨n', 1⟩ ∈ α⁻¹.ramp a by
       rw [α⁻¹.ramp_lamp_dual a] at this
@@ -1095,10 +1091,10 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
     simp only [τ.inv_mul_cancel_eval] at this
     refine α⁻¹.ramp_closed a ?_ ?_ this
     · apply le_trans n'_le (le_refl _)
-    · rw [τ⁻¹.dual_inverse_raw, inv_inv]
+    · simp only [inv_inv]
       have : τ.s a v₁ = 1 + τ.s a (v₁ + 1) := by
         linarith [(τ.b_step_one_iff a v₁).mpr τv₁_lt_a]
-      rw [← AspPerm.s_func_eq_s_raw, this]
+      rw [this]
       linarith [τ.s_nonneg a (τ v₁ + 1)]
 
 omit h_χ in
@@ -1128,10 +1124,9 @@ lemma not_isolated_of_domino (a b m m' n n' : ℤ)
     apply (τ.sr_crit α (τ⁻¹ v') (τ⁻¹ u')).mpr
     simpa using invα
   have u_lt_b : u < b := τ.u_lt b n_pos
-  have s'_ge : τ.s'_raw b a ≥ n := by
-    rw [τ.s'_raw_eq_s_dual]; linarith
-  have s'_ge' : τ⁻¹.s b a ≥ n := by
-    rwa [τ.dual_inverse_raw] at s'_ge
+  have s'_ge : τ⁻¹.s b a ≥ n := by
+    linarith
+  have s'_ge' : τ⁻¹.s b a ≥ n := s'_ge
   have τu_ge_a : τ u ≥ a := τ.τu_ge b n_pos s'_ge
   have u'_lt_a : u' < a := τ⁻¹.u_lt a m'_pos
   have : n' + n = τ⁻¹.s b a + 1 := by linarith [nsum]

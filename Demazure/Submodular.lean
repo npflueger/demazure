@@ -1154,30 +1154,12 @@ lemma chi_rres (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
   repeat rw [← AspPerm.sf_chi_eq]
   simp only [rres_spec, SlipFace.chi_rres]
 
-private lemma star_valley (α β : AspPerm) (a b : ℤ) : (α ⋆ β).s a b
-  = (Submodular.AspValley α β a b).min := by
-  let v := (Submodular.AspValley α β a b)
-  have : (α ⋆ β).s a b = (α ⋆ β).sf.func a b := by
-    rw [AspPerm.sf_func_eq_s]
-  rw [this]
-  rw [star_spec]
-  let w := SlipFace.SlipValley α.sf β.sf a b
-  suffices w.min = v.min by
-    rw [← this, SlipFace.star_func_eq]
-    rfl
-  have : w = v := by exact Submodular.AspSlipValley α β a b
-  rw [this]
-
 /-- The min-plus characterization of the Demazure product on \mathrm{ASP}.
 This is part of *Theorem A* (`thm:starExists`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
     IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
-  constructor
-  · exact ⟨(Submodular.AspValley α β a b).M,
-      (Submodular.AspValley α β a b).f_M.trans (star_valley α β a b).symm⟩
-  · rintro y ⟨l, rfl⟩
-    rw [star_valley]
-    exact (Submodular.AspValley α β a b).min_spec l
+  have h := SlipFace.star_eq_min α.sf β.sf a b
+  rwa [← star_spec α β] at h
 
 /-- The max-minus characteriztion of the $\triangleleft$ operator on \mathrm{ASP}.
 This is part of *Theorem 1.1* (`thm:resL`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
@@ -1400,42 +1382,23 @@ theorem lres_eq_min (α β : AspPerm) :
 inequalities defining `τ.le_dprod α β`. -/
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by
   constructor
-  · intro le a b
-    specialize le a b
-    let v := (Submodular.AspValley α β a b)
-    unfold AspPerm.dprod_val_ge
-    intro l
-    apply le_trans le
-    rw [star_valley]
-    exact v.min_spec l
+  · intro le a b l
+    exact le_trans (le a b) ((star_sf_isleast α β a b).2 ⟨l, rfl⟩)
   · intro dle a b
-    let v := (Submodular.AspValley α β a b)
-    specialize dle a b v.M
-    apply le_trans dle
-    rw [star_valley, ← v.f_M]
-    exact Int.le_refl (v.f v.M)
+    obtain ⟨l, hl⟩ := (star_sf_isleast α β a b).1
+    rw [← hl]
+    exact dle a b l
 
 /-- Comparison `α ⋆ β ≤ τ` is equivalent to the upper Demazure-product
 inequalities defining `τ.ge_dprod α β`. -/
 lemma ge_star_iff (τ α β : AspPerm) : α ⋆ β ≤ τ ↔ τ.ge_dprod α β := by
   constructor
   · intro ge a b
-    specialize ge a b
-    let v := (Submodular.AspValley α β a b)
-    use v.M
-    have : α.s a v.M + β.s v.M b = v.f v.M := by rfl
-    rw [this, v.f_M]
-    rwa [star_valley] at ge
+    obtain ⟨l, hl⟩ := (star_sf_isleast α β a b).1
+    exact ⟨l, hl.trans_le (ge a b)⟩
   · intro dge a b
-    let v := (Submodular.AspValley α β a b)
-    rcases dge a b with ⟨l, hl⟩
-    calc
-      (α ⋆ β).s a b = v.f v.M := by rw [star_valley, v.f_M]
-      _ ≤ v.f l := by
-        rw [v.f_M]
-        exact v.min_spec l
-      _ = α.s a l + β.s l b := rfl
-      _ ≤ τ.s a b := hl
+    obtain ⟨l, hl⟩ := dge a b
+    exact le_trans ((star_sf_isleast α β a b).2 ⟨l, rfl⟩) hl
 
 /-- Equality `τ = α ⋆ β` is equivalent to satisfying both Demazure comparison
 conditions. -/

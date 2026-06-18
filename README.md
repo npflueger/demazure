@@ -39,15 +39,15 @@ The Lean development in `Demazure/` is organized as follows. Section numbers tel
               ┌────────────────────────────┴────────────────────────────┐
               │                                                         │
               ▼                                                         ▼
-┌───────────────────────────────┐          ┌───────────────────────────────┐
+┌─────────────┴─────────────────┐          ┌────────────────────────────┴──┐
 │ InvSet.lean (§2)              │          │ Submodular.lean (§4)          │
 │ Abstract ASP inversion sets   │          │ Submodular slipfaces;         │
 │ and reconstruction            │          │ ⋆ and ◃ on ASP.               │
 └───────────────┬───────────────┘          └───────────────┬───────────────┘
                 │                                          │
-                └─────────────────────┬────────────────────┤
-                                      │                    │
-                                      ▼                    ▼
+                └─────────────────────┬────────────────────┴───────────────┐
+                                      │                                    │
+                                      ▼                                    ▼
                       ┌───────────────┴───────────────┐    ┌───────────────┴───────────────┐
                       │ Avoiding321.lean              │    │ ReducedProducts.lean (§5)     │
                       │ 321-avoiding permutations     │    │ Reduced products              │

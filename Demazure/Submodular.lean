@@ -682,7 +682,7 @@ private lemma lres_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
 lemma lres_candidate_le (α β : AspPerm) (a b l : ℤ) :
     α.s a l - (β⁻¹).s b l ≤ (α.s ◃ β.s) a b := by
   rw [SlipFace.lres_func_eq]
-  simpa only [AspPerm.s_dual, AspPerm.s_func_eq_s_raw] using SlipFace.lres_val_ge α.s β.s a b l
+  simpa only [AspPerm.s_dual] using SlipFace.lres_val_ge α.s β.s a b l
 
 /-- Witness-set form of the left-residual step in the first coordinate:
 the step is flat exactly when a witness for the new value lies to the right of
@@ -1498,9 +1498,9 @@ theorem reducedProduct_of_lres (α β : AspPerm) :
   have hflat_s : (α ◃ β).s a (u + 1) = (α ◃ β).s a u := by
     exact ((α ◃ β).b_step_eq_iff a u).mpr (by rfl)
   have hdrop : (α.s ◃ β.s) a (v + 1) = (α.s ◃ β.s) a v - 1 := by
-    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hdrop_s
+    simpa only [AspPerm.lres_spec] using hdrop_s
   have hflat : (α.s ◃ β.s) a (u + 1) = (α.s ◃ β.s) a u := by
-    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hflat_s
+    simpa only [AspPerm.lres_spec] using hflat_s
   have hv_wit := (lres_b_step_one_iff_forall_witness α β a v).mp hdrop
   obtain ⟨l, hl, hβu⟩ :=
     (lres_b_step_eq_iff_exists_witness α β a u).mp hflat
@@ -1522,9 +1522,9 @@ theorem ler_of_lres (α β : AspPerm) : α ◃ β ≤R α := by
   have hone_s : (α ◃ β).s (u + 1) b = (α ◃ β).s u b + 1 := by
     exact ((α ◃ β).a_step_one_iff u b).mpr (by rfl)
   have hflat : (α.s ◃ β.s) (v + 1) b = (α.s ◃ β.s) v b := by
-    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hflat_s
+    simpa only [AspPerm.lres_spec] using hflat_s
   have hone : (α.s ◃ β.s) (u + 1) b = (α.s ◃ β.s) u b + 1 := by
-    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hone_s
+    simpa only [AspPerm.lres_spec] using hone_s
   obtain ⟨l, hl, hαv⟩ :=
     (lres_a_step_eq_iff_exists_witness α β v b).mp hflat
   have hu_wit := (lres_a_step_one_iff_forall_witness α β u b).mp hone

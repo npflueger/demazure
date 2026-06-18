@@ -191,7 +191,7 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
     rw [hse₀] at hβm
     exact Finset.notMem_empty _ hβm
   have hval₀ : (α.s ⋆ β.s) a b ≤ α.s a l₀ + β.s l₀ b := by
-    simpa only [AspPerm.s_func_eq_s_raw] using
+    simpa using
       SlipFace.star_val_le α.s β.s a b l₀
   have hcount₀ := star_sum_eq_mul_add_errors α β a b l₀
   simp only [hl₀, add_zero, hlo₀, Finset.card_empty, Nat.cast_zero] at hcount₀
@@ -213,7 +213,7 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
     have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
     omega
   have hval_succ : (α.s ⋆ β.s) a b ≤ α.s a (n + 1) + β.s (n + 1) b := by
-    simpa only [AspPerm.s_func_eq_s_raw] using
+    simpa using
       SlipFace.star_val_le α.s β.s a b (n + 1)
   have hcount_succ := star_sum_eq_mul_add_errors α β a b (n + 1)
   simp only [hhi_succ, Finset.card_empty, Nat.cast_zero] at hcount_succ
@@ -415,7 +415,7 @@ private lemma mul_le_lres_of_le_weak_L (α β : AspPerm)
     simp only [hlo, hhi, Finset.card_empty, Nat.cast_zero, sub_zero] at hcount
     have hcand := Submodular.lres_candidate_le α β a b l
     have hcand' : α.s a l - (β⁻¹).s b l ≤ (α ◃ β).s a b := by
-      simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hcand
+      simpa only [AspPerm.lres_spec] using hcand
     rw [← hcount]
     exact hcand'
   obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b

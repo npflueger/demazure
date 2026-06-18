@@ -337,20 +337,20 @@ def rev_map : ℤ × ℤ → ℤ × ℤ := fun ⟨i, j⟩ => ⟨τ j, τ i⟩
 /-- The slipface associated to an ASP permutation is defined by
 $s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$, in the notation of
 *Equation (4)* (`eq:sa`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
-In the repository, this is denoted as `τ.s a b`. -/
-noncomputable def s (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
+In the repository, this is denoted as `τ.s_raw a b`. -/
+noncomputable def s_raw (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 
 /-- The companion counting function $s_{\tau^{-1}}(b,a)$.
 
-In Lean this is written `τ.s' b a`; later `dual_inverse` identifies it with
-`(τ⁻¹).s`. -/
-noncomputable def s' (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
+In Lean this is written `τ.s'_raw b a`; later `dual_inverse_raw` identifies it with
+`(τ⁻¹).s_raw`. -/
+noncomputable def s'_raw (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 
 /-- The shift $\chi_\tau = s_\tau(0,0) - s_{\tau^{-1}}(0,0)$.
 
 [An extended Demazure product](https://arxiv.org/abs/2206.14227) writes this as
 $\chi_\tau$; Lean writes it as `τ.χ`. -/
-noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
+noncomputable def χ : ℤ := τ.s_raw 0 0 - τ.s'_raw 0 0
 
 @[simp] lemma id_chi : AspPerm.id.χ = 0 := by
   have h_se : southeast_set AspPerm.id 0 0 = ∅ := by
@@ -363,38 +363,38 @@ noncomputable def χ : ℤ := τ.s 0 0 - τ.s' 0 0
     intro k hk
     dsimp [northwest_set, AspPerm.id] at hk
     omega
-  dsimp [AspPerm.χ, AspPerm.s, AspPerm.s']
+  dsimp [AspPerm.χ, AspPerm.s_raw, AspPerm.s'_raw]
   rw [h_se, h_nw]
   simp
 
-lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := by
-  unfold AspPerm.s se_finset
+lemma s_eq_se_card_raw (a b : ℤ) : τ.s_raw a b = (τ.se_finset a b).card := by
+  unfold AspPerm.s_raw se_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.se_finite a b)]
 
-lemma s'_eq_nw_card (b a : ℤ) : τ.s' b a = (τ.nw_finset a b).card := by
-  unfold AspPerm.s' nw_finset
+lemma s'_eq_nw_card_raw (b a : ℤ) : τ.s'_raw b a = (τ.nw_finset a b).card := by
+  unfold AspPerm.s'_raw nw_finset
   rw [Set.ncard_eq_toFinset_card _ (τ.nw_finite a b)]
 
 
-lemma s_nonneg (a b : ℤ) : τ.s a b ≥ 0 := by
-  unfold s
+lemma s_nonneg_raw (a b : ℤ) : τ.s_raw a b ≥ 0 := by
+  unfold s_raw
   exact Nat.cast_nonneg _
 
-lemma s'_nonneg (a b : ℤ) : τ.s' a b ≥ 0 := by
-  unfold s'
+lemma s'_nonneg_raw (a b : ℤ) : τ.s'_raw a b ≥ 0 := by
+  unfold s'_raw
   exact Nat.cast_nonneg _
 
 -- The s'-value at τ u (from the left of b) is positive whenever u < b.
-lemma s'_pos_of_lt {u b : ℤ} (u_lt_b : u < b) : τ.s' b (τ u) ≥ 1 := by
-  simp only [s']
+lemma s'_pos_of_lt_raw {u b : ℤ} (u_lt_b : u < b) : τ.s'_raw b (τ u) ≥ 1 := by
+  simp only [s'_raw]
   have h_nonempty : ↑(northwest_set τ (τ u) b).Nonempty := by use u, u_lt_b
   have := (Set.ncard_pos (τ.nw_finite (τ u) b)).mpr h_nonempty
   omega
 
-lemma dual_inverse : τ.s' = (τ⁻¹).s := by
+lemma dual_inverse_raw : τ.s'_raw = (τ⁻¹).s_raw := by
   funext b a
   calc
-    τ.s' b a = (northwest_set τ a b).ncard := by rfl
+    τ.s'_raw b a = (northwest_set τ a b).ncard := by rfl
     _ = ( τ.func '' (northwest_set τ a b)).ncard := by
       rw [Set.ncard_image_of_injective (northwest_set τ a b) τ.injective]
     _ = (southeast_set τ⁻¹.func b a).ncard := by
@@ -409,11 +409,11 @@ lemma dual_inverse : τ.s' = (τ⁻¹).s := by
         unfold northwest_set; unfold southeast_set at h
         obtain ⟨a_le_n, τin_lt_b⟩ := h
         simpa using ⟨τin_lt_b, a_le_n⟩
-    _ = (τ⁻¹).s b a := by rfl
+    _ = (τ⁻¹).s_raw b a := by rfl
 
 lemma chi_dual : τ⁻¹.χ = - τ.χ := by
   dsimp [AspPerm.χ]
-  simp only [AspPerm.dual_inverse, inv_inv]
+  simp only [AspPerm.dual_inverse_raw, inv_inv]
   norm_num
 
 lemma chi_dual' : τ.χ = - (τ⁻¹).χ := by
@@ -558,8 +558,8 @@ lemma chi_mul (α β : AspPerm) : (α * β).χ = α.χ + β.χ := by
       (R.card : ℤ) - S.card =
         ((P.card : ℤ) - Q.card) + ((A.card : ℤ) - B.card) := by
     omega
-  rw [AspPerm.χ, AspPerm.χ, AspPerm.χ, s_eq_se_card, s'_eq_nw_card,
-    s_eq_se_card, s'_eq_nw_card, s_eq_se_card, s'_eq_nw_card,
+  rw [AspPerm.χ, AspPerm.χ, AspPerm.χ, s_eq_se_card_raw, s'_eq_nw_card_raw,
+    s_eq_se_card_raw, s'_eq_nw_card_raw, s_eq_se_card_raw, s'_eq_nw_card_raw,
     hmul_se_image, hmul_nw_image, hse_image, hnw_image]
   exact hcards
 
@@ -618,8 +618,8 @@ private lemma flip_flip : τ.flip.flip = τ := by
   intro n
   simp only [flip, Int.reduceNeg, sub_sub_cancel]
 
-private lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
-  unfold AspPerm.s AspPerm.s'
+private lemma flip_s (a b : ℤ) : τ.flip.s_raw a b = τ.s'_raw (-b) (-a) := by
+  unfold AspPerm.s_raw AspPerm.s'_raw
   let A := southeast_set τ.flip a b
   let B := northwest_set τ (-a) (-b)
   suffices A.ncard = B.ncard by congr
@@ -635,11 +635,11 @@ private lemma flip_s (a b : ℤ) : τ.flip.s a b = τ.s' (-b) (-a) := by
     A.ncard = ((-1 - ·) '' A).ncard := by simpa using himage_card.symm
     _ = B.ncard := by simp only [Int.reduceNeg, himage]
 
-private lemma s_flip (a b : ℤ) : τ.s a b = τ⁻¹.flip.s (-b) (-a) := by
-  rw [flip_s, dual_inverse, inv_inv, neg_neg, neg_neg]
+private lemma s_flip_raw (a b : ℤ) : τ.s_raw a b = τ⁻¹.flip.s_raw (-b) (-a) := by
+  rw [flip_s, dual_inverse_raw, inv_inv, neg_neg, neg_neg]
 
 lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
-  τ.s a b' = τ.s a b - ((Finset.Ico b b').filter (τ · < a)).card := by
+  τ.s_raw a b' = τ.s_raw a b - ((Finset.Ico b b').filter (τ · < a)).card := by
   let A := τ.se_finset a b'
   let B := τ.se_finset a b
   let C := (Finset.Ico b b').filter (τ · < a)
@@ -647,7 +647,7 @@ lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
     unfold A B at this
     have hcard : ((τ.se_finset a b).card : ℤ) = (τ.se_finset a b').card + C.card := by
       exact_mod_cast this
-    rw [τ.s_eq_se_card, τ.s_eq_se_card]
+    rw [τ.s_eq_se_card_raw, τ.s_eq_se_card_raw]
     linarith
   have h_disj : Disjoint A C := by
     apply Finset.disjoint_left.mpr
@@ -677,17 +677,17 @@ lemma b_move_up (a b b' : ℤ) (b_le_b' : b ≤ b') :
       simp only [Finset.mem_Ico, hB.1, this, and_self, hB.2]
   rw [← h_union, Finset.card_union_of_disjoint h_disj]
 
-lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
-    τ.s a b ≥ τ.s a b' ∧
-      (τ.s a b = τ.s a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := by
+lemma s_noninc_raw (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
+    τ.s_raw a b ≥ τ.s_raw a b' ∧
+      (τ.s_raw a b = τ.s_raw a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := by
   let S := {x ∈ Finset.Ico b b' | τ x < a}
-  have heq : τ.s a b = τ.s a b' + S.card := by
+  have heq : τ.s_raw a b = τ.s_raw a b' + S.card := by
     rw [b_move_up τ a b b' b_le_b']
     simp only [sub_add_cancel, S]
   constructor
   · have : S.card ≥ 0 := by simp
     omega
-  · have : τ.s a b = τ.s a b' ↔ S.card = 0 := by
+  · have : τ.s_raw a b = τ.s_raw a b' ↔ S.card = 0 := by
       rw [heq]
       constructor <;> (intro; omega)
     rw [this, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
@@ -696,7 +696,7 @@ lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
 
 /-- We have $s_\alpha(a,b+1) = s_\alpha(a,b) - \delta(\alpha(b)<a)$.
 This is Equation (12) (`eq:b+1`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0) := by
+lemma b_step_raw (a b : ℤ) : τ.s_raw a (b+1) = τ.s_raw a b - (if τ b < a then 1 else 0) := by
   have move_up := b_move_up τ a b (b+1) (by omega)
   suffices {x ∈ Finset.Ico b (b + 1) | τ.func x < a}.card = if τ b < a then 1 else 0 by linarith
   by_cases h_lt : τ b < a
@@ -722,16 +722,16 @@ lemma b_step (a b : ℤ) : τ.s a (b+1) = τ.s a b - (if τ b < a then 1 else 0)
     rw [x_eq_b] at τx_lt_a
     linarith [ge_a, τx_lt_a]
 
-lemma b_step_one_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b - 1 ↔ τ b < a := by
-  rw [b_step τ a b]
+lemma b_step_one_iff_raw (a b : ℤ) : τ.s_raw a (b+1) = τ.s_raw a b - 1 ↔ τ b < a := by
+  rw [b_step_raw τ a b]
   by_cases h_lt : τ b < a
   · simp only [h_lt, ↓reduceIte]
   · simp only [h_lt, ↓reduceIte, sub_zero, iff_false]
     intro h_eq
     omega
 
-lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
-  rw [b_step τ a b]
+lemma b_step_eq_iff_raw (a b : ℤ) : τ.s_raw a (b+1) = τ.s_raw a b ↔ τ b ≥ a := by
+  rw [b_step_raw τ a b]
   by_cases h_lt : τ b < a
   · simp only [h_lt, ↓reduceIte, sub_eq_self, one_ne_zero, ge_iff_le, false_iff, not_le]
   · simp only [h_lt, ↓reduceIte, sub_zero, ge_iff_le, true_iff]
@@ -760,7 +760,7 @@ private lemma se_diff_card (a a' b : ℤ) :
     exact ⟨⟨τinv_ge_b, x_lt_a'⟩, fun ⟨_, h⟩ => by omega⟩
 
 lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
-    τ.s a' b = τ.s a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
+    τ.s_raw a' b = τ.s_raw a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
   have h_sub : τ.se_finset a b ⊆ τ.se_finset a' b := fun k hk => by
     simp only [mem_se] at *; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
   suffices (τ.se_finset a' b).card
@@ -768,7 +768,7 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
     have hcard : ((τ.se_finset a' b).card : ℤ) =
         (τ.se_finset a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
       exact_mod_cast this
-    rw [τ.s_eq_se_card, τ.s_eq_se_card]
+    rw [τ.s_eq_se_card_raw, τ.s_eq_se_card_raw]
     omega
   rw [← se_diff_card τ a a' b]
   have h_disj : Disjoint (τ.se_finset a b) (τ.se_finset a' b \ τ.se_finset a b) :=
@@ -779,9 +779,9 @@ lemma a_move_up (a a' b : ℤ) (a_le_a' : a ≤ a') :
   rw [h_union] at h_card
   omega
 
-lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
-    τ.s a b ≤ τ.s a' b ∧
-      (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := by
+lemma s_nondec_raw {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
+    τ.s_raw a b ≤ τ.s_raw a' b ∧
+      (τ.s_raw a b = τ.s_raw a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := by
   rw [a_move_up τ a a' b a_le_a']
   let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
   constructor
@@ -804,7 +804,7 @@ lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
 
 /-- We have $s_\alpha(a+1,b) = s_\alpha(a,b) + \delta(\alpha^{-1}(a) \ge b)$.
 This is Equation (13) (`eq:a+1`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
+lemma a_step_raw (a b : ℤ) : τ.s_raw (a + 1) b = τ.s_raw a b + (if τ⁻¹ a ≥ b then 1 else 0) := by
   rw [a_move_up τ a (a + 1) b (by omega)]
   by_cases h : τ⁻¹ a ≥ b
   · have hfilt : ((Finset.Ico a (a + 1)).filter (τ⁻¹ · ≥ b)) = {a} := by
@@ -822,33 +822,33 @@ lemma a_step (a b : ℤ) : τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 
       rw [hxa] at htau; exact h htau
     simp only [ge_iff_le, hfilt, Finset.card_empty, Nat.cast_zero, add_zero, if_neg h]
 
-lemma a_step_one_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b := by
-  rw [a_step τ a b]
+lemma a_step_one_iff_raw (a b : ℤ) : τ.s_raw (a+1) b = τ.s_raw a b + 1 ↔ τ⁻¹ a ≥ b := by
+  rw [a_step_raw τ a b]
   by_cases h_ge : τ⁻¹ a ≥ b <;> simp [h_ge]
 
-lemma a_step_one_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b + 1 ↔ u ≥ b := by
-  have := a_step_one_iff τ (τ u) b
+lemma a_step_one_iff'_raw (u b : ℤ) : τ.s_raw (τ u + 1) b = τ.s_raw (τ u) b + 1 ↔ u ≥ b := by
+  have := a_step_one_iff_raw τ (τ u) b
   simpa [τ.mul_inv_cancel_eval] using this
 
-lemma a_step_eq_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b ↔ τ⁻¹ a < b := by
-  rw [a_step τ a b]
+lemma a_step_eq_iff_raw (a b : ℤ) : τ.s_raw (a+1) b = τ.s_raw a b ↔ τ⁻¹ a < b := by
+  rw [a_step_raw τ a b]
   by_cases h_ge : τ⁻¹ a ≥ b
   · simp only [ge_iff_le, h_ge, ↓reduceIte, add_eq_left, one_ne_zero, false_iff, not_lt]
   · simp only [ge_iff_le, h_ge, ↓reduceIte, add_zero, true_iff]
     omega
 
-lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b := by
-  have := a_step_eq_iff τ (τ u) b
+lemma a_step_eq_iff'_raw (u b : ℤ) : τ.s_raw (τ u + 1) b = τ.s_raw (τ u) b ↔ u < b := by
+  have := a_step_eq_iff_raw τ (τ u) b
   simpa [τ.mul_inv_cancel_eval] using this
 
-/-- The key duality formula for slipfaces of ASP permutations:
+/-- The key duality_raw formula for slipfaces of ASP permutations:
 $s_\alpha(a,b) - s_{\alpha^{-1}}(b,a) = \chi_\alpha + a - b$.
 This is Equation (15) (`eq:saDuality`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
-theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
-  let h (a b : ℤ) := τ.s a b - (τ⁻¹).s b a - a + b
+theorem duality_raw (a b : ℤ) : τ.s_raw a b - (τ⁻¹).s_raw b a = τ.χ + a - b := by
+  let h (a b : ℤ) := τ.s_raw a b - (τ⁻¹).s_raw b a - a + b
   have h_zero : h 0 0 = τ.χ := by
     simp only [h, AspPerm.χ]
-    rw [dual_inverse τ]
+    rw [dual_inverse_raw τ]
     omega
   have change_a : ∀ (a a' b : ℤ), h a' b = h a b := by
     intro a a' b
@@ -856,21 +856,21 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
     · specialize this a' a (by omega)
       rw [this]
     calc
-      h a' b = τ.s a' b - τ⁻¹.s b a' - a' + b := by rfl
-      _ = τ.s a b - τ⁻¹.s b a' - a' + b
+      h a' b = τ.s_raw a' b - τ⁻¹.s_raw b a' - a' + b := by rfl
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a' - a' + b
         + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
         rw [a_move_up τ a a' b a_le_a']
         omega
-      _ = τ.s a b - τ⁻¹.s b a - a' + b
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a' + b
         + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card
         + ((Finset.Ico a a').filter (τ⁻¹ · < b)).card := by
         rw [b_move_up (τ⁻¹) b a a' (by omega)]
         omega
-      _ = τ.s a b - τ⁻¹.s b a - a' + b
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a' + b
         + (Finset.Ico a a').card := by
         rw [← Utils.card_filter_helper (Finset.Ico a a') (τ⁻¹).func b]
         simp; omega
-      _ = τ.s a b - τ⁻¹.s b a - a' + b + (a' - a) := by
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a' + b + (a' - a) := by
         simp only [Int.card_Ico, Int.ofNat_toNat, Int.sub_nonneg, a_le_a', sup_of_le_left]
       _ = h a b := by linarith
   have change_b : ∀ (a b b' : ℤ), h a b' = h a b := by
@@ -879,21 +879,21 @@ theorem duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := by
     · specialize this b' b (by linarith [b_le_b'])
       rw [this]
     calc
-      h a b' = τ.s a b' - τ⁻¹.s b' a - a + b' := by rfl
-      _ = τ.s a b - τ⁻¹.s b' a - a + b'
+      h a b' = τ.s_raw a b' - τ⁻¹.s_raw b' a - a + b' := by rfl
+      _ = τ.s_raw a b - τ⁻¹.s_raw b' a - a + b'
         - ((Finset.Ico b b').filter (τ · < a)).card := by
         rw [b_move_up τ a b b' b_le_b']
         omega
-      _ = τ.s a b - τ⁻¹.s b a - a + b'
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a + b'
         - ((Finset.Ico b b').filter (τ · < a)).card
         - ((Finset.Ico b b').filter (τ · ≥ a)).card := by
         rw [a_move_up (τ⁻¹) b b' a (by omega)]
         simp; omega
-      _ = τ.s a b - τ⁻¹.s b a - a + b'
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a + b'
         - (Finset.Ico b b').card := by
         rw [← Utils.card_filter_helper (Finset.Ico b b') τ.func a]
         simp; omega
-      _ = τ.s a b - τ⁻¹.s b a - a + b' - (b' - b) := by
+      _ = τ.s_raw a b - τ⁻¹.s_raw b a - a + b' - (b' - b) := by
         simp only [Int.card_Ico, Int.ofNat_toNat, Int.sub_nonneg, b_le_b', sup_of_le_left]
       _ = h a b := by linarith
   have : h a b = h 0 0 := by
@@ -959,13 +959,13 @@ $- \#\{u \in \mathbb{Z} : (u,n) \in \operatorname{Inv} \tau\}$.
 theorem reconstruction : ∀ n : ℤ,
   τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
   intro n
-  have : τ.s (τ n) n = (τ.outset n).ncard := by
-    rw [AspPerm.s, τ.outset_eq_se]
+  have : τ.s_raw (τ n) n = (τ.outset n).ncard := by
+    rw [AspPerm.s_raw, τ.outset_eq_se]
   rw [← this]
-  have : τ⁻¹.s n (τ n) = (τ.inset n).ncard := by
-    rw [← τ.dual_inverse, AspPerm.s', τ.inset_eq_nw]
+  have : τ⁻¹.s_raw n (τ n) = (τ.inset n).ncard := by
+    rw [← τ.dual_inverse_raw, AspPerm.s'_raw, τ.inset_eq_nw]
   rw [← this]
-  have := τ.duality (τ n) n
+  have := τ.duality_raw (τ n) n
   omega
 
 /-- Two ASP permutations are equal if they have the same inversion set and the
@@ -1008,30 +1008,30 @@ lemma inv_set_id : inv_set AspPerm.id = ∅ := by
   intro u_lt_v
   exact le_of_lt u_lt_v
 
-lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := by
-  have := duality τ a b
+lemma s_eq_raw (a b : ℤ) : τ.s_raw a b = (τ⁻¹).s_raw b a + τ.χ + a - b := by
+  have := duality_raw τ a b
   omega
 
-lemma s'_eq (a b : ℤ) : τ⁻¹.s a b = τ.s b a - τ.χ + a - b := by
-  have := duality τ b a
+lemma s'_eq_raw (a b : ℤ) : τ⁻¹.s_raw a b = τ.s_raw b a - τ.χ + a - b := by
+  have := duality_raw τ b a
   omega
 
-lemma s_ge (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := by
-  rw [τ.s_eq a b]
-  linarith [τ⁻¹.s_nonneg b a]
+lemma s_ge_raw (a b : ℤ) : τ.s_raw a b ≥ a - b + τ.χ := by
+  rw [τ.s_eq_raw a b]
+  linarith [τ⁻¹.s_nonneg_raw b a]
 
-lemma s'_ge (a b : ℤ) : τ.s' a b ≥ a - b - τ.χ := by
-  rw [dual_inverse τ]
-  have := (τ⁻¹).s_ge a b
+lemma s'_ge_raw (a b : ℤ) : τ.s'_raw a b ≥ a - b - τ.χ := by
+  rw [dual_inverse_raw τ]
+  have := (τ⁻¹).s_ge_raw a b
   rwa [chi_dual] at this
 
-lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
-  by_cases h : τ.s 0 b = 0
+lemma tend_zero_a_raw (b : ℤ) : ∃ a : ℤ, τ.s_raw a b = 0 := by
+  by_cases h : τ.s_raw 0 b = 0
   · use 0
   · let S := Finset.image τ (τ.se_finset 0 b)
     have S_nonempty : S.Nonempty := by
       have h_ne : (southeast_set τ 0 b).ncard ≠ 0 := by
-        simpa [AspPerm.s] using h
+        simpa [AspPerm.s_raw] using h
       have h_nonempty : (southeast_set τ 0 b).Nonempty := Set.nonempty_of_ncard_ne_zero h_ne
       have h_se_nonempty : (τ.se_finset 0 b).Nonempty := by
         rcases h_nonempty with ⟨n, hn⟩
@@ -1051,7 +1051,7 @@ lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
         exact (Set.ncard_eq_zero
           (s := southeast_set τ (Finset.min' S S_nonempty) b)
           (hs := τ.se_finite (Finset.min' S S_nonempty) b)).2 this
-      unfold AspPerm.s
+      unfold AspPerm.s_raw
       exact_mod_cast h_ncard
     apply Set.eq_empty_iff_forall_notMem.mpr
     rintro n ⟨b_le_n, τn_lt_min⟩
@@ -1061,166 +1061,177 @@ lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := by
     have : a ≤ τ n := Finset.min'_le S (τ n) this
     exact lt_irrefl (τ n) <| lt_of_lt_of_le τn_lt_min this
 
-lemma tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := by
-  have := tend_zero_a (τ := τ⁻¹.flip) (-a)
+lemma tend_zero_b_raw (a : ℤ) : ∃ b : ℤ, τ.s_raw a b = 0 := by
+  have := tend_zero_a_raw (τ := τ⁻¹.flip) (-a)
   obtain ⟨b, hb⟩ := this
   use -b
-  rw [τ⁻¹.flip_s, τ⁻¹.dual_inverse] at hb
+  rw [τ⁻¹.flip_s, τ⁻¹.dual_inverse_raw] at hb
   simpa using hb
 
 /-- The slipface attached to `τ`.
 
 [An extended Demazure product](https://arxiv.org/abs/2206.14227) writes its values as
 $s_\tau(a,b)$; in Lean the corresponding value
-is `τ.s a b`, and `τ.sf` packages the same data as a `SlipFace`. -/
-noncomputable def sf : SlipFace := {
-  func := τ.s
+is `τ.s_raw a b`, and `τ.s` packages the same data as a `SlipFace`. -/
+noncomputable def s : SlipFace := {
+  func := τ.s_raw
   χ := τ.χ
   a_step := by
     intro a b
-    rw [τ.a_step a b]
+    rw [τ.a_step_raw a b]
     by_cases h : τ⁻¹ a ≥ b <;> simp [h]
   b_step := by
     intro a b
-    rw [τ.b_step a b]
+    rw [τ.b_step_raw a b]
     by_cases h : τ b < a <;> simp [h]
-  nonneg := τ.s_nonneg
-  ge_diff := τ.s_ge
+  nonneg := τ.s_nonneg_raw
+  ge_diff := τ.s_ge_raw
   small_a := by
     intro b
-    obtain ⟨A, hA⟩ := τ.tend_zero_a b
+    obtain ⟨A, hA⟩ := τ.tend_zero_a_raw b
     use A
     intro a a_le_A
-    have := (τ.s_nondec a_le_A b).1
+    have := (τ.s_nondec_raw a_le_A b).1
     rw [hA] at this
     apply le_antisymm this
-    exact τ.s_nonneg a b
+    exact τ.s_nonneg_raw a b
   large_a := by
     intro b
-    obtain ⟨A, hA⟩ := τ⁻¹.tend_zero_b b
+    obtain ⟨A, hA⟩ := τ⁻¹.tend_zero_b_raw b
     use A; intro a a_ge_A
-    have ha : τ⁻¹.s b a = 0 := by
+    have ha : τ⁻¹.s_raw b a = 0 := by
       apply le_antisymm
-      · have := (τ⁻¹.s_noninc b a_ge_A).1
+      · have := (τ⁻¹.s_noninc_raw b a_ge_A).1
         rwa [hA] at this
-      · exact τ⁻¹.s_nonneg b a
-    rw [τ.s_eq a b, ha]
+      · exact τ⁻¹.s_nonneg_raw b a
+    rw [τ.s_eq_raw a b, ha]
     omega
   small_b := by
     intro a
-    obtain ⟨B, hB⟩ := τ⁻¹.tend_zero_a a
+    obtain ⟨B, hB⟩ := τ⁻¹.tend_zero_a_raw a
     use B; intro b b_le_B
-    have hb : τ⁻¹.s b a = 0 := by
+    have hb : τ⁻¹.s_raw b a = 0 := by
       apply le_antisymm
-      · have := (τ⁻¹.s_nondec b_le_B a).1
+      · have := (τ⁻¹.s_nondec_raw b_le_B a).1
         rwa [hB] at this
-      · exact τ⁻¹.s_nonneg b a
-    rw [τ.s_eq a b, hb]
+      · exact τ⁻¹.s_nonneg_raw b a
+    rw [τ.s_eq_raw a b, hb]
     omega
   large_b := by
     intro a
-    obtain ⟨B, hB⟩ := τ.tend_zero_b a
+    obtain ⟨B, hB⟩ := τ.tend_zero_b_raw a
     use B; intro b b_ge_B
     apply le_antisymm
-    · have := (τ.s_noninc a b_ge_B).1
+    · have := (τ.s_noninc_raw a b_ge_B).1
       rwa [hB] at this
-    · exact τ.s_nonneg a b
+    · exact τ.s_nonneg_raw a b
 }
 
-@[simp] lemma sf_func_eq_s : τ.sf.func = τ.s := rfl
-@[simp] lemma sf_chi_eq : τ.sf.χ = τ.χ := rfl
+lemma s_func_eq_s_raw : τ.s.func = τ.s_raw := rfl
+@[simp] lemma s_chi_eq : τ.s.χ = τ.χ := rfl
 
-lemma sf_dual : τ.sf.dual = (τ⁻¹).sf := by
-  apply (SF_ext τ.sf.dual τ⁻¹.sf).mpr
+lemma s_dual : τ.s.dual = (τ⁻¹).s := by
+  apply (SF_ext τ.s.dual τ⁻¹.s).mpr
   intro a b
-  simp only [sf_func_eq_s]
-  rw [τ.s'_eq]
-  have := τ.sf.duality b a
-  simp only [sf_func_eq_s, sf_chi_eq] at this
+  simp only [s_func_eq_s_raw]
+  rw [τ.s'_eq_raw]
+  have := τ.s.duality b a
+  simp only [s_func_eq_s_raw, s_chi_eq] at this
   omega
 
-/-! ### Public `.sf` API (Stage A wrappers)
+/-- The northwest count `(τ⁻¹).s b a` (the slipface dual value) equals the
+cardinality of the northwest set. The slipface replacement for `s'_eq_nw_card`. -/
+lemma s_dual_eq_nw_card (b a : ℤ) : (τ⁻¹).s b a = (τ.nw_finset a b).card := by
+  change (τ⁻¹).s_raw b a = (τ.nw_finset a b).card
+  rw [← dual_inverse_raw]
+  exact τ.s'_eq_nw_card_raw b a
 
-These restate the raw `.s` lemmas about the slipface `τ.sf`. Because
-`τ.sf a b` is definitionally `τ.s a b`, each is a thin `:= τ.<raw>` proof.
-Downstream code should use these; the raw `.s` versions will become private.
+/-- Bridge: the raw northwest count equals the slipface dual value. -/
+lemma s'_raw_eq_s_dual (b a : ℤ) : τ.s'_raw b a = (τ⁻¹).s b a := by
+  rw [dual_inverse_raw, s_func_eq_s_raw]
+
+/-! ### Public `.s` API (Stage A wrappers)
+
+These restate the raw `.s_raw` lemmas about the slipface `τ.s`. Because
+`τ.s a b` is definitionally `τ.s_raw a b`, each is a thin `:= τ.<raw>` proof.
+Downstream code should use these; the raw `.s_raw` versions will become private.
 (Temporary `_sf` suffix; renamed in the terminal pass.) -/
 
-lemma s_eq_se_card_sf (a b : ℤ) : τ.sf a b = (τ.se_finset a b).card := τ.s_eq_se_card a b
-lemma s_nonneg_sf (a b : ℤ) : τ.sf a b ≥ 0 := τ.s_nonneg a b
-lemma s_ge_sf (a b : ℤ) : τ.sf a b ≥ a - b + τ.χ := τ.s_ge a b
-lemma a_step_sf (a b : ℤ) :
-    τ.sf (a + 1) b = τ.sf a b + (if τ⁻¹ a ≥ b then 1 else 0) := τ.a_step a b
-lemma b_step_sf (a b : ℤ) :
-    τ.sf a (b + 1) = τ.sf a b - (if τ b < a then 1 else 0) := τ.b_step a b
-lemma a_step_one_iff_sf (a b : ℤ) : τ.sf (a + 1) b = τ.sf a b + 1 ↔ τ⁻¹ a ≥ b :=
-  τ.a_step_one_iff a b
-lemma a_step_one_iff'_sf (u b : ℤ) : τ.sf (τ u + 1) b = τ.sf (τ u) b + 1 ↔ u ≥ b :=
-  τ.a_step_one_iff' u b
-lemma a_step_eq_iff_sf (a b : ℤ) : τ.sf (a + 1) b = τ.sf a b ↔ τ⁻¹ a < b :=
-  τ.a_step_eq_iff a b
-lemma a_step_eq_iff'_sf (u b : ℤ) : τ.sf (τ u + 1) b = τ.sf (τ u) b ↔ u < b :=
-  τ.a_step_eq_iff' u b
-lemma b_step_one_iff_sf (a b : ℤ) : τ.sf a (b + 1) = τ.sf a b - 1 ↔ τ b < a :=
-  τ.b_step_one_iff a b
-lemma b_step_eq_iff_sf (a b : ℤ) : τ.sf a (b + 1) = τ.sf a b ↔ τ b ≥ a :=
-  τ.b_step_eq_iff a b
-lemma s_noninc_sf (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
-    τ.sf a b ≥ τ.sf a b' ∧
-      (τ.sf a b = τ.sf a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := τ.s_noninc a b_le_b'
-lemma s_nondec_sf {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
-    τ.sf a b ≤ τ.sf a' b ∧
-      (τ.sf a b = τ.sf a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := τ.s_nondec a_le_a' b
-lemma duality_sf (a b : ℤ) : τ.sf a b - (τ⁻¹).sf b a = τ.χ + a - b := τ.duality a b
-lemma s_eq_sf (a b : ℤ) : τ.sf a b = (τ⁻¹).sf b a + τ.χ + a - b := τ.s_eq a b
-lemma s'_eq_sf (a b : ℤ) : (τ⁻¹).sf a b = τ.sf b a - τ.χ + a - b := τ.s'_eq a b
-lemma tend_zero_a_sf (b : ℤ) : ∃ a : ℤ, τ.sf a b = 0 := τ.tend_zero_a b
-lemma tend_zero_b_sf (a : ℤ) : ∃ b : ℤ, τ.sf a b = 0 := τ.tend_zero_b a
+lemma s_eq_se_card (a b : ℤ) : τ.s a b = (τ.se_finset a b).card := τ.s_eq_se_card_raw a b
+lemma s_nonneg (a b : ℤ) : τ.s a b ≥ 0 := τ.s_nonneg_raw a b
+lemma s_ge (a b : ℤ) : τ.s a b ≥ a - b + τ.χ := τ.s_ge_raw a b
+lemma a_step (a b : ℤ) :
+    τ.s (a + 1) b = τ.s a b + (if τ⁻¹ a ≥ b then 1 else 0) := τ.a_step_raw a b
+lemma b_step (a b : ℤ) :
+    τ.s a (b + 1) = τ.s a b - (if τ b < a then 1 else 0) := τ.b_step_raw a b
+lemma a_step_one_iff (a b : ℤ) : τ.s (a + 1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b :=
+  τ.a_step_one_iff_raw a b
+lemma a_step_one_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b + 1 ↔ u ≥ b :=
+  τ.a_step_one_iff'_raw u b
+lemma a_step_eq_iff (a b : ℤ) : τ.s (a + 1) b = τ.s a b ↔ τ⁻¹ a < b :=
+  τ.a_step_eq_iff_raw a b
+lemma a_step_eq_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b ↔ u < b :=
+  τ.a_step_eq_iff'_raw u b
+lemma b_step_one_iff (a b : ℤ) : τ.s a (b + 1) = τ.s a b - 1 ↔ τ b < a :=
+  τ.b_step_one_iff_raw a b
+lemma b_step_eq_iff (a b : ℤ) : τ.s a (b + 1) = τ.s a b ↔ τ b ≥ a :=
+  τ.b_step_eq_iff_raw a b
+lemma s_noninc (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
+    τ.s a b ≥ τ.s a b' ∧
+      (τ.s a b = τ.s a b' ↔ ∀ x : ℤ, b ≤ x → x < b' → τ x ≥ a) := τ.s_noninc_raw a b_le_b'
+lemma s_nondec {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
+    τ.s a b ≤ τ.s a' b ∧
+      (τ.s a b = τ.s a' b ↔ ∀ x : ℤ, a ≤ τ x → τ x < a' → x < b) := τ.s_nondec_raw a_le_a' b
+lemma duality (a b : ℤ) : τ.s a b - (τ⁻¹).s b a = τ.χ + a - b := τ.duality_raw a b
+lemma s_eq (a b : ℤ) : τ.s a b = (τ⁻¹).s b a + τ.χ + a - b := τ.s_eq_raw a b
+lemma s'_eq (a b : ℤ) : (τ⁻¹).s a b = τ.s b a - τ.χ + a - b := τ.s'_eq_raw a b
+lemma tend_zero_a (b : ℤ) : ∃ a : ℤ, τ.s a b = 0 := τ.tend_zero_a_raw b
+lemma tend_zero_b (a : ℤ) : ∃ b : ℤ, τ.s a b = 0 := τ.tend_zero_b_raw a
 
 /-- The bend set is a finite set on which the minimum defining the Demazure product is always
 obtained. It is characterized in
 *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/5.* -/
 lemma bend_set_sf (β : AspPerm) (b : ℤ) :
-    SlipFace.bend_set β.sf b = {l : ℤ | β⁻¹ (l - 1) < b ∧ b ≤ β⁻¹ l} := by
+    SlipFace.bend_set β.s b = {l : ℤ | β⁻¹ (l - 1) < b ∧ b ≤ β⁻¹ l} := by
   -- Proof written by GPT 5.5.
   ext l
-  simp only [SlipFace.bend_set, Set.mem_setOf_eq, sf_func_eq_s]
+  simp only [SlipFace.bend_set, Set.mem_setOf_eq, s_func_eq_s_raw]
   constructor
   · rintro ⟨hflat, hne⟩
     constructor
-    · have hflat' : β.s ((l - 1) + 1) b = β.s (l - 1) b := by
+    · have hflat' : β.s_raw ((l - 1) + 1) b = β.s_raw (l - 1) b := by
         simpa only [sub_add_cancel] using hflat.symm
-      exact (β.a_step_eq_iff (l - 1) b).mp hflat'
+      exact (β.a_step_eq_iff_raw (l - 1) b).mp hflat'
     · have hnot : ¬ β⁻¹ l < b := by
         intro hlt
-        have hflat' : β.s (l + 1) b = β.s l b :=
-          (β.a_step_eq_iff l b).mpr hlt
+        have hflat' : β.s_raw (l + 1) b = β.s_raw l b :=
+          (β.a_step_eq_iff_raw l b).mpr hlt
         exact hne hflat'.symm
       exact not_lt.mp hnot
   · rintro ⟨hleft, hright⟩
     constructor
-    · have hflat : β.s ((l - 1) + 1) b = β.s (l - 1) b :=
-        (β.a_step_eq_iff (l - 1) b).mpr hleft
+    · have hflat : β.s_raw ((l - 1) + 1) b = β.s_raw (l - 1) b :=
+        (β.a_step_eq_iff_raw (l - 1) b).mpr hleft
       simpa only [sub_add_cancel] using hflat.symm
     · intro hsame
       have hlt : β⁻¹ l < b :=
-        (β.a_step_eq_iff l b).mp hsame.symm
+        (β.a_step_eq_iff_raw l b).mp hsame.symm
       exact not_lt_of_ge hright hlt
 
 /-- Formula (14) (`eq:Deltasa`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227),
 characterizing the values of a permutation via the second iterated difference of its slipface. -/
-lemma Delta_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
-  let d1 := τ.s (a+1) b - τ.s (a+1) (b+1)
-  let d2 := τ.s a b - τ.s a (b+1)
+lemma Delta_eq (a b : ℤ) : τ.s.Δ a b = if τ b = a then 1 else 0 := by
+  let d1 := τ.s_raw (a+1) b - τ.s_raw (a+1) (b+1)
+  let d2 := τ.s_raw a b - τ.s_raw a (b+1)
   suffices d1 - d2 = if τ b = a then 1 else 0 by
-    unfold SlipFace.Δ AspPerm.sf
+    unfold SlipFace.Δ AspPerm.s
     simp; omega
   have h1 : d1 = if τ b ≤ a then 1 else 0 := by
-    unfold d1; rw [τ.b_step (a+1) b]
+    unfold d1; rw [τ.b_step_raw (a+1) b]
     omega
   have h2 : d2 = if τ b < a then 1 else 0 := by
-    unfold d2; rw [τ.b_step a b]
+    unfold d2; rw [τ.b_step_raw a b]
     omega
   rw [h1, h2]
   by_cases h : τ b < a
@@ -1236,14 +1247,14 @@ lemma Delta_eq (a b : ℤ) : τ.sf.Δ a b = if τ b = a then 1 else 0 := by
     exact le_antisymm h' h
   simpa [h, h']
 
-lemma Γ_eq : τ.sf.Γ = { ⟨a, b⟩ | τ b = a } := by
+lemma Γ_eq : τ.s.Γ = { ⟨a, b⟩ | τ b = a } := by
   ext ⟨a, b⟩
   simp only [SlipFace.Γ, τ.Delta_eq, ite_eq_left_iff, zero_ne_one, imp_false,
     Decidable.not_not, Set.mem_setOf_eq]
 
 /-- The slipface of an ASP permutation is submodular.
 *Proposition 4.3* (`prop:imageASP`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), one direction. -/
-lemma submodular : τ.sf.submodular := by
+lemma submodular : τ.s.submodular := by
   intro a b
   have Delta_eq := τ.Delta_eq a b
   by_cases h : τ b = a <;> simp [h, Delta_eq]
@@ -1262,11 +1273,11 @@ variable (τ : AspPerm)
 /-- The `b`-ramp of an ASP permutation: the region, shaped like a Young diagram, of pairs `(m,n)`
 such that $s_\tau(\ell,b) \ge m$ and $s^∨_\tau(b,\ell) \ge n$ for some $\ell$. -/
 def ramp (b : ℤ) : Set (ℤ × ℤ) :=
-  {⟨m, n⟩ | ∃ l : ℤ, τ.s l b ≥ m ∧ τ.s' b l ≥ n}
+  {⟨m, n⟩ | ∃ l : ℤ, τ.s_raw l b ≥ m ∧ τ.s'_raw b l ≥ n}
 
 /-- The `a`-lamp of an ASP permutation, defined as the dual of a ramp. -/
 def lamp (a : ℤ) : Set (ℤ × ℤ) :=
-  {⟨m, n⟩ | ∃ l : ℤ, τ.s a l ≥ m ∧ τ.s' l a ≥ n}
+  {⟨m, n⟩ | ∃ l : ℤ, τ.s_raw a l ≥ m ∧ τ.s'_raw l a ≥ n}
 
 def ramp_closed (b : ℤ) {m₁ n₁ m₂ n₂ : ℤ} (hm : m₁ ≤ m₂) (hn : n₁ ≤ n₂) :
   ⟨m₂, n₂⟩ ∈ τ.ramp b → ⟨m₁, n₁⟩ ∈ τ.ramp b := by
@@ -1279,11 +1290,11 @@ def ramp_closed (b : ℤ) {m₁ n₁ m₂ n₂ : ℤ} (hm : m₁ ≤ m₂) (hn :
 lemma ramp_lamp_dual (b m n : ℤ) :
   ⟨m,n⟩ ∈ τ.ramp b ↔ ⟨n, m⟩ ∈ (τ⁻¹).lamp b := by
   unfold ramp lamp
-  rw [← dual_inverse τ, dual_inverse τ⁻¹, inv_inv τ]
+  rw [← dual_inverse_raw τ, dual_inverse_raw τ⁻¹, inv_inv τ]
   constructor <;> (intro h; rcases h with ⟨l, _, _⟩; use l)
 
-lemma mem_ramp_iff_s_ge (b m n : ℤ) :
-  ⟨m, n⟩ ∈ τ.ramp b ↔ τ.s (b + m - n - τ.χ) b ≥ m := by
+lemma mem_ramp_iff_s_ge_raw (b m n : ℤ) :
+  ⟨m, n⟩ ∈ τ.ramp b ↔ τ.s_raw (b + m - n - τ.χ) b ≥ m := by
   constructor
   · intro mn_ramp
     rcases mn_ramp with ⟨l, hm, hn⟩
@@ -1291,32 +1302,40 @@ lemma mem_ramp_iff_s_ge (b m n : ℤ) :
     · have := a_move_up τ l (b + m - n - τ.χ) b hl
       omega
     · have ineq := b_move_up τ⁻¹ b (b + m - n - τ.χ) l (by omega)
-      rw [dual_inverse τ] at hn
-      rw [τ.s_eq (b + m - n - τ.χ) b]
+      rw [dual_inverse_raw τ] at hn
+      rw [τ.s_eq_raw (b + m - n - τ.χ) b]
       omega
-  · intro s_ge
+  · intro s_ge_raw
     use b + m - n - τ.χ
-    rw [dual_inverse τ]
+    rw [dual_inverse_raw τ]
     constructor
-    · exact s_ge
-    · rw [s_eq] at s_ge
+    · exact s_ge_raw
+    · rw [s_eq_raw] at s_ge_raw
       omega
 
-lemma mem_lamp_iff_s_ge (a m n : ℤ) :
-  ⟨m, n⟩ ∈ τ.lamp a ↔ τ⁻¹.s (a - m + n + τ.χ) a ≥ n := by
+lemma mem_lamp_iff_s_ge_raw (a m n : ℤ) :
+  ⟨m, n⟩ ∈ τ.lamp a ↔ τ⁻¹.s_raw (a - m + n + τ.χ) a ≥ n := by
   have := ramp_lamp_dual (τ := τ⁻¹) a n m
   rw [inv_inv] at this
   rw [← this]
-  rw [mem_ramp_iff_s_ge, chi_dual]
+  rw [mem_ramp_iff_s_ge_raw, chi_dual]
   constructor <;> (intro h; convert h using 2; omega)
+
+/-- Slipface form of `mem_ramp_iff_s_ge_raw`. -/
+lemma mem_ramp_iff_s_ge (b m n : ℤ) :
+    ⟨m, n⟩ ∈ τ.ramp b ↔ τ.s (b + m - n - τ.χ) b ≥ m := τ.mem_ramp_iff_s_ge_raw b m n
+
+/-- Slipface form of `mem_lamp_iff_s_ge_raw`. -/
+lemma mem_lamp_iff_s_ge (a m n : ℤ) :
+    ⟨m, n⟩ ∈ τ.lamp a ↔ (τ⁻¹).s (a - m + n + τ.χ) a ≥ n := τ.mem_lamp_iff_s_ge_raw a m n
 
 namespace Wings
 variable (b m n : ℤ) (m_pos : m > 0) (n_pos : n > 0)
 
-private def R : Set ℤ := {n : ℤ | τ.s n b < m}
+private def R : Set ℤ := {n : ℤ | τ.s_raw n b < m}
 
 private lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
-  have := tend_zero_a (τ := τ) b
+  have := tend_zero_a_raw (τ := τ) b
   obtain ⟨n, hn⟩ := this
   use n
   unfold R; simp
@@ -1326,26 +1345,26 @@ private lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
   use m + b - τ.χ
   intro n hn
   simp only [R] at hn
-  have := lt_of_le_of_lt (τ.s_ge n b) hn
+  have := lt_of_le_of_lt (τ.s_ge_raw n b) hn
   omega
 
-private def L : Set ℤ := {a : ℤ | τ.s' b a ≥ n}
+private def L : Set ℤ := {a : ℤ | τ.s'_raw b a ≥ n}
 
 private lemma L_nonnempty : (L τ b n).Nonempty := by
   use b - n - τ.χ
   unfold L; simp only [ge_iff_le, Set.mem_setOf_eq]
-  refine le_trans ?_ (τ.s'_ge b (b - n - τ.χ))
+  refine le_trans ?_ (τ.s'_ge_raw b (b - n - τ.χ))
   omega
 
 private lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
-  have := tend_zero_b (τ := τ⁻¹) b
+  have := tend_zero_b_raw (τ := τ⁻¹) b
   obtain ⟨a, ha⟩ := this
   use a
   intro a' a'_L
   unfold L at a'_L; simp only [ge_iff_le, Set.mem_setOf_eq] at a'_L
   contrapose! a'_L with a_lt_a'
-  have := (τ⁻¹.s_noninc b (le_of_lt a_lt_a')).1
-  rw [dual_inverse τ]
+  have := (τ⁻¹.s_noninc_raw b (le_of_lt a_lt_a')).1
+  rw [dual_inverse_raw τ]
   omega
 
 end Wings
@@ -1355,8 +1374,8 @@ noncomputable def v (b : ℤ) {m : ℤ} (m_pos : m > 0) : ℤ :=
     (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos) )
 
 private lemma v_spec (b : ℤ) {m : ℤ} (m_pos : m > 0) :
-  τ.s (τ (τ.v b m_pos)) b < m
-  ∧ ∀ a : ℤ, τ.s a b < m → a ≤ τ (τ.v b m_pos) := by
+  τ.s_raw (τ (τ.v b m_pos)) b < m
+  ∧ ∀ a : ℤ, τ.s_raw a b < m → a ≤ τ (τ.v b m_pos) := by
   let v := τ.v b m_pos
   let τv := Classical.choose <| Int.exists_greatest_of_bdd
     (Wings.R_bddAbove τ b m) (Wings.R_nonempty τ b m m_pos)
@@ -1368,42 +1387,42 @@ private lemma v_spec (b : ℤ) {m : ℤ} (m_pos : m > 0) :
   simpa [v, R, Wings.R] using this
 
 lemma v_crit (b : ℤ) {m : ℤ} (m_pos : m > 0) (v : ℤ) :
-  v = τ.v b m_pos ↔ τ.s (τ v) b = m - 1 ∧ b ≤ v := by
+  v = τ.v b m_pos ↔ τ.s_raw (τ v) b = m - 1 ∧ b ≤ v := by
   constructor
   · intro v_eq
-    have v_spec : τ.s (τ v) b < m ∧ ∀ a : ℤ, τ.s a b < m → a ≤ τ v := by
+    have v_spec : τ.s_raw (τ v) b < m ∧ ∀ a : ℤ, τ.s_raw a b < m → a ≤ τ v := by
       subst v; exact τ.v_spec b m_pos
     obtain ⟨s_lt_m, τv_max⟩ := v_spec
-    have s_next : τ.s (τ v + 1) b ≥ m := by
+    have s_next : τ.s_raw (τ v + 1) b ≥ m := by
       by_contra! s_next_lt
       have a_le : τ v + 1 ≤ τ v := τv_max (τ v + 1) s_next_lt
       omega
-    have s_inc : τ.s (τ v) b < τ.s (τ v + 1) b := lt_of_lt_of_le s_lt_m s_next
+    have s_inc : τ.s_raw (τ v) b < τ.s_raw (τ v + 1) b := lt_of_lt_of_le s_lt_m s_next
     have v_ge_b : b ≤ v := by
       by_contra! v_lt_b
-      have : τ.s (τ v + 1) b = τ.s (τ v) b := (a_step_eq_iff' τ v b).mpr v_lt_b
+      have : τ.s_raw (τ v + 1) b = τ.s_raw (τ v) b := (a_step_eq_iff'_raw τ v b).mpr v_lt_b
       rw [this] at s_inc
       exact lt_irrefl _ s_inc
-    let s_inc : τ.s (τ v + 1) b = τ.s (τ v) b + 1 := (a_step_one_iff' τ v b).mpr v_ge_b
-    have s_next_le : τ.s (τ v + 1) b ≤ m := by
+    let s_inc : τ.s_raw (τ v + 1) b = τ.s_raw (τ v) b + 1 := (a_step_one_iff'_raw τ v b).mpr v_ge_b
+    have s_next_le : τ.s_raw (τ v + 1) b ≤ m := by
       rw [s_inc]
       apply Int.lt_iff_add_one_le.mpr
       linarith [v_eq]
-    have : τ.s (τ v + 1) b = m := le_antisymm s_next_le s_next
+    have : τ.s_raw (τ v + 1) b = m := le_antisymm s_next_le s_next
     rw [s_inc] at this
     exact ⟨by linarith [this, s_inc], v_ge_b⟩
-  · rintro ⟨s_eq, v_ge_b⟩
+  · rintro ⟨s_eq_raw, v_ge_b⟩
     let v₀ := τ.v b m_pos
     have τv_le : τ v ≤ τ v₀ := by
       apply (τ.v_spec b m_pos).2 (τ v)
-      linarith [s_eq]
+      linarith [s_eq_raw]
     have τv_ge : τ v₀ ≤ τ v := by
       by_contra! τv_lt
       have τv_le : τ v + 1 ≤ τ (τ.v b m_pos) := by linarith [τv_le]
-      have : (τ.s (τ v + 1) b ≤ τ.s (τ v₀) b) := (τ.s_nondec τv_le b).1
-      have : (τ.s (τ v) b) + 1 ≤ τ.s (τ v₀) b := by
-        rwa [(a_step_one_iff' τ v b).mpr v_ge_b] at this
-      linarith [this, s_eq, (τ.v_spec b m_pos).1]
+      have : (τ.s_raw (τ v + 1) b ≤ τ.s_raw (τ v₀) b) := (τ.s_nondec_raw τv_le b).1
+      have : (τ.s_raw (τ v) b) + 1 ≤ τ.s_raw (τ v₀) b := by
+        rwa [(a_step_one_iff'_raw τ v b).mpr v_ge_b] at this
+      linarith [this, s_eq_raw, (τ.v_spec b m_pos).1]
     exact τ.injective <| le_antisymm τv_le τv_ge
 
 lemma s_τv_b (b : ℤ) {m : ℤ} (m_pos : m > 0) :
@@ -1416,7 +1435,7 @@ lemma v_ge (b : ℤ) {m : ℤ} (m_pos : m > 0) : b ≤ τ.v b m_pos :=
 lemma τv_lt (b : ℤ) {m : ℤ} (m_pos : m > 0)
   {a : ℤ} (s_ge_m : m ≤ τ.s a b) : τ (τ.v b m_pos) < a := by
   by_contra! τv_ge_a
-  have h := (τ.s_nondec τv_ge_a b).1
+  have h := (τ.s_nondec_raw τv_ge_a b).1
   have := ((τ.v_crit b m_pos (τ.v b m_pos)).mp rfl).1
   rw [this] at h
   have : m ≤ m-1 := le_trans s_ge_m h
@@ -1427,8 +1446,8 @@ noncomputable def u (b : ℤ) {n : ℤ} (n_pos : n > 0) : ℤ :=
     (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
 
 private lemma u_spec (b : ℤ) {n : ℤ} (n_pos : n > 0) :
-  τ.s' b (τ (τ.u b n_pos)) ≥ n
-  ∧ ∀ a : ℤ, τ.s' b a ≥ n → a ≤ τ (τ.u b n_pos) := by
+  τ.s'_raw b (τ (τ.u b n_pos)) ≥ n
+  ∧ ∀ a : ℤ, τ.s'_raw b a ≥ n → a ≤ τ (τ.u b n_pos) := by
   let u := τ.u b n_pos
   let τu := Classical.choose <| Int.exists_greatest_of_bdd
     (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n)
@@ -1437,69 +1456,78 @@ private lemma u_spec (b : ℤ) {n : ℤ} (n_pos : n > 0) :
   have : τu ∈ L ∧ ∀ n : ℤ, n ∈ L → τu ≥ n := Classical.choose_spec
     (Int.exists_greatest_of_bdd (Wings.L_bddAbove τ b n n_pos) (Wings.L_nonnempty τ b n))
   rw [← τ_us] at this
-  simpa [L, Wings.L, dual_inverse τ] using this
+  simpa [L, Wings.L, dual_inverse_raw τ] using this
 
 lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
-  u = τ.u b n_pos ↔ τ.s' b (τ u) = n ∧ u < b := by
+  u = τ.u b n_pos ↔ τ.s'_raw b (τ u) = n ∧ u < b := by
   constructor
   · intro u_eq
-    have u_spec : τ.s' b (τ u) ≥ n ∧ ∀ a : ℤ, τ.s' b a ≥ n → a ≤ τ u := by
+    have u_spec : τ.s'_raw b (τ u) ≥ n ∧ ∀ a : ℤ, τ.s'_raw b a ≥ n → a ≤ τ u := by
       subst u; exact τ.u_spec b n_pos
     obtain ⟨s_ge_n, τu_max⟩ := u_spec
-    have s_next : τ.s' b (τ u + 1) < n := by
+    have s_next : τ.s'_raw b (τ u + 1) < n := by
       by_contra! s_next_ge
       have a_le : τ u + 1 ≤ τ u := τu_max (τ u + 1) s_next_ge
       omega
-    have s_ge_n_inv : (τ⁻¹).s b (τ u) ≥ n := by
-      simpa [dual_inverse τ] using s_ge_n
-    have s_next_inv : (τ⁻¹).s b (τ u + 1) < n := by
-      simpa [dual_inverse τ] using s_next
+    have s_ge_n_inv : (τ⁻¹).s_raw b (τ u) ≥ n := by
+      simpa [dual_inverse_raw τ] using s_ge_n
+    have s_next_inv : (τ⁻¹).s_raw b (τ u + 1) < n := by
+      simpa [dual_inverse_raw τ] using s_next
     have u_lt_b : u < b := by
       by_contra! u_ge_b
-      have hs_eq : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) := by
-        apply ((τ⁻¹).b_step_eq_iff b (τ u)).2
+      have hs_eq : (τ⁻¹).s_raw b (τ u + 1) = (τ⁻¹).s_raw b (τ u) := by
+        apply ((τ⁻¹).b_step_eq_iff_raw b (τ u)).2
         simpa using u_ge_b
       rw [hs_eq] at s_next_inv
       exact lt_irrefl _ (lt_of_lt_of_le s_next_inv s_ge_n_inv)
-    have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
-      apply ((τ⁻¹).b_step_one_iff b (τ u)).2
+    have hs_dec : (τ⁻¹).s_raw b (τ u + 1) = (τ⁻¹).s_raw b (τ u) - 1 := by
+      apply ((τ⁻¹).b_step_one_iff_raw b (τ u)).2
       simpa using u_lt_b
-    have hs_eq_n : (τ⁻¹).s b (τ u) = n := by
+    have hs_eq_n : (τ⁻¹).s_raw b (τ u) = n := by
       rw [hs_dec] at s_next_inv
       omega
-    exact ⟨by simpa [dual_inverse τ] using hs_eq_n, u_lt_b⟩
-  · rintro ⟨s_eq, u_lt_b⟩
+    exact ⟨by simpa [dual_inverse_raw τ] using hs_eq_n, u_lt_b⟩
+  · rintro ⟨s_eq_raw, u_lt_b⟩
     let u₀ := τ.u b n_pos
     have τu_le : τ u ≤ τ u₀ := by
       apply (τ.u_spec b n_pos).2 (τ u)
-      rw [s_eq]
+      rw [s_eq_raw]
     have τu_ge : τ u₀ ≤ τ u := by
       by_contra! τu_lt
       have τu_succ_le : τ u + 1 ≤ τ u₀ := by omega
-      have hs_noninc : (τ⁻¹).s b (τ u₀) ≤ (τ⁻¹).s b (τ u + 1) := by
-        exact ((τ⁻¹).s_noninc (a := b) τu_succ_le).1
-      have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
-        apply ((τ⁻¹).b_step_one_iff b (τ u)).2
+      have hs_noninc : (τ⁻¹).s_raw b (τ u₀) ≤ (τ⁻¹).s_raw b (τ u + 1) := by
+        exact ((τ⁻¹).s_noninc_raw (a := b) τu_succ_le).1
+      have hs_dec : (τ⁻¹).s_raw b (τ u + 1) = (τ⁻¹).s_raw b (τ u) - 1 := by
+        apply ((τ⁻¹).b_step_one_iff_raw b (τ u)).2
         simpa using u_lt_b
-      have hs_u0_ge_n : (τ⁻¹).s b (τ u₀) ≥ n := by
-        simpa [u₀, dual_inverse τ] using (τ.u_spec b n_pos).1
-      have hs_u0_le : (τ⁻¹).s b (τ u₀) ≤ n - 1 := by
+      have hs_u0_ge_n : (τ⁻¹).s_raw b (τ u₀) ≥ n := by
+        simpa [u₀, dual_inverse_raw τ] using (τ.u_spec b n_pos).1
+      have hs_u0_le : (τ⁻¹).s_raw b (τ u₀) ≤ n - 1 := by
         rw [hs_dec] at hs_noninc
-        have hs_eq_inv : (τ⁻¹).s b (τ u) = n := by
-          simpa [dual_inverse τ] using s_eq
+        have hs_eq_inv : (τ⁻¹).s_raw b (τ u) = n := by
+          simpa [dual_inverse_raw τ] using s_eq_raw
         omega
       omega
     exact τ.injective <| le_antisymm τu_le τu_ge
 
-lemma s'_b_τu (b : ℤ) {n : ℤ} (n_pos : n > 0) :
-  τ.s' b (τ (τ.u b n_pos)) = n := by
+lemma s'_b_τu_raw (b : ℤ) {n : ℤ} (n_pos : n > 0) :
+  τ.s'_raw b (τ (τ.u b n_pos)) = n := by
   exact ((τ.u_crit b n_pos (τ.u b n_pos)).mp rfl).1
+
+/-- Slipface form of `s'_b_τu_raw`, via the dual count `(τ⁻¹).s`. -/
+lemma s'_b_τu (b : ℤ) {n : ℤ} (n_pos : n > 0) :
+    (τ⁻¹).s b (τ (τ.u b n_pos)) = n := by
+  have := τ.s'_b_τu_raw b n_pos; rwa [dual_inverse_raw] at this
+
+/-- Slipface form of `s'_pos_of_lt_raw`, via the dual count `(τ⁻¹).s`. -/
+lemma s'_pos_of_lt {u b : ℤ} (u_lt_b : u < b) : (τ⁻¹).s b (τ u) ≥ 1 := by
+  have := τ.s'_pos_of_lt_raw u_lt_b; rwa [dual_inverse_raw] at this
 
 lemma u_lt (b : ℤ) {n : ℤ} (n_pos : n > 0) : τ.u b n_pos < b :=
   ((τ.u_crit b n_pos (τ.u b n_pos)).mp rfl).2
 
 lemma τu_ge (b : ℤ) {n : ℤ} (n_pos : n > 0)
-  {a : ℤ} (s_ge_n : n ≤ τ.s' b a) : τ (τ.u b n_pos) ≥ a := by
+  {a : ℤ} (s_ge_n : n ≤ τ.s'_raw b a) : τ (τ.u b n_pos) ≥ a := by
   by_contra! τu_lt_a
   have hu_ge : a ≤ τ (τ.u b n_pos) := (τ.u_spec b n_pos).2 a s_ge_n
   omega
@@ -1519,15 +1547,15 @@ theorem inv_ramp_correspondence (b : ℤ) {m n : ℤ} (m_pos : m > 0) (n_pos : n
   let a := b + m - n - τ.χ
   constructor
   · intro mn_ramp
-    have s_ge_m : τ.s a b ≥ m := (mem_ramp_iff_s_ge (τ := τ) b m n).mp mn_ramp
-    have s'_ge_n : τ.s' b a ≥ n := by
-      rw [dual_inverse τ]
-      have := τ.duality a b
+    have s_ge_m : τ.s_raw a b ≥ m := (mem_ramp_iff_s_ge_raw (τ := τ) b m n).mp mn_ramp
+    have s'_ge_n : τ.s'_raw b a ≥ n := by
+      rw [dual_inverse_raw τ]
+      have := τ.duality_raw a b
       omega
     have a_gt_v : a > τ v := by
       contrapose! s_ge_m with a_le_v
-      have h_lt : τ.s (τ v) b < m := (τ.v_spec b m_pos).1
-      have h_le : τ.s a b ≤ τ.s (τ (τ.v b m_pos)) b := (τ.s_nondec a_le_v b).1
+      have h_lt : τ.s_raw (τ v) b < m := (τ.v_spec b m_pos).1
+      have h_le : τ.s_raw a b ≤ τ.s_raw (τ (τ.v b m_pos)) b := (τ.s_nondec_raw a_le_v b).1
       exact lt_of_le_of_lt h_le h_lt
     have a_le_u : a ≤ τ u := by
       exact (τ.u_spec b n_pos).2 a s'_ge_n
@@ -1687,36 +1715,36 @@ lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α 
   simp only [inv_mul_cancel_eval] at u_lt_v
   exact ⟨u_lt_v, τu_gt_τv⟩
 
--- This means that `(α ⋆ β).s a b ≥ n`.
+-- This means that `(α ⋆ β).s_raw a b ≥ n`.
 def dprod_val_ge (α β : AspPerm) (a b n : ℤ) : Prop :=
-  ∀ l : ℤ, α.sf a l + β.sf l b ≥ n
+  ∀ l : ℤ, α.s a l + β.s l b ≥ n
 
 def le_dprod (τ α β : AspPerm) : Prop :=
-  ∀ a b : ℤ, dprod_val_ge α β a b (τ.sf a b)
+  ∀ a b : ℤ, dprod_val_ge α β a b (τ.s a b)
 
 def dprod_val_le (α β : AspPerm) (a b n : ℤ) : Prop :=
-  ∃ l : ℤ, α.sf a l + β.sf l b ≤ n
+  ∃ l : ℤ, α.s a l + β.s l b ≤ n
 
 def ge_dprod (τ α β : AspPerm) : Prop :=
-  ∀ a b : ℤ, dprod_val_le α β a b (τ.sf a b)
+  ∀ a b : ℤ, dprod_val_le α β a b (τ.s a b)
 
 def eq_dprod (τ α β : AspPerm) : Prop :=
   τ.le_dprod α β ∧ τ.ge_dprod α β
 
 lemma chi_ge_of_dprod_ge {α β τ : AspPerm} (h_ge : τ.le_dprod α β) :
   α.χ + β.χ ≥ τ.χ := by
-  rcases α⁻¹.tend_zero_a_sf 0 with ⟨l, hl⟩
-  rcases β⁻¹.tend_zero_a_sf l with ⟨c, hc⟩
+  rcases α⁻¹.tend_zero_a 0 with ⟨l, hl⟩
+  rcases β⁻¹.tend_zero_a l with ⟨c, hc⟩
   have eq := h_ge 0 c l
-  rw [α.s_eq_sf, β.s_eq_sf] at eq
-  linarith [τ.s_ge_sf 0 c]
+  rw [α.s_eq, β.s_eq] at eq
+  linarith [τ.s_ge 0 c]
 
 lemma chi_le_of_dprod_le {α β τ : AspPerm} (h_le : τ.ge_dprod α β) :
   α.χ + β.χ ≤ τ.χ := by
-  rcases τ⁻¹.tend_zero_a_sf 0 with ⟨c, hc⟩
+  rcases τ⁻¹.tend_zero_a 0 with ⟨c, hc⟩
   rcases h_le 0 c with ⟨l, hl⟩
-  rw [τ.s_eq_sf] at hl
-  linarith [α.s_ge_sf 0 l, β.s_ge_sf l c]
+  rw [τ.s_eq] at hl
+  linarith [α.s_ge 0 l, β.s_ge l c]
 
 lemma chi_eq_of_drop_eq {τ α β : AspPerm} (h_eq : τ.eq_dprod α β) :
   α.χ + β.χ = τ.χ :=
@@ -1727,18 +1755,18 @@ lemma dprod_inv_eq_inv_dprod (τ α β : AspPerm) (h_eq : τ.eq_dprod α β) :
   have hχ : α.χ + β.χ = τ.χ := chi_eq_of_drop_eq h_eq
   constructor
   · intro a b l
-    have eqα : α⁻¹.sf l b = l - b + α.sf b l - α.χ := by have := α.s'_eq_sf l b; omega
-    have eqβ : β⁻¹.sf a l = a - l + β.sf l a - β.χ := by have := β.s'_eq_sf a l; omega
-    have eqτ : τ⁻¹.sf a b = a - b + τ.sf b a - τ.χ := by have := τ.s'_eq_sf a b; omega
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     have := h_eq.1 b a l
     omega
   · intro a b
     rcases h_eq.2 b a with ⟨l, hl⟩
     use l
-    have eqα : α⁻¹.sf l b = l - b + α.sf b l - α.χ := by have := α.s'_eq_sf l b; omega
-    have eqβ : β⁻¹.sf a l = a - l + β.sf l a - β.χ := by have := β.s'_eq_sf a l; omega
-    have eqτ : τ⁻¹.sf a b = a - b + τ.sf b a - τ.χ := by have := τ.s'_eq_sf a b; omega
+    have eqα : α⁻¹.s l b = l - b + α.s b l - α.χ := by have := α.s'_eq l b; omega
+    have eqβ : β⁻¹.s a l = a - l + β.s l a - β.χ := by have := β.s'_eq a l; omega
+    have eqτ : τ⁻¹.s a b = a - b + τ.s b a - τ.χ := by have := τ.s'_eq a b; omega
     rw [eqα, eqβ, eqτ, ← hχ]
     omega
 
@@ -1762,10 +1790,10 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       rw [inv_inv] at h
       rw [← h]
       exact this
-    have sα := mem_ramp_iff_s_ge α⁻¹ a n' m'
-    have sβ := mem_ramp_iff_s_ge β b m n
+    have sα := mem_ramp_iff_s_ge_raw α⁻¹ a n' m'
+    have sβ := mem_ramp_iff_s_ge_raw β b m n
     rw [sα, sβ]
-    replace dprod : ∀ l, α.s a l + β.s l b ≥ M := dprod
+    replace dprod : ∀ l, α.s_raw a l + β.s_raw l b ≥ M := dprod
     contrapose! dprod with ineqs
     let l := b + m - n  - β.χ
     use l
@@ -1774,46 +1802,46 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       linarith [habMN]
     rw [← l_eq] at ineqs
     obtain ⟨hβ, hα⟩ := ineqs
-    have hβ : β.s l b ≤ m-1 := by exact Int.le_sub_one_of_lt hβ
-    have hα : α.s a l ≤ M  - m := by
-      linarith [α.s_eq a l]
-    have : α.s a l + β.s l b ≤ M-1 := by
-      linarith [add_le_add (α.s_ge a l) hβ]
+    have hβ : β.s_raw l b ≤ m-1 := by exact Int.le_sub_one_of_lt hβ
+    have hα : α.s_raw a l ≤ M  - m := by
+      linarith [α.s_eq_raw a l]
+    have : α.s_raw a l + β.s_raw l b ≤ M-1 := by
+      linarith [add_le_add (α.s_ge_raw a l) hβ]
     exact Int.lt_of_le_sub_one this
   · intro hramp l
     contrapose! hramp with ineq
-    obtain ineq : α.s a l + β.s l b ≤ M - 1 := Int.le_sub_one_of_lt ineq
-    have ineq' : α⁻¹.s l a + β⁻¹.s b l ≤ N -1 := by
-      linarith [α.s'_eq l a, β.s'_eq b l]
-    let m := β.s l b + 1
-    let n := β⁻¹.s b l + 1
+    obtain ineq : α.s_raw a l + β.s_raw l b ≤ M - 1 := Int.le_sub_one_of_lt ineq
+    have ineq' : α⁻¹.s_raw l a + β⁻¹.s_raw b l ≤ N -1 := by
+      linarith [α.s'_eq_raw l a, β.s'_eq_raw b l]
+    let m := β.s_raw l b + 1
+    let n := β⁻¹.s_raw b l + 1
     have l_eq : l = m - n + b - β.χ := by
-      linarith [β.s_eq l b]
+      linarith [β.s_eq_raw l b]
     have m_icc : m ∈ Set.Icc 1 M := by
       constructor
-      · linarith [β.s_nonneg l b]
-      · linarith [ineq, α.s_nonneg a l]
+      · linarith [β.s_nonneg_raw l b]
+      · linarith [ineq, α.s_nonneg_raw a l]
     have n_icc : n ∈ Set.Icc 1 N := by
       constructor
-      · linarith [β⁻¹.s_nonneg b l]
-      · linarith [ineq', α⁻¹.s_nonneg l a]
+      · linarith [β⁻¹.s_nonneg_raw b l]
+      · linarith [ineq', α⁻¹.s_nonneg_raw l a]
     use m, m_icc, n, n_icc
     constructor
     · show ⟨m, n⟩ ∉ β.ramp b
       intro h_mn
-      apply (mem_ramp_iff_s_ge β b m n).mp at h_mn
-      have hm : β.s l b ≥ m := by
+      apply (mem_ramp_iff_s_ge_raw β b m n).mp at h_mn
+      have hm : β.s_raw l b ≥ m := by
         convert h_mn using 2
         linarith [l_eq]
       unfold m at hm
       linarith [hm]
     · show ⟨M+1-m, N+1-n⟩ ∉ α.lamp a
       intro h_mn
-      have s_ge := (mem_lamp_iff_s_ge α a (M + 1 - m) (N + 1 - n)).mp h_mn
+      have s_ge_raw := (mem_lamp_iff_s_ge_raw α a (M + 1 - m) (N + 1 - n)).mp h_mn
       have : (a - (M + 1 - m) + (N + 1 - n) + α.χ) = l := by
         linarith [N, l_eq]
-      have : α⁻¹.s l a ≥ N + 1 - n := by
-        rwa [this] at s_ge
+      have : α⁻¹.s_raw l a ≥ N + 1 - n := by
+        rwa [this] at s_ge_raw
       linarith [ineq']
 
 end AspPerm

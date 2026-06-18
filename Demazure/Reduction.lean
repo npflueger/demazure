@@ -188,18 +188,18 @@ This is the ASP-level lift of `SlipFace.lres_mono`. -/
 private lemma lres_inv_mono_alpha {α α' β : AspPerm} (hα : α ≤ α') :
     α ◃ β⁻¹ ≤ α' ◃ β⁻¹ := by
   -- Proof written by Claude Opus 4.7.
-  apply (sf_le_iff (α ◃ β⁻¹) (α' ◃ β⁻¹)).mp
-  rw [lres_spec, lres_spec, ← sf_dual]
-  exact SlipFace.lres_mono ((sf_le_iff α α').mpr hα) (le_refl β.sf)
+  apply (s_le_iff (α ◃ β⁻¹) (α' ◃ β⁻¹)).mp
+  rw [lres_spec, lres_spec, ← s_dual]
+  exact SlipFace.lres_mono ((s_le_iff α α').mpr hα) (le_refl β.s)
 
 /-- The residual `α ◃ β⁻¹` is anti-monotone in `β`: if `β' ≤ β` then
 `α ◃ β⁻¹ ≤ α ◃ β'⁻¹`. -/
 private lemma lres_inv_antimono_beta {α β β' : AspPerm} (hβ : β' ≤ β) :
     α ◃ β⁻¹ ≤ α ◃ β'⁻¹ := by
   -- Proof written by Claude Opus 4.7.
-  apply (sf_le_iff (α ◃ β⁻¹) (α ◃ β'⁻¹)).mp
-  rw [lres_spec, lres_spec, ← sf_dual, ← sf_dual]
-  exact SlipFace.lres_mono (le_refl α.sf) ((sf_le_iff β' β).mpr hβ)
+  apply (s_le_iff (α ◃ β⁻¹) (α ◃ β'⁻¹)).mp
+  rw [lres_spec, lres_spec, ← s_dual, ← s_dual]
+  exact SlipFace.lres_mono (le_refl α.s) ((s_le_iff β' β).mpr hβ)
 
 /-- Bounding the two factors puts an ordinary product above a left residual.
 This is the ASP form of the bound labeled `eq:aresLbBound` in

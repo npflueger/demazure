@@ -48,8 +48,8 @@ $s_{\alpha\beta}(a,b)$ and the two remaining quadrants.
 *Proof component for Lemma 5.1 (`lem:reducedStar`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 private lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
-    α.sf a l + β.sf l b =
-      (α * β).sf a b
+    α.s a l + β.s l b =
+      (α * β).s a b
         + (star_hi_error α β a b l).card
         + (star_lo_error α β a b l).card := by
   -- Proof written by Codex.
@@ -67,16 +67,16 @@ private lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
     · intro hn
       refine ⟨β⁻¹ n, ?_, by simp only [AspPerm.mul_inv_cancel_eval]⟩
       simpa only [AspPerm.mul_inv_cancel_eval] using ⟨hn.2, hn.1⟩
-  have hβ_card : β.sf l b = B.card := by
-    rw [β.s_eq_se_card_sf]
+  have hβ_card : β.s l b = B.card := by
+    rw [β.s_eq_se_card]
     have hcard :
         (β.se_finset l b).card = B.card := calc
       (β.se_finset l b).card = (Finset.image β (β.se_finset l b)).card := by
         exact (Finset.card_image_of_injective _ β.injective).symm
       _ = B.card := by rw [hβ_image]
     exact_mod_cast hcard
-  have hmul_card : (α * β).sf a b = P.card := by
-    rw [(α * β).s_eq_se_card_sf]
+  have hmul_card : (α * β).s a b = P.card := by
+    rw [(α * β).s_eq_se_card]
     exact_mod_cast (Finset.card_image_of_injective _ β.injective).symm
   have hA_error : A.card = P_hi.card + (star_hi_error α β a b l).card := by
     have hsplit := Finset.card_filter_add_card_filter_not
@@ -126,7 +126,7 @@ private lemma star_sum_eq_mul_add_errors (α β : AspPerm) (a b l : ℤ) :
           + (star_hi_error α β a b l).card
           + (star_lo_error α β a b l).card := by
     omega
-  rw [α.s_eq_se_card_sf, hβ_card, hmul_card]
+  rw [α.s_eq_se_card, hβ_card, hmul_card]
   exact_mod_cast hcards
 
 /-- An ordinary product lies below the corresponding Demazure product in
@@ -168,18 +168,18 @@ private lemma reducedProduct_of_star_le_mul (α β : AspPerm) (hupper : α ⋆ �
 private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
     (h_reduced : AspPerm.ReducedProduct α β) : α ⋆ β ≤ α * β := by
   -- Proof written by Codex.
-  apply (AspPerm.sf_le_iff (α ⋆ β) (α * β)).mp
+  apply (AspPerm.s_le_iff (α ⋆ β) (α * β)).mp
   rw [AspPerm.star_spec]
   intro a b
   -- Contrapose and use the witnessing value of l to construct a common inversion.
   by_contra hnot
-  have hstrict : (α * β).sf a b < (α.sf ⋆ β.sf) a b := by
+  have hstrict : (α * β).s a b < (α.s ⋆ β.s) a b := by
     omega
-  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a_sf b
+  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
   have hse₀ : β.se_finset l₀ b = ∅ := by
     apply Finset.card_eq_zero.mp
     have hcard : ((β.se_finset l₀ b).card : ℤ) = 0 := by
-      rwa [← β.s_eq_se_card_sf]
+      rwa [← β.s_eq_se_card]
     exact_mod_cast hcard
   have hlo₀ : star_lo_error α β a b l₀ = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
@@ -190,9 +190,9 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
         ⟨hm'.2.1, hm'.1⟩
     rw [hse₀] at hβm
     exact Finset.notMem_empty _ hβm
-  have hval₀ : (α.sf ⋆ β.sf) a b ≤ α.sf a l₀ + β.sf l₀ b := by
-    simpa only [AspPerm.sf_func_eq_s] using
-      SlipFace.star_val_le α.sf β.sf a b l₀
+  have hval₀ : (α.s ⋆ β.s) a b ≤ α.s a l₀ + β.s l₀ b := by
+    simpa only [AspPerm.s_func_eq_s_raw] using
+      SlipFace.star_val_le α.s β.s a b l₀
   have hcount₀ := star_sum_eq_mul_add_errors α β a b l₀
   simp only [hl₀, add_zero, hlo₀, Finset.card_empty, Nat.cast_zero] at hcount₀
   have hhi₀ : 0 < (star_hi_error α β a b l₀).card := by
@@ -212,9 +212,9 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
       exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
     have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
     omega
-  have hval_succ : (α.sf ⋆ β.sf) a b ≤ α.sf a (n + 1) + β.sf (n + 1) b := by
-    simpa only [AspPerm.sf_func_eq_s] using
-      SlipFace.star_val_le α.sf β.sf a b (n + 1)
+  have hval_succ : (α.s ⋆ β.s) a b ≤ α.s a (n + 1) + β.s (n + 1) b := by
+    simpa only [AspPerm.s_func_eq_s_raw] using
+      SlipFace.star_val_le α.s β.s a b (n + 1)
   have hcount_succ := star_sum_eq_mul_add_errors α β a b (n + 1)
   simp only [hhi_succ, Finset.card_empty, Nat.cast_zero] at hcount_succ
   have hlo_succ : 0 < (star_lo_error α β a b (n + 1)).card := by
@@ -277,8 +277,8 @@ $s_{\alpha\beta}(a,b)$ minus these two errors.
 *Proof component for Lemma 5.2 (`lem:reducedRes`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
-    α.sf a l - (β⁻¹).sf b l =
-      (α * β).sf a b
+    α.s a l - (β⁻¹).s b l =
+      (α * β).s a b
         - (lres_lo_error α β a b l).card
         - (lres_hi_error α β a b l).card := by
   -- Proof written by Codex.
@@ -287,8 +287,8 @@ private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
   let P := Finset.image β ((α * β).se_finset a b)
   let P_hi := A.filter (fun n => b ≤ β⁻¹ n)
   let C := B.filter (fun n => α n < a)
-  have hmul_card : (α * β).sf a b = P.card := by
-    rw [(α * β).s_eq_se_card_sf]
+  have hmul_card : (α * β).s a b = P.card := by
+    rw [(α * β).s_eq_se_card]
     exact_mod_cast (Finset.card_image_of_injective _ β.injective).symm
   have hA_split : A.card = P_hi.card + C.card := by
     have hsplit := Finset.card_filter_add_card_filter_not
@@ -342,7 +342,7 @@ private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
           - (lres_lo_error α β a b l).card
           - (lres_hi_error α β a b l).card := by
     omega
-  rw [α.s_eq_se_card_sf, (β⁻¹).s_eq_se_card_sf, hmul_card]
+  rw [α.s_eq_se_card, (β⁻¹).s_eq_se_card, hmul_card]
   exact hcards
 
 /-- Left residual lies below ordinary multiplication in Bruhat order.
@@ -350,13 +350,13 @@ private lemma lres_diff_eq_mul_sub_errors (α β : AspPerm) (a b l : ℤ) :
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/4.* -/
 theorem lres_le_mul (α β : AspPerm) : α ◃ β ≤ α * β := by
   -- Proof written by Codex.
-  apply (AspPerm.sf_le_iff (α ◃ β) (α * β)).mp
+  apply (AspPerm.s_le_iff (α ◃ β) (α * β)).mp
   rw [AspPerm.lres_spec]
   intro a b
-  let l := SlipFace.lres_wit α.sf β.sf a b
+  let l := SlipFace.lres_wit α.s β.s a b
   have hcount := lres_diff_eq_mul_sub_errors α β a b l
   dsimp only [l] at hcount
-  rw [SlipFace.lres_wit_spec, AspPerm.sf_dual]
+  rw [SlipFace.lres_wit_spec, AspPerm.s_dual]
   omega
 
 /-- If ordinary multiplication lies below left residual, then the inverse
@@ -376,12 +376,12 @@ private lemma le_weak_L_of_mul_le_lres (α β : AspPerm)
   have hα_lt : α m < α n := lt_of_le_of_ne hα_le hα_ne
   let a := α n
   let b := β⁻¹ m
-  let l := SlipFace.lres_wit α.sf β.sf a b
+  let l := SlipFace.lres_wit α.s β.s a b
   have hcount := lres_diff_eq_mul_sub_errors α β a b l
   have hlc :
-      (α ◃ β).sf a b = α.sf a l - (β⁻¹).sf b l := by
+      (α ◃ β).s a b = α.s a l - (β⁻¹).s b l := by
     dsimp only [l]
-    rw [AspPerm.lres_spec, SlipFace.lres_wit_spec, AspPerm.sf_dual]
+    rw [AspPerm.lres_spec, SlipFace.lres_wit_spec, AspPerm.s_dual]
   have hcomp := hle a b
   rw [hlc] at hcomp
   by_cases hln : l ≤ n
@@ -410,19 +410,19 @@ private lemma mul_le_lres_of_le_weak_L (α β : AspPerm)
   have hle_of_errors_empty (l : ℤ)
       (hlo : lres_lo_error α β a b l = ∅)
       (hhi : lres_hi_error α β a b l = ∅) :
-      (α * β).sf a b ≤ (α ◃ β).sf a b := by
+      (α * β).s a b ≤ (α ◃ β).s a b := by
     have hcount := lres_diff_eq_mul_sub_errors α β a b l
     simp only [hlo, hhi, Finset.card_empty, Nat.cast_zero, sub_zero] at hcount
     have hcand := Submodular.lres_candidate_le α β a b l
-    have hcand' : α.sf a l - (β⁻¹).sf b l ≤ (α ◃ β).sf a b := by
-      simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hcand
+    have hcand' : α.s a l - (β⁻¹).s b l ≤ (α ◃ β).s a b := by
+      simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hcand
     rw [← hcount]
     exact hcand'
-  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a_sf b
+  obtain ⟨l₀, hl₀⟩ := β.tend_zero_a b
   have hse₀ : β.se_finset l₀ b = ∅ := by
     apply Finset.card_eq_zero.mp
     have hcard : ((β.se_finset l₀ b).card : ℤ) = 0 := by
-      rwa [← β.s_eq_se_card_sf]
+      rwa [← β.s_eq_se_card]
     exact_mod_cast hcard
   have hlo₀ : lres_lo_error α β a b l₀ = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr

@@ -262,15 +262,11 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
     apply Set.finite_Ico
 
 private lemma asp_spec (s : SlipFace) (hsub : s.submodular) :
-  (asp hsub).sf = s := by
+  (asp hsub).s = s := by
   apply (SF_ext _ _).mpr
   intro a b
   let τ := asp hsub
-  suffices τ.s = s by
-    subst τ
-    rw [← this]
-    congr
-  ext a b
+  change τ.s a b = s a b
   have : ∃ A ≤ a, s A b = 0 := by
     obtain ⟨A, hA⟩ := s.small_a b
     by_cases h : A ≤ a
@@ -355,7 +351,7 @@ some ASP permutation `α`.
 
 *Proposition 4.3 (`prop:imageASP`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).*, full statement. -/
-theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.sf = s := by
+theorem submodular_iff_asp (s : SlipFace) : s.submodular ↔ ∃ α : AspPerm, α.s = s := by
   constructor
   · intro hsub
     use asp hsub
@@ -395,11 +391,11 @@ private noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
       · linarith [α.s_nonneg a n, β.s_ge n b]
 
 private lemma AspSlipValley (α β : AspPerm) (a b : ℤ) :
-  (AspValley α β a b) = (SlipFace.SlipValley α.sf β.sf a b) := by
-  suffices (AspValley α β a b).f = (SlipFace.SlipValley α.sf β.sf a b).f by
+  (AspValley α β a b) = (SlipFace.SlipValley α.s β.s a b) := by
+  suffices (AspValley α β a b).f = (SlipFace.SlipValley α.s β.s a b).f by
     rwa [Valley.mk.injEq]
   ext l
-  dsimp [AspValley, SlipFace.SlipValley, AspPerm.sf]
+  dsimp [AspValley, SlipFace.SlipValley, AspPerm.s]
 
 /-- If `τ = α ⋆ β` in the Demazure sense, then the minimum of
 `AspValley α β a b` is `τ.s a b`. -/
@@ -629,9 +625,9 @@ theorem submodular_of_star {s t : SlipFace} (subS : s.submodular) (subT : t.subm
     → (s ⋆ t) a b = (s ⋆ t) a (b + 1) by
     exact (submodular_of_basepoint_preserved (s ⋆ t) a b).mpr this
   let α := asp subS
-  have α_spec : α.sf = s := asp_spec s subS
+  have α_spec : α.s = s := asp_spec s subS
   let β := asp subT
-  have β_spec : β.sf = t := asp_spec t subT
+  have β_spec : β.s = t := asp_spec t subT
   intro eq
   have : ∀ a b : ℤ, (s ⋆ t) a b = (AspValley α β a b).min := by
     intro a b
@@ -671,34 +667,33 @@ a bound on every witness, while $M > m$ becomes the existence of a witness above
 /-- The set of witnesses attaining the maximum in
 $s_\alpha \triangleleft s_\beta(a,b)$. -/
 private def lres_witness_set (α β : AspPerm) (a b : ℤ) : Set ℤ :=
-  {l | (α.sf ◃ β.sf) a b = α.s a l - (β⁻¹).s b l}
+  {l | (α.s ◃ β.s) a b = α.s a l - (β⁻¹).s b l}
 
 private lemma lres_wit_mem_lres_witness_set (α β : AspPerm) (a b : ℤ) :
-    SlipFace.lres_wit α.sf β.sf a b ∈ lres_witness_set α β a b := by
+    SlipFace.lres_wit α.s β.s a b ∈ lres_witness_set α β a b := by
   dsimp [lres_witness_set]
-  rw [SlipFace.lres_wit_spec, AspPerm.sf_dual]
-  simp only [AspPerm.sf_func_eq_s]
+  rw [SlipFace.lres_wit_spec, AspPerm.s_dual]
 
 private lemma lres_witness_set_nonempty (α β : AspPerm) (a b : ℤ) :
     (lres_witness_set α β a b).Nonempty :=
-  ⟨SlipFace.lres_wit α.sf β.sf a b, lres_wit_mem_lres_witness_set α β a b⟩
+  ⟨SlipFace.lres_wit α.s β.s a b, lres_wit_mem_lres_witness_set α β a b⟩
 
 /-- Every candidate value for left residual is at most its maximum. -/
 lemma lres_candidate_le (α β : AspPerm) (a b l : ℤ) :
-    α.s a l - (β⁻¹).s b l ≤ (α.sf ◃ β.sf) a b := by
+    α.s a l - (β⁻¹).s b l ≤ (α.s ◃ β.s) a b := by
   rw [SlipFace.lres_func_eq]
-  simpa only [AspPerm.sf_dual, AspPerm.sf_func_eq_s] using SlipFace.lres_val_ge α.sf β.sf a b l
+  simpa only [AspPerm.s_dual, AspPerm.s_func_eq_s_raw] using SlipFace.lres_val_ge α.s β.s a b l
 
 /-- Witness-set form of the left-residual step in the first coordinate:
 the step is flat exactly when a witness for the new value lies to the right of
 the cutoff. -/
 private lemma lres_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
-    (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b ↔
+    (α.s ◃ β.s) (a + 1) b = (α.s ◃ β.s) a b ↔
       ∃ l ∈ lres_witness_set α β (a + 1) b, α⁻¹ a < l := by
   -- Proof written by Codex.
   constructor
   · intro hflat
-    let l := SlipFace.lres_wit α.sf β.sf a b
+    let l := SlipFace.lres_wit α.s β.s a b
     have hl : l ∈ lres_witness_set α β a b :=
       lres_wit_mem_lres_witness_set α β a b
     have hcut : α⁻¹ a < l := by
@@ -720,7 +715,7 @@ private lemma lres_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
     have hstep : α.s (a + 1) l = α.s a l :=
       (α.a_step_eq_iff a l).mpr hcut
     have hmax := lres_candidate_le α β a b l
-    have hmono := ((α.sf ◃ β.sf).a_step a b).1
+    have hmono := ((α.s ◃ β.s).a_step a b).1
     dsimp [lres_witness_set] at hl
     apply le_antisymm
     · rw [hl, hstep]
@@ -731,7 +726,7 @@ private lemma lres_a_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
 the step rises by one exactly when every witness for the new value is at or
 left of the cutoff. -/
 private lemma lres_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
-    (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b + 1 ↔
+    (α.s ◃ β.s) (a + 1) b = (α.s ◃ β.s) a b + 1 ↔
       ∀ l ∈ lres_witness_set α β (a + 1) b, l ≤ α⁻¹ a := by
   -- Proof written by Codex.
   constructor
@@ -742,8 +737,8 @@ private lemma lres_a_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
       (lres_a_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
     omega
   · intro hall
-    have hstep := (α.sf ◃ β.sf).a_step a b
-    have hne : (α.sf ◃ β.sf) (a + 1) b ≠ (α.sf ◃ β.sf) a b := by
+    have hstep := (α.s ◃ β.s).a_step a b
+    have hne : (α.s ◃ β.s) (a + 1) b ≠ (α.s ◃ β.s) a b := by
       intro hflat
       obtain ⟨l, hl, hcut⟩ :=
         (lres_a_step_eq_iff_exists_witness α β a b).mp hflat
@@ -755,12 +750,12 @@ the step is flat exactly when an old witness lies to the right of the cutoff.
 Here the cutoff is `β b`, from applying the first-coordinate step formula to
 the dual slipface $s_{\beta^{-1}}$. -/
 private lemma lres_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
-    (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b ↔
+    (α.s ◃ β.s) a (b + 1) = (α.s ◃ β.s) a b ↔
       ∃ l ∈ lres_witness_set α β a b, β b < l := by
   -- Proof written by Codex.
   constructor
   · intro hflat
-    let l := SlipFace.lres_wit α.sf β.sf a (b + 1)
+    let l := SlipFace.lres_wit α.s β.s a (b + 1)
     have hl : l ∈ lres_witness_set α β a (b + 1) :=
       lres_wit_mem_lres_witness_set α β a (b + 1)
     have hcut : β b < l := by
@@ -784,7 +779,7 @@ private lemma lres_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
       apply ((β⁻¹).a_step_eq_iff b l).mpr
       simpa only [inv_inv] using hcut
     have hmax := lres_candidate_le α β a (b + 1) l
-    have hmono := ((α.sf ◃ β.sf).b_step a b).1
+    have hmono := ((α.s ◃ β.s).b_step a b).1
     dsimp [lres_witness_set] at hl
     apply le_antisymm
     · exact hmono
@@ -795,7 +790,7 @@ private lemma lres_b_step_eq_iff_exists_witness (α β : AspPerm) (a b : ℤ) :
 the step drops by one exactly when every old witness is at or left of the
 cutoff. -/
 private lemma lres_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
-    (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b - 1 ↔
+    (α.s ◃ β.s) a (b + 1) = (α.s ◃ β.s) a b - 1 ↔
       ∀ l ∈ lres_witness_set α β a b, l ≤ β b := by
   -- Proof written by Codex.
   constructor
@@ -806,8 +801,8 @@ private lemma lres_b_step_one_iff_forall_witness (α β : AspPerm) (a b : ℤ) :
       (lres_b_step_eq_iff_exists_witness α β a b).mpr ⟨l, hl, hcut⟩
     omega
   · intro hall
-    have hstep := (α.sf ◃ β.sf).b_step a b
-    have hne : (α.sf ◃ β.sf) a (b + 1) ≠ (α.sf ◃ β.sf) a b := by
+    have hstep := (α.s ◃ β.s).b_step a b
+    have hne : (α.s ◃ β.s) a (b + 1) ≠ (α.s ◃ β.s) a b := by
       intro hflat
       obtain ⟨l, hl, hcut⟩ :=
         (lres_b_step_eq_iff_exists_witness α β a b).mp hflat
@@ -837,12 +832,12 @@ private lemma lres_witness_move_a_down (α β : AspPerm) (a b l : ℤ)
   by_cases hcut : α⁻¹ a < l
   · exact ⟨l, old_of_high hl hcut, le_refl l⟩
   have hle : l ≤ α⁻¹ a := by omega
-  by_cases hflat : (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b
+  by_cases hflat : (α.s ◃ β.s) (a + 1) b = (α.s ◃ β.s) a b
   · obtain ⟨l', hl', hcut'⟩ :=
       (lres_a_step_eq_iff_exists_witness α β a b).mp hflat
     exact ⟨l', old_of_high hl' hcut', by omega⟩
-  · have hbounds := (α.sf ◃ β.sf).a_step a b
-    have hone : (α.sf ◃ β.sf) (a + 1) b = (α.sf ◃ β.sf) a b + 1 := by
+  · have hbounds := (α.s ◃ β.s).a_step a b
+    have hone : (α.s ◃ β.s) (a + 1) b = (α.s ◃ β.s) a b + 1 := by
       omega
     have hstep : α.s (a + 1) l = α.s a l + 1 := by
       rw [α.a_step a l]
@@ -876,12 +871,12 @@ private lemma lres_witness_move_b_up (α β : AspPerm) (a b l : ℤ)
   by_cases hcut : β b < l
   · exact ⟨l, new_of_high hl hcut, le_refl l⟩
   have hle : l ≤ β b := by omega
-  by_cases hflat : (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b
+  by_cases hflat : (α.s ◃ β.s) a (b + 1) = (α.s ◃ β.s) a b
   · obtain ⟨l', hl', hcut'⟩ :=
       (lres_b_step_eq_iff_exists_witness α β a b).mp hflat
     exact ⟨l', new_of_high hl' hcut', by omega⟩
-  · have hbounds := (α.sf ◃ β.sf).b_step a b
-    have hdrop : (α.sf ◃ β.sf) a (b + 1) = (α.sf ◃ β.sf) a b - 1 := by
+  · have hbounds := (α.s ◃ β.s).b_step a b
+    have hdrop : (α.s ◃ β.s) a (b + 1) = (α.s ◃ β.s) a b - 1 := by
       omega
     have hstep : (β⁻¹).s (b + 1) l = (β⁻¹).s b l + 1 := by
       rw [(β⁻¹).a_step b l]
@@ -957,9 +952,9 @@ theorem submodular_of_lres {s t : SlipFace}
         (s ◃ t) a b = (s ◃ t) a (b + 1) by
     exact (submodular_of_basepoint_preserved (s ◃ t) a b).mpr this
   let α := asp subS
-  have α_spec : α.sf = s := asp_spec s subS
+  have α_spec : α.s = s := asp_spec s subS
   let β := asp subT
-  have β_spec : β.sf = t := asp_spec t subT
+  have β_spec : β.s = t := asp_spec t subT
   intro hflat
   rw [← α_spec, ← β_spec] at hflat ⊢
   obtain ⟨l, hl, hcut⟩ :=
@@ -993,12 +988,12 @@ structural properties. -/
 namespace AspPerm
 
 /-- Two ASP permutations are equal if their associated slipfaces are equal. -/
-lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
+lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.s = β.s) : α = β := by
   suffices α.func = β.func by
     cases α; cases β
     congr
   ext n
-  have : β.sf.Δ (β n) n = 1 := by
+  have : β.s.Δ (β n) n = 1 := by
     simpa using β.Delta_eq (β n) n
   rw [← eq_sf] at this
   rw [α.Delta_eq (β n) n] at this
@@ -1007,11 +1002,11 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.sf = β.sf) : α = β := by
 
 /-- The slipface product of two ASP permutations is represented by a unique ASP
 permutation. -/
-private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ⋆ β.sf := by
+private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ⋆ β.s := by
   intro α β
-  have : (α.sf ⋆ β.sf).submodular := by
+  have : (α.s ⋆ β.s).submodular := by
     exact Submodular.submodular_of_star (α.submodular) (β.submodular)
-  have ex := (Submodular.submodular_iff_asp (α.sf ⋆ β.sf)).mp this
+  have ex := (Submodular.submodular_iff_asp (α.s ⋆ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
   constructor
@@ -1022,11 +1017,11 @@ private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.s
 
 /-- The slipface left residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ◃ β.sf := by
+private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ◃ β.s := by
   intro α β
-  have : (α.sf ◃ β.sf).submodular := by
+  have : (α.s ◃ β.s).submodular := by
     exact Submodular.submodular_of_lres (α.submodular) (β.submodular)
-  have ex := (Submodular.submodular_iff_asp (α.sf ◃ β.sf)).mp this
+  have ex := (Submodular.submodular_iff_asp (α.s ◃ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
   constructor
@@ -1037,11 +1032,11 @@ private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.s
 
 /-- The slipface right residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.sf = α.sf ▹ β.sf := by
+private lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ▹ β.s := by
   intro α β
-  have : (α.sf ▹ β.sf).submodular := by
+  have : (α.s ▹ β.s).submodular := by
     exact Submodular.submodular_of_rres (α.submodular) (β.submodular)
-  have ex := (Submodular.submodular_iff_asp (α.sf ▹ β.sf)).mp this
+  have ex := (Submodular.submodular_iff_asp (α.s ▹ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
   constructor
@@ -1064,7 +1059,7 @@ noncomputable def star (α β : AspPerm) : AspPerm :=
 $s_{\alpha \star \beta} = s_\alpha \star s_\beta$.
 *Theorem 4.4 (`thm:starExists1`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5. -/
-@[simp] lemma star_spec (α β : AspPerm) : (star α β).sf = α.sf ⋆ β.sf :=
+@[simp] lemma star_spec (α β : AspPerm) : (star α β).s = α.s ⋆ β.s :=
   (Classical.choose_spec (star_exists α β)).1
 
 infixl:70 " ⋆ " => star
@@ -1081,7 +1076,7 @@ $s_{\alpha \triangleleft \beta} = s_\alpha \triangleleft s_\beta$.
 *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/11.* -/
 @[simp] lemma lres_spec (α β : AspPerm) :
-    (lres α β).sf = α.sf ◃ β.sf :=
+    (lres α β).s = α.s ◃ β.s :=
   (Classical.choose_spec (lres_exists α β)).1
 
 infixl:70 " ◃ " => lres
@@ -1098,7 +1093,7 @@ $s_{\alpha \triangleright \beta} = s_\alpha \triangleright s_\beta$.
 *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/11.* -/
 @[simp] lemma rres_spec (α β : AspPerm) :
-    (rres α β).sf = α.sf ▹ β.sf :=
+    (rres α β).s = α.s ▹ β.s :=
   (Classical.choose_spec (rres_exists α β)).1
 
 infixr:70 " ▹ " => rres
@@ -1136,42 +1131,42 @@ lemma inverse_lres (α β : AspPerm) :
     (α ◃ β)⁻¹ = β⁻¹ ▹ α⁻¹ := by
   -- Proof written by Codex.
   apply AspPerm.eq_of_sf_eq
-  rw [← AspPerm.sf_dual]
-  simp only [lres_spec, SlipFace.lres_dual, AspPerm.sf_dual,
+  rw [← AspPerm.s_dual]
+  simp only [lres_spec, SlipFace.lres_dual, AspPerm.s_dual,
     rres_spec]
 
 /-- The shift of left residual is the sum of shifts.
 *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 8/11.* -/
 lemma chi_lres (α β : AspPerm) : (α ◃ β).χ = α.χ + β.χ := by
-  repeat rw [← AspPerm.sf_chi_eq]
+  repeat rw [← AspPerm.s_chi_eq]
   simp only [lres_spec, SlipFace.chi_lres]
 
 /-- The shift of right residual is the sum of shifts.
 *Theorem 4.10 (`thm:resLExists`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 9/11.* -/
 lemma chi_rres (α β : AspPerm) : (α ▹ β).χ = α.χ + β.χ := by
-  repeat rw [← AspPerm.sf_chi_eq]
+  repeat rw [← AspPerm.s_chi_eq]
   simp only [rres_spec, SlipFace.chi_rres]
 
 /-- The min-plus characterization of the Demazure product on \mathrm{ASP}.
 This is part of *Theorem A* (`thm:starExists`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
-    IsLeast {α.sf a l + β.sf l b | l : ℤ} ((α ⋆ β).sf a b) := by
-  have h := SlipFace.star_eq_min α.sf β.sf a b
+    IsLeast {α.s a l + β.s l b | l : ℤ} ((α ⋆ β).s a b) := by
+  have h := SlipFace.star_eq_min α.s β.s a b
   rwa [← star_spec α β] at h
 
 /-- The max-minus characteriztion of the $\triangleleft$ operator on \mathrm{ASP}.
 This is part of *Theorem 1.1* (`thm:resL`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem lres_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
-    IsGreatest {α.sf a l - β⁻¹.sf b l | l : ℤ} ((α ◃ β).sf a b) := by
+    IsGreatest {α.s a l - β⁻¹.s b l | l : ℤ} ((α ◃ β).s a b) := by
   constructor
-  · use SlipFace.lres_wit α.sf β.sf a b
-    convert Eq.symm <| SlipFace.lres_wit_spec α.sf β.sf a b
-    · rw [β.sf_dual]
+  · use SlipFace.lres_wit α.s β.s a b
+    convert Eq.symm <| SlipFace.lres_wit_spec α.s β.s a b
+    · rw [β.s_dual]
     · rw [← lres_spec α β]
   · rintro x ⟨l, rfl⟩
-    rw [← β.sf_dual, AspPerm.lres_spec, SlipFace.lres_wit_spec]
+    rw [← β.s_dual, AspPerm.lres_spec, SlipFace.lres_wit_spec]
     apply SlipFace.lres_val_ge
 
 /-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`) of
@@ -1179,11 +1174,11 @@ theorem lres_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
 lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ := by
   have ex := star_exists (β⁻¹) (α⁻¹)
   let τ := β⁻¹ ⋆ α⁻¹
-  have τ_eq : τ.sf = β⁻¹.sf ⋆ α⁻¹.sf  := (ex.choose_spec).1
+  have τ_eq : τ.s = β⁻¹.s ⋆ α⁻¹.s  := (ex.choose_spec).1
   apply (ex.choose_spec).2 (α ⋆ β)⁻¹
   simp only [SF_ext]
   intro a b
-  repeat rw [← AspPerm.sf_dual]
+  repeat rw [← AspPerm.s_dual]
   simp
 
 /-- The shift of a Demazure product satisfies
@@ -1193,9 +1188,9 @@ lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ :=
 lemma chi_star (α β : AspPerm) : (α ⋆ β).χ = α.χ + β.χ := by
   have ex := star_exists α β
   let τ := α ⋆ β
-  have τ_eq : τ.sf = α.sf ⋆ β.sf  := (ex.choose_spec).1
-  repeat rw [← AspPerm.sf_chi_eq]
-  simp only [star_spec, SlipFace.chi_star, sf_chi_eq]
+  have τ_eq : τ.s = α.s ⋆ β.s  := (ex.choose_spec).1
+  repeat rw [← AspPerm.s_chi_eq]
+  simp only [star_spec, SlipFace.chi_star, s_chi_eq]
 
 /-!
   ## Products and Demazure products of lists of ASP permutations
@@ -1262,7 +1257,7 @@ lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
     have : (a - b).toNat = 0 := Int.toNat_of_nonpos (le_of_lt h')
     simp only [this, Nat.cast_zero]
 
-lemma id_sf : AspPerm.id.sf = SlipFace.id := by
+lemma id_sf : AspPerm.id.s = SlipFace.id := by
   apply (SF_ext _ _).mpr
   intro a b
   change AspPerm.id.s a b = max (a - b) 0
@@ -1271,12 +1266,12 @@ lemma id_sf : AspPerm.id.sf = SlipFace.id := by
 lemma id_star (α : AspPerm) : AspPerm.id ⋆ α = α := by
   apply AspPerm.eq_of_sf_eq
   rw [AspPerm.star_spec, id_sf]
-  simpa using SlipFace.id_mul α.sf
+  simpa using SlipFace.id_mul α.s
 
 lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
   apply AspPerm.eq_of_sf_eq
   rw [AspPerm.star_spec, id_sf]
-  simpa using SlipFace.mul_id α.sf
+  simpa using SlipFace.mul_id α.s
 
 /-!
   ## Partial (pre)orders on ASP permutations
@@ -1284,10 +1279,10 @@ lemma star_id (α : AspPerm) : α ⋆ AspPerm.id = α := by
 
 -- The `PartialOrder` on `AspPerm` is only now defined because we needed `eq_of_sf_eq`.
 instance : PartialOrder AspPerm where
-  le (σ τ : AspPerm) := ∀ a b : ℤ, σ.sf a b ≤ τ.sf a b
+  le (σ τ : AspPerm) := ∀ a b : ℤ, σ.s a b ≤ τ.s a b
   le_refl := by
     intro σ a b
-    exact Int.le_refl (σ.sf a b)
+    exact Int.le_refl (σ.s a b)
   le_trans := by
     intro σ τ υ h₁ h₂ a b
     exact Int.le_trans (h₁ a b) (h₂ a b)
@@ -1306,7 +1301,7 @@ infix:50 " ≤χ " => le_chi
 
 /-- Bruhat order on ASP permutations agrees with pointwise order on their
 slipfaces. -/
-lemma sf_le_iff (α β : AspPerm) : α.sf ≤ β.sf ↔ α ≤ β := Iff.rfl
+lemma s_le_iff (α β : AspPerm) : α.s ≤ β.s ↔ α ≤ β := Iff.rfl
 
 /-- Inversion preserves Bruhat comparisons between ASP permutations of the
 same shift. *Lemma 2.1 (`lem:bruhatInverse`) of
@@ -1317,7 +1312,7 @@ theorem le_chi_inv_iff (α β : AspPerm) : α ≤χ β ↔ α⁻¹ ≤χ β⁻¹
     intro σ τ h
     constructor
     · intro a b
-      rw [σ.s'_eq_sf a b, τ.s'_eq_sf a b, h.2]
+      rw [σ.s'_eq a b, τ.s'_eq a b, h.2]
       linarith [h.1 b a]
     · simp only [chi_dual, h.2]
   constructor
@@ -1331,11 +1326,10 @@ order. This is the $\chi = 0$ case of the minimum-shift observation after Defini
 lemma id_le_of_chi_nonneg {τ : AspPerm} (hχ : 0 ≤ τ.χ) : AspPerm.id ≤ τ := by
   -- Proof written by Codex.
   intro a b
-  change AspPerm.id.s a b ≤ τ.sf a b
   rw [id_s_eq]
   apply max_le
-  · linarith [τ.s_ge_sf a b]
-  · exact τ.s_nonneg_sf a b
+  · linarith [τ.s_ge a b]
+  · exact τ.s_nonneg a b
 
 /-- Demazure product on ASP permutations is Bruhat-increasing in both
 arguments. This lifts the slipface comparison of Lemma 3.8 in
@@ -1343,11 +1337,11 @@ arguments. This lifts the slipface comparison of Lemma 3.8 in
 lemma star_mono {α₁ α₂ β₁ β₂ : AspPerm}
     (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ ⋆ β₁ ≤ α₂ ⋆ β₂ := by
   -- Proof written by Codex.
-  apply (sf_le_iff (α₁ ⋆ β₁) (α₂ ⋆ β₂)).mp
+  apply (s_le_iff (α₁ ⋆ β₁) (α₂ ⋆ β₂)).mp
   simp only [star_spec]
   exact SlipFace.star_mono
-    ((sf_le_iff α₁ α₂).mpr hα)
-    ((sf_le_iff β₁ β₂).mpr hβ)
+    ((s_le_iff α₁ α₂).mpr hα)
+    ((s_le_iff β₁ β₂).mpr hβ)
 
 /-- The left residual $\tau \triangleleft \beta^{-1}$ is the Bruhat
 minimum of the ASP permutations $\alpha$ such that $\alpha \star \beta \geq \tau$.
@@ -1355,9 +1349,9 @@ minimum of the ASP permutations $\alpha$ such that $\alpha \star \beta \geq \tau
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 10/11.* -/
 lemma ge_star_iff_ge_lres (α β τ : AspPerm) :
     α ≥ τ ◃ β⁻¹ ↔ α ⋆ β ≥ τ := by
-  change (τ ◃ β⁻¹).sf ≤ α.sf ↔ τ.sf ≤ (α ⋆ β).sf
-  simpa only [lres_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_lres α.sf β.sf τ.sf)
+  change (τ ◃ β⁻¹).s ≤ α.s ↔ τ.s ≤ (α ⋆ β).s
+  simpa only [lres_spec, star_spec, s_dual] using
+    (SlipFace.ge_star_iff_ge_lres α.s β.s τ.s)
 
 /-- The right residual $\alpha^{-1} \triangleright \tau$ is the Bruhat
 minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$.
@@ -1365,9 +1359,9 @@ minimum of the ASP permutations $\beta$ such that $\alpha \star \beta \geq \tau$
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 11/11.* -/
 lemma ge_star_iff_ge_rres (α β τ : AspPerm) :
     β ≥ α⁻¹ ▹ τ ↔ α ⋆ β ≥ τ := by
-  change (α⁻¹ ▹ τ).sf ≤ β.sf ↔ τ.sf ≤ (α ⋆ β).sf
-  simpa only [rres_spec, star_spec, sf_dual] using
-    (SlipFace.ge_star_iff_ge_rres α.sf β.sf τ.sf)
+  change (α⁻¹ ▹ τ).s ≤ β.s ↔ τ.s ≤ (α ⋆ β).s
+  simpa only [rres_spec, star_spec, s_dual] using
+    (SlipFace.ge_star_iff_ge_rres α.s β.s τ.s)
 
 /-- The left residual $\alpha \triangleleft \beta^{-1}$ is the minimum permutation $\gamma$
   such that $\gamma \star \beta \ge \alpha$.
@@ -1503,10 +1497,10 @@ theorem reducedProduct_of_lres (α β : AspPerm) :
     exact ((α ◃ β).b_step_one_iff a v).mpr huv.2
   have hflat_s : (α ◃ β).s a (u + 1) = (α ◃ β).s a u := by
     exact ((α ◃ β).b_step_eq_iff a u).mpr (by rfl)
-  have hdrop : (α.sf ◃ β.sf) a (v + 1) = (α.sf ◃ β.sf) a v - 1 := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hdrop_s
-  have hflat : (α.sf ◃ β.sf) a (u + 1) = (α.sf ◃ β.sf) a u := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hflat_s
+  have hdrop : (α.s ◃ β.s) a (v + 1) = (α.s ◃ β.s) a v - 1 := by
+    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hdrop_s
+  have hflat : (α.s ◃ β.s) a (u + 1) = (α.s ◃ β.s) a u := by
+    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hflat_s
   have hv_wit := (lres_b_step_one_iff_forall_witness α β a v).mp hdrop
   obtain ⟨l, hl, hβu⟩ :=
     (lres_b_step_eq_iff_exists_witness α β a u).mp hflat
@@ -1527,10 +1521,10 @@ theorem ler_of_lres (α β : AspPerm) : α ◃ β ≤R α := by
     exact ((α ◃ β).a_step_eq_iff v b).mpr huv.2
   have hone_s : (α ◃ β).s (u + 1) b = (α ◃ β).s u b + 1 := by
     exact ((α ◃ β).a_step_one_iff u b).mpr (by rfl)
-  have hflat : (α.sf ◃ β.sf) (v + 1) b = (α.sf ◃ β.sf) v b := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hflat_s
-  have hone : (α.sf ◃ β.sf) (u + 1) b = (α.sf ◃ β.sf) u b + 1 := by
-    simpa only [← AspPerm.sf_func_eq_s, AspPerm.lres_spec] using hone_s
+  have hflat : (α.s ◃ β.s) (v + 1) b = (α.s ◃ β.s) v b := by
+    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hflat_s
+  have hone : (α.s ◃ β.s) (u + 1) b = (α.s ◃ β.s) u b + 1 := by
+    simpa only [← AspPerm.s_func_eq_s_raw, AspPerm.lres_spec] using hone_s
   obtain ⟨l, hl, hαv⟩ :=
     (lres_a_step_eq_iff_exists_witness α β v b).mp hflat
   have hu_wit := (lres_a_step_one_iff_forall_witness α β u b).mp hone

@@ -221,39 +221,39 @@ private lemma sigma_s_diag (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ) :
 corresponding to the inversions.
 -/
 private lemma sigma_slipface (S : Set ℤ) (hS : NoConsecutive S) (a b : ℤ) :
-    (sigma S hS).sf a b =
+    (sigma S hS).s a b =
       max 0 (a - b) + Utils.oneIf (a = b ∧ a - 1 ∈ S) := by
   -- Proof written by GPT 5.5.
   rcases lt_trichotomy a b with hab | hab | hba
-  · have hzero : (sigma S hS).sf a b = 0 := by
-      simpa only [AspPerm.sf_func_eq_s] using sigma_s_zero_of_lt S hS hab
+  · have hzero : (sigma S hS).s a b = 0 := by
+      simpa using sigma_s_zero_of_lt S hS hab
     rw [hzero]
     have hmax : max 0 (a - b) = 0 := max_eq_left (by omega)
     have hne : a ≠ b := ne_of_lt hab
     simp only [hmax, Utils.oneIf, hne, false_and, if_false, add_zero]
   · subst a
-    have hdiag : (sigma S hS).sf b b = Utils.oneIf (b - 1 ∈ S) := by
-      simpa only [AspPerm.sf_func_eq_s] using sigma_s_diag S hS b
+    have hdiag : (sigma S hS).s b b = Utils.oneIf (b - 1 ∈ S) := by
+      simpa using sigma_s_diag S hS b
     rw [hdiag]
     simp only [sub_self, max_eq_left (by omega : (0 : ℤ) ≤ 0), true_and, zero_add]
-  · have hs : (sigma S hS).sf a b = a - b := by
-      simpa only [AspPerm.sf_func_eq_s] using sigma_s_of_gt S hS hba
+  · have hs : (sigma S hS).s a b = a - b := by
+      simpa using sigma_s_of_gt S hS hba
     rw [hs]
     have hmax : max 0 (a - b) = a - b := max_eq_right (by omega)
     have hne : a ≠ b := ne_of_gt hba
     simp only [hmax, Utils.oneIf, hne, false_and, if_false, add_zero]
 
 private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ) :
-    SlipFace.bend_set (sigma S hS).sf b =
+    SlipFace.bend_set (sigma S hS).s b =
       {l : ℤ |
         (b - 1 ∉ S ∧ l = b) ∨
           (b - 1 ∈ S ∧ (l = b - 1 ∨ l = b + 1))} := by
   -- Proof written by GPT 5.5.
   ext l
   have hmem_iff :
-      l ∈ SlipFace.bend_set (sigma S hS).sf b ↔
+      l ∈ SlipFace.bend_set (sigma S hS).s b ↔
         sigma S hS (l - 1) < b ∧ b ≤ sigma S hS l := by
-    simp only [SlipFace.bend_set, Set.mem_setOf_eq, AspPerm.sf_func_eq_s]
+    simp only [SlipFace.bend_set, Set.mem_setOf_eq]
     constructor
     · rintro ⟨hflat, hright⟩
       constructor
@@ -366,7 +366,7 @@ This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:star
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6. -/
 private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∉ S) :
-    SlipFace.bend_set (sigma S hS).sf b = {b} := by
+    SlipFace.bend_set (sigma S hS).s b = {b} := by
   -- Proof written by GPT 5.5.
   rw [bend_set_sigma_cases S hS b]
   ext l
@@ -383,7 +383,7 @@ This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:star
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6. -/
 private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∈ S) :
-    SlipFace.bend_set (sigma S hS).sf b = {l : ℤ | l = b - 1 ∨ l = b + 1} := by
+    SlipFace.bend_set (sigma S hS).s b = {l : ℤ | l = b - 1 ∨ l = b + 1} := by
   -- Proof written by GPT 5.5.
   rw [bend_set_sigma_cases S hS b]
   ext l
@@ -396,9 +396,9 @@ private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b
     exact Or.inr ⟨hb, hl⟩
 
 @[simp] private lemma sigma_sf_dual (S : Set ℤ) (hS : NoConsecutive S) :
-    (sigma S hS).sf.dual = (sigma S hS).sf := by
+    (sigma S hS).s.dual = (sigma S hS).s := by
   -- Proof written by GPT 5.5.
-  rw [AspPerm.sf_dual, sigma_inv hS]
+  rw [AspPerm.s_dual, sigma_inv hS]
 
 private lemma star_step_min_eq_oneIf (s : SlipFace) (a b : ℤ) :
     min (s a (b - 1)) (s a (b + 1) + 1) =
@@ -470,7 +470,7 @@ private lemma asp_s_prev_gt_iff (α : AspPerm) (a b : ℤ) :
   have hiff := α.b_step_one_iff a (b - 1)
   rw [show (b - 1 : ℤ) + 1 = b by omega] at hiff
   have hstep : α.s a b ≤ α.s a (b - 1) ∧ α.s a (b - 1) ≤ α.s a b + 1 := by
-    simpa only [AspPerm.sf_func_eq_s, sub_add_cancel] using α.sf.b_step a (b - 1)
+    simpa only [sub_add_cancel] using α.s.b_step a (b - 1)
   constructor
   · intro h
     exact hiff.mp (by omega)
@@ -497,7 +497,7 @@ private lemma asp_s_gt_next_iff (α : AspPerm) (a b : ℤ) :
   -- Proof written by GPT 5.5.
   have hiff := α.b_step_one_iff a b
   have hstep : α.s a (b + 1) ≤ α.s a b ∧ α.s a b ≤ α.s a (b + 1) + 1 :=
-    by simpa only [AspPerm.sf_func_eq_s] using α.sf.b_step a b
+    by simpa using α.s.b_step a b
   constructor
   · intro h
     exact hiff.mp (by omega)
@@ -511,17 +511,17 @@ The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 *Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/6.* -/
 theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b : ℤ) :
-    (s ⋆ (sigma S hS).sf) a b =
+    (s ⋆ (sigma S hS).s) a b =
         s a b
           + Utils.oneIf (b - 1 ∈ S ∧ s a (b - 1) > s a b ∧ s a b = s a (b + 1)) := by
   -- Proof written by GPT 5.5.
   by_cases hb : b - 1 ∈ S
-  · have ht_left : (sigma S hS).sf (b - 1) b = 0 := by
+  · have ht_left : (sigma S hS).s (b - 1) b = 0 := by
       rw [sigma_slipface S hS (b - 1) b]
       have hmax : max 0 (b - 1 - b) = 0 := max_eq_left (by omega)
       have hne : b - 1 ≠ b := by omega
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
-    have ht_right : (sigma S hS).sf (b + 1) b = 1 := by
+    have ht_right : (sigma S hS).s (b + 1) b = 1 := by
       rw [sigma_slipface S hS (b + 1) b]
       have hmax : max 0 (b + 1 - b) = 1 := by
         rw [max_eq_right (by omega)]
@@ -529,39 +529,39 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
       have hne : b + 1 ≠ b := by omega
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have hstar_min :
-        (s ⋆ (sigma S hS).sf) a b =
+        (s ⋆ (sigma S hS).s) a b =
           min (s a (b - 1)) (s a (b + 1) + 1) := by
-      have hle_left : (s ⋆ (sigma S hS).sf) a b ≤ s a (b - 1) := by
+      have hle_left : (s ⋆ (sigma S hS).s) a b ≤ s a (b - 1) := by
         simpa only [ht_left, add_zero] using
-          SlipFace.star_val_le s (sigma S hS).sf a b (b - 1)
-      have hle_right : (s ⋆ (sigma S hS).sf) a b ≤ s a (b + 1) + 1 := by
+          SlipFace.star_val_le s (sigma S hS).s a b (b - 1)
+      have hle_right : (s ⋆ (sigma S hS).s) a b ≤ s a (b + 1) + 1 := by
         simpa only [ht_right] using
-          SlipFace.star_val_le s (sigma S hS).sf a b (b + 1)
+          SlipFace.star_val_le s (sigma S hS).s a b (b + 1)
       have hle_min :
-          (s ⋆ (sigma S hS).sf) a b ≤ min (s a (b - 1)) (s a (b + 1) + 1) :=
+          (s ⋆ (sigma S hS).s) a b ≤ min (s a (b - 1)) (s a (b + 1) + 1) :=
         le_min hle_left hle_right
-      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness s (sigma S hS).sf a b
+      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness s (sigma S hS).s a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
       simp only [Set.mem_setOf_eq] at hl
       have hmin_le :
-          min (s a (b - 1)) (s a (b + 1) + 1) ≤ (s ⋆ (sigma S hS).sf) a b := by
+          min (s a (b - 1)) (s a (b + 1) + 1) ≤ (s ⋆ (sigma S hS).s) a b := by
         rcases hl with rfl | rfl
-        · have hval' : (s ⋆ (sigma S hS).sf) a b = s a (b - 1) := by
+        · have hval' : (s ⋆ (sigma S hS).s) a b = s a (b - 1) := by
             simpa only [ht_left, add_zero] using hval
           rw [hval']
           exact min_le_left _ _
-        · have hval' : (s ⋆ (sigma S hS).sf) a b = s a (b + 1) + 1 := by
+        · have hval' : (s ⋆ (sigma S hS).s) a b = s a (b + 1) + 1 := by
             simpa only [ht_right] using hval
           rw [hval']
           exact min_le_right _ _
       exact le_antisymm hle_min hmin_le
     rw [hstar_min, star_step_min_eq_oneIf]
     simp only [hb, true_and]
-  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness s (sigma S hS).sf a b
+  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness s (sigma S hS).s a b
     rw [bend_set_sigma_of_not_pred_mem S hS hb] at hl
     simp only [Set.mem_singleton_iff] at hl
     subst l
-    have ht_diag : (sigma S hS).sf b b = 0 := by
+    have ht_diag : (sigma S hS).s b b = 0 := by
       rw [sigma_slipface S hS b b]
       simp only [sub_self, max_self, true_and, hb, Utils.oneIf, if_false, add_zero]
     rw [hval, ht_diag, add_zero]
@@ -571,11 +571,10 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
 *Lemma 3.17 (`lem:starTrans`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/6.* -/
 theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a b : ℤ) :
-    (α.sf ⋆ (sigma S hS).sf) a b =
+    (α.s ⋆ (sigma S hS).s) a b =
       α.s a b + Utils.oneIf (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) := by
   -- Proof written by GPT 5.5.
-  rw [sf_star_sigma S hS α.sf a b]
-  simp only [AspPerm.sf_func_eq_s]
+  rw [sf_star_sigma S hS α.s a b]
   have hiff :
       (b - 1 ∈ S ∧ α.s a (b - 1) > α.s a b ∧ α.s a b = α.s a (b + 1)) ↔
         (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) := by
@@ -594,60 +593,60 @@ The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 5/6.* -/
 theorem sf_lres_sigma (S : Set ℤ) (hS : NoConsecutive S)
     (s : SlipFace) (a b : ℤ) :
-    (s ◃ (sigma S hS).sf) a b =
+    (s ◃ (sigma S hS).s) a b =
         s a b
           - Utils.oneIf (b - 1 ∈ S ∧ s a (b - 1) = s a b ∧ s a b > s a (b + 1)) := by
   -- Proof written by GPT 5.5.
   by_cases hb : b - 1 ∈ S
-  · have ht_left : (sigma S hS).sf.dual b (b - 1) = 1 := by
+  · have ht_left : (sigma S hS).s.dual b (b - 1) = 1 := by
       rw [sigma_sf_dual S hS, sigma_slipface S hS b (b - 1)]
       have hmax : max 0 (b - (b - 1)) = 1 := by
         rw [max_eq_right (by omega)]
         omega
       have hne : b ≠ b - 1 := by omega
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
-    have ht_right : (sigma S hS).sf.dual b (b + 1) = 0 := by
+    have ht_right : (sigma S hS).s.dual b (b + 1) = 0 := by
       rw [sigma_sf_dual S hS, sigma_slipface S hS b (b + 1)]
       have hmax : max 0 (b - (b + 1)) = 0 := max_eq_left (by omega)
       have hne : b ≠ b + 1 := by omega
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have hlres_max :
-        (s ◃ (sigma S hS).sf) a b =
+        (s ◃ (sigma S hS).s) a b =
           max (s a (b - 1) - 1) (s a (b + 1)) := by
       have hge_left :
-          s a (b - 1) - 1 ≤ (s ◃ (sigma S hS).sf) a b := by
+          s a (b - 1) - 1 ≤ (s ◃ (sigma S hS).s) a b := by
         simpa only [SlipFace.lres_func_eq, ht_left] using
-          SlipFace.lres_val_ge s (sigma S hS).sf a b (b - 1)
+          SlipFace.lres_val_ge s (sigma S hS).s a b (b - 1)
       have hge_right :
-          s a (b + 1) ≤ (s ◃ (sigma S hS).sf) a b := by
+          s a (b + 1) ≤ (s ◃ (sigma S hS).s) a b := by
         simpa only [SlipFace.lres_func_eq, ht_right, sub_zero] using
-          SlipFace.lres_val_ge s (sigma S hS).sf a b (b + 1)
+          SlipFace.lres_val_ge s (sigma S hS).s a b (b + 1)
       have hmax_le :
           max (s a (b - 1) - 1) (s a (b + 1)) ≤
-            (s ◃ (sigma S hS).sf) a b :=
+            (s ◃ (sigma S hS).s) a b :=
         max_le hge_left hge_right
-      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).sf a b
+      obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).s a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
       simp only [Set.mem_setOf_eq] at hl
       have hlres_le :
-          (s ◃ (sigma S hS).sf) a b ≤ max (s a (b - 1) - 1) (s a (b + 1)) := by
+          (s ◃ (sigma S hS).s) a b ≤ max (s a (b - 1) - 1) (s a (b + 1)) := by
         rcases hl with rfl | rfl
-        · have hval' : (s ◃ (sigma S hS).sf) a b = s a (b - 1) - 1 := by
+        · have hval' : (s ◃ (sigma S hS).s) a b = s a (b - 1) - 1 := by
             simpa only [ht_left] using hval
           rw [hval']
           exact le_max_left _ _
-        · have hval' : (s ◃ (sigma S hS).sf) a b = s a (b + 1) := by
+        · have hval' : (s ◃ (sigma S hS).s) a b = s a (b + 1) := by
             simpa only [ht_right, sub_zero] using hval
           rw [hval']
           exact le_max_right _ _
       exact le_antisymm hlres_le hmax_le
     rw [hlres_max, lres_step_max_eq_oneIf]
     simp only [hb, true_and]
-  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).sf a b
+  · obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).s a b
     rw [bend_set_sigma_of_not_pred_mem S hS hb] at hl
     simp only [Set.mem_singleton_iff] at hl
     subst l
-    have ht_diag : (sigma S hS).sf.dual b b = 0 := by
+    have ht_diag : (sigma S hS).s.dual b b = 0 := by
       rw [sigma_sf_dual S hS, sigma_slipface S hS b b]
       simp only [sub_self, max_self, true_and, hb, Utils.oneIf, if_false, add_zero]
     rw [hval, ht_diag, sub_zero]
@@ -658,11 +657,10 @@ theorem sf_lres_sigma (S : Set ℤ) (hS : NoConsecutive S)
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 6/6.* -/
 theorem asp_residual_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
     (α : AspPerm) (a b : ℤ) :
-    (α.sf ◃ (sigma S hS).sf) a b =
+    (α.s ◃ (sigma S hS).s) a b =
       α.s a b - Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) := by
   -- Proof written by GPT 5.5.
-  rw [sf_lres_sigma S hS α.sf a b]
-  simp only [AspPerm.sf_func_eq_s]
+  rw [sf_lres_sigma S hS α.s a b]
   have hiff :
       (b - 1 ∈ S ∧ α.s a (b - 1) = α.s a b ∧ α.s a b > α.s a (b + 1)) ↔
         (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) := by
@@ -921,7 +919,6 @@ private lemma star_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsecutiv
   apply (SF_ext _ _).mpr
   intro a b
   rw [AspPerm.star_spec, asp_star_sigma_sf S hS α a b]
-  simp only [AspPerm.sf_func_eq_s]
   have hzero :
       Utils.oneIf (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) = 0 := by
     simp only [Utils.oneIf]
@@ -941,7 +938,6 @@ private lemma residual_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsec
   apply (SF_ext _ _).mpr
   intro a b
   rw [AspPerm.lres_spec, asp_residual_sigma_sf S hS α a b]
-  simp only [AspPerm.sf_func_eq_s]
   have hzero :
       Utils.oneIf (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) = 0 := by
     simp only [Utils.oneIf]

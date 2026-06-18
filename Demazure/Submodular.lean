@@ -1182,22 +1182,15 @@ theorem star_sf_isleast (α β : AspPerm) (a b : ℤ) :
 /-- The max-minus characteriztion of the $\triangleleft$ operator on \mathrm{ASP}.
 This is part of *Theorem 1.1* (`thm:resL`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 theorem lres_sf_isgreatest (α β : AspPerm) (a b : ℤ) :
-    IsGreatest {α.s a l - β⁻¹.s b l | l : ℤ} ((α ◃ β).s a b) := by
+    IsGreatest {α.sf a l - β⁻¹.sf b l | l : ℤ} ((α ◃ β).sf a b) := by
   constructor
   · use SlipFace.lres_wit α.sf β.sf a b
     convert Eq.symm <| SlipFace.lres_wit_spec α.sf β.sf a b
-    · rfl
     · rw [β.sf_dual]
-      rfl
     · rw [← lres_spec α β]
-      rfl
   · rintro x ⟨l, rfl⟩
-    convert SlipFace.lres_val_ge α.sf β.sf a b l
-    · rfl
-    · rw [β.sf_dual]
-      rfl
-    · rw [← SlipFace.lres_func_eq α.sf β.sf, ← lres_spec α β]
-      rfl
+    rw [← β.sf_dual, AspPerm.lres_spec, SlipFace.lres_wit_spec]
+    apply SlipFace.lres_val_ge
 
 /-- Inversion reverses Demazure products. *Theorem 4.4 (`thm:starExists1`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/

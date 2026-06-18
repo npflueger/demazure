@@ -1152,9 +1152,8 @@ noncomputable def lres (s t : SlipFace) : SlipFace :=
 
 infixl:70 " ◃ " => lres
 
-lemma lres_func_eq (s t : SlipFace) : (s ◃ t).func = lres_func s t := by
-  have h := lres_exists s t
-  exact (Classical.choose_spec h).1.1
+lemma lres_func_eq (s t : SlipFace) : (s ◃ t).func = lres_func s t :=
+  (Classical.choose_spec (lres_exists s t)).1.1
 
 lemma lres_wit_spec (s t : SlipFace) (a b : ℤ) :
     (s ◃ t) a b = s a (lres_wit s t a b) - t.dual b (lres_wit s t a b) := by
@@ -1170,7 +1169,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
     constructor
     · exact ⟨_, Eq.symm (lres_wit_spec s t a b)⟩
     · rintro x ⟨l, rfl⟩
-      rw [lres_func_eq]
+      rw [lres_wit_spec]
       apply lres_val_ge
 
 /-- The shift is additive under left residual.
@@ -1209,7 +1208,7 @@ This is simply an unwinding of the formal definition to obtain the formula as st
     constructor
     · exact ⟨_, Eq.symm (rres_wit_spec s t a b)⟩
     · rintro x ⟨l, rfl⟩
-      rw [rres_func_eq]
+      rw [rres_wit_spec]
       apply rres_val_ge
 
 /-- The shift is additive under right residual.
@@ -1429,16 +1428,16 @@ def iota_sf (n : ℤ) : SlipFace  := {
       simp [h,h']
       omega
     · have h' : a + 1 - b + n ≤ 0 := by omega
-      simp [h,h']
+      simp [h']
       omega
   b_step := by
     intro a b
     by_cases h : 0 < a - b + n
     · have h' : 0 ≤ a - (b+1) + n := by omega
-      simp [h,h']
+      simp [h']
       omega
     · have h' : a - (b+1) + n ≤ 0 := by omega
-      simp [h,h']
+      simp [h']
       omega
   nonneg := by
     intro a b
@@ -1504,7 +1503,7 @@ lemma lres_mono {s₁ s₂ t₁ t₂ : SlipFace}
   rw [lres_wit_spec]
   change s₁ a l - (t₂.dual).dual b l ≤ (s₂ ◃ t₁.dual) a b
   have hmax : s₂ a l - t₁ b l ≤ (s₂ ◃ t₁.dual) a b := by
-    rw [lres_func_eq]
+    rw [lres_wit_spec]
     have h := lres_val_ge s₂ t₁.dual a b l
     rwa [SlipFace.dual_dual t₁] at h
   have hsval : s₁ a l ≤ s₂ a l := hs a l
@@ -1526,7 +1525,7 @@ lemma rres_mono {s₁ s₂ t₁ t₂ : SlipFace}
   rw [rres_wit_spec]
   change s₁ l b - (t₂.dual).dual l a ≤ (t₁.dual ▹ s₂) a b
   have hmax : s₂ l b - t₁ l a ≤ (t₁.dual ▹ s₂) a b := by
-    rw [rres_func_eq]
+    rw [rres_wit_spec]
     have h := rres_val_ge t₁.dual s₂ a b l
     rwa [SlipFace.dual_dual t₁] at h
   have hsval : s₁ l b ≤ s₂ l b := hs l b
@@ -1547,7 +1546,7 @@ lemma ge_star_iff_ge_lres (s t u : SlipFace) :
     apply (le_star_val_iff u s t a b).mpr
     intro l
     have hresidual : u a b - t l b ≤ (u ◃ t.dual) a l := by
-      rw [lres_func_eq]
+      rw [lres_wit_spec]
       have hval := lres_val_ge u t.dual a l b
       rwa [SlipFace.dual_dual t] at hval
     have hs : (u ◃ t.dual) a l ≤ s a l := h a l
@@ -1574,7 +1573,7 @@ lemma ge_star_iff_ge_rres (s t u : SlipFace) :
     apply (le_star_val_iff u s t a b).mpr
     intro l
     have hresidual : u a b - s a l ≤ (s.dual ▹ u) l b := by
-      rw [rres_func_eq]
+      rw [rres_wit_spec]
       have hval := rres_val_ge s.dual u l b a
       rwa [SlipFace.dual_dual s] at hval
     have ht : (s.dual ▹ u) l b ≤ t l b := h l b

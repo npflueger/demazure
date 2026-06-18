@@ -1412,6 +1412,70 @@ lemma bend_set_witness_lres (s t : SlipFace) (a b : ℤ) :
     · exact le_trans hlr hrm
     · exact hmax m
 
+/-!
+  ## Minimal slipfaces in each shift
+-/
+
+/-- The slipface $s_{\iota_n}$, which is the minimal slipface of shift $n$.
+It is given simply by $s(a,b) = \max(a - b + n, 0)$.
+-/
+def iota_sf (n : ℤ) : SlipFace  := {
+  func := fun a b => max (a - b + n) 0
+  χ := n
+  a_step := by
+    intro a b
+    by_cases h : 0 ≤ a - b + n
+    · have h' : 0 ≤ a + 1 - b + n := by omega
+      simp [h,h']
+      omega
+    · have h' : a + 1 - b + n ≤ 0 := by omega
+      simp [h,h']
+      omega
+  b_step := by
+    intro a b
+    by_cases h : 0 < a - b + n
+    · have h' : 0 ≤ a - (b+1) + n := by omega
+      simp [h,h']
+      omega
+    · have h' : a - (b+1) + n ≤ 0 := by omega
+      simp [h,h']
+      omega
+  nonneg := by
+    intro a b
+    apply Int.le_max_right (a-b+n) 0
+  ge_diff := by
+    intro a b
+    apply Int.le_max_left (a-b+n) 0
+  small_a := by
+    intro a
+    use a - n
+    intro b hb
+    apply Int.max_eq_right
+    omega
+  large_a := by
+    intro a
+    use a - n
+    intro b hb
+    apply Int.max_eq_left
+    omega
+  small_b := by
+    intro b
+    use b + n
+    intro a ha
+    apply Int.max_eq_left
+    omega
+  large_b := by
+    intro b
+    use b + n
+    intro a ha
+    apply Int.max_eq_right
+    omega
+}
+
+/-!
+  ## Monotonicity, adjointness, and associativity
+-/
+
 /-- The $\star$ operation is Bruhat-increasing in both arguments.
 *Lemma 3.8 (`lem:compatLeq`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3.* -/

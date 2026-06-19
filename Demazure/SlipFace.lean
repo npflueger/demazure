@@ -1760,4 +1760,82 @@ lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := b
   intro a b
   simp only [Γ, Set.mem_setOf_eq, sf.Δ_dual]
 
+/-! ## The essential set of a slipface
+  This section includes the content of §7.1 of [An extended Demazure product](https://arxiv.org/abs/2206.14227), about the essential set of a slipface.
+-/
+
+/-- The *essential set* of a slipface $s$ is the set
+  $\operatorname{Ess}(s) = \{ (a,b) \in \mathbb{Z}^2:
+s(a-1,b) < s(a,b) = s(a+1,b) \mbox{ and } s(a,b+1) < s(a,b) = s(a,b-1) \}.$
+-/
+def ess : Set (ℤ × ℤ) := {(a, b) | sf (a-1) b < sf a b ∧ sf a b = sf (a+1) b
+  ∧ sf a (b+1) < sf a b ∧ sf a b = sf a (b-1)}
+
+/-- Lemmma 7.2 (`lem:essSetMoves`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+-/
+lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
+  ¬ (a, b) ∈ s.ess →
+    ∃ (a' b' : ℤ), ⟨a', b'⟩ ∈ ({ (a-1,b), (a+1,b), (a,b-1), (a,b+1) } : Set (ℤ × ℤ) ) ∧
+    s a' b' > t a' b' ∧ s a b + s.dual b a < s a' b' + s.dual b' a' := by
+    let steps : Set (ℤ × ℤ) := {(a-1,b), (a+1,b), (a,b-1), (a,b+1)}
+    have fsub (sf : SlipFace) (a b : ℤ) : sf a b + sf.dual b a = 2 * sf a b - a + b - sf.χ := by
+      linarith [sf.duality a b]
+    intro not_ess
+    contrapose! not_ess with h
+    -- The casework below is quite repetitive. There may be a way to refactor it, similarly
+    -- to how it's written in the paper.
+    have h1 : s (a-1) b < s a b := by
+      have : (a-1, b) ∈ steps := by
+        simp [steps]
+      by_cases h' : s (a-1) b > t (a-1) b
+      · specialize h (a-1) b this h'
+        rw [fsub s (a-1) b, fsub s a b] at h
+        omega
+      · contrapose! h'
+        have : t (a-1) b ≤ t a b := by
+          have := (t.a_step (a-1) b).1
+          convert this; norm_num
+        omega
+    have h2 : s a b = s (a+1) b := by
+      have : (a+1, b) ∈ steps := by
+        simp [steps]
+      by_cases h' : s (a+1) b > t (a+1) b
+      · specialize h (a+1) b this h'
+        rw [fsub s (a+1) b, fsub s a b] at h
+        have := (s.a_step a b).1
+        omega
+      · push Not at h'
+        apply le_antisymm (s.a_step a b).1
+        have := (t.a_step a b).2
+        omega
+    have h3 : s a (b+1) < s a b := by
+      have : (a, b+1) ∈ steps := by
+        simp [steps]
+      by_cases h' : s a (b+1) > t a (b+1)
+      · specialize h a (b+1) this h'
+        rw [fsub s a (b+1), fsub s a b] at h
+        omega
+      · push Not at h'
+        have := (t.b_step a b).1
+        omega
+    have h4 : s a b = s a (b-1) := by
+      have : (a, b-1) ∈ steps := by
+        simp [steps]
+      by_cases h' : s a (b-1) > t a (b-1)
+      · specialize h a (b-1) this h'
+        rw [fsub s a (b-1), fsub s a b] at h
+        have := (s.b_step a (b-1)).1
+        norm_num at this
+        omega
+      · push Not at h'
+        have := (t.b_step a (b-1)).2
+        norm_num at this
+        apply le_antisymm
+        · have := (s.b_step a (b-1)).1
+          norm_num at this
+          exact this
+        · omega
+    exact ⟨h1, h2, h3, h4⟩
+
+
 end SlipFace

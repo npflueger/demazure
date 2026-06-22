@@ -478,14 +478,14 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
   · have ht_left : (sigma S hS).s (b - 1) b = 0 := by
       rw [sigma_slipface S hS (b - 1) b]
       have hmax : max 0 (b - 1 - b) = 0 := max_eq_left (by omega)
-      have hne : b - 1 ≠ b := by omega
+      have hne : b - 1 ≠ b := ne_of_lt (sub_one_lt b)
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have ht_right : (sigma S hS).s (b + 1) b = 1 := by
       rw [sigma_slipface S hS (b + 1) b]
       have hmax : max 0 (b + 1 - b) = 1 := by
         rw [max_eq_right (by omega)]
         omega
-      have hne : b + 1 ≠ b := by omega
+      have hne : b + 1 ≠ b := ne_of_gt (lt_add_one b)
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have hstar_min :
         (s ⋆ (sigma S hS).s) a b =
@@ -566,12 +566,12 @@ theorem sf_lres_sigma (S : Set ℤ) (hS : NoConsecutive S)
       have hmax : max 0 (b - (b - 1)) = 1 := by
         rw [max_eq_right (by omega)]
         omega
-      have hne : b ≠ b - 1 := by omega
+      have hne : b ≠ b - 1 := ne_of_gt (sub_one_lt b)
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have ht_right : (sigma S hS).s.dual b (b + 1) = 0 := by
       rw [sigma_sf_dual S hS, sigma_slipface S hS b (b + 1)]
       have hmax : max 0 (b - (b + 1)) = 0 := max_eq_left (by omega)
-      have hne : b ≠ b + 1 := by omega
+      have hne : b ≠ b + 1 := ne_of_lt (lt_add_one b)
       simp only [hmax, hne, false_and, Utils.oneIf, if_false, add_zero]
     have hlres_max :
         (s ◃ (sigma S hS).s) a b =
@@ -1032,7 +1032,7 @@ theorem star_simple (α σ : AspPerm) (n : ℤ)
     subst m
     have hne : α n ≠ α (n + 1) := by
       intro heq
-      exact (by omega : n ≠ n + 1) (α.injective heq)
+      exact (ne_of_lt (lt_add_one n)) (α.injective heq)
     omega
 
 /-- The simple-transposition case of left residual: if $\sigma \in \mathrm{ASP}$
@@ -1069,7 +1069,7 @@ theorem residual_simple (α σ : AspPerm) (n : ℤ)
     subst m
     have hne : α n ≠ α (n + 1) := by
       intro heq
-      exact (by omega : n ≠ n + 1) (α.injective heq)
+      exact (ne_of_lt (lt_add_one n)) (α.injective heq)
     omega
 
 end Transpositions

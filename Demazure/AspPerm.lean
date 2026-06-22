@@ -533,7 +533,7 @@ private lemma b_move_up_raw (a b b' : ℤ) (b_le_b' : b ≤ b') :
       by_cases n_ge_b' : b' ≤ n
       · left; exact ⟨n_ge_b', hB.2⟩
       right
-      have : n < b' := by linarith [n_ge_b']
+      have : n < b' := lt_of_not_ge n_ge_b'
       simp only [Finset.mem_Ico, hB.1, this, and_self, hB.2]
   rw [← h_union, Finset.card_union_of_disjoint h_disj]
 
@@ -554,7 +554,7 @@ private lemma a_step_raw (a b : ℤ) : τ.s_raw (a + 1) b = τ.s_raw a b + (if �
       ext x
       simp only [Finset.mem_filter, Finset.mem_Ico, Finset.notMem_empty, iff_false]
       rintro ⟨⟨hge, hlt⟩, htau⟩
-      have hxa : x = a := by omega
+      have hxa : x = a := le_antisymm (Int.le_of_lt_add_one hlt) hge
       rw [hxa] at htau; exact h htau
     simp only [ge_iff_le, hfilt, Finset.card_empty, Nat.cast_zero, add_zero, if_neg h]
 
@@ -579,12 +579,12 @@ private lemma b_step_raw (a b : ℤ) : τ.s_raw a (b+1) = τ.s_raw a b - (if τ 
       subst n
       simp only [Finset.mem_filter, Finset.mem_Ico]
       exact ⟨⟨le_rfl, by omega⟩, h_lt⟩
-  · have ge_a : τ b ≥ a := by omega
+  · have ge_a : τ b ≥ a := le_of_not_gt h_lt
     simp only [h_lt, ite_false, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
     intro x x_Ico
     obtain ⟨x_mem_Ico, τx_lt_a⟩ := Finset.mem_filter.mp x_Ico
     obtain ⟨x_ge_b, x_lt_b_plus_one⟩ := Finset.mem_Ico.mp x_mem_Ico
-    have x_eq_b : x = b := by omega
+    have x_eq_b : x = b := le_antisymm (Int.le_of_lt_add_one x_lt_b_plus_one) x_ge_b
     rw [x_eq_b] at τx_lt_a
     linarith [ge_a, τx_lt_a]
 
@@ -1877,10 +1877,51 @@ lemma ess_asp_eq_ass_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
     rw [b_step_eq_iff] at h4
     exact ⟨h3, h4, h2, h1⟩
 
-def is_bdd_diff : Prop := ∃ (M : ℤ), ∀ (n : ℤ), abs (n - τ n) ≤ M
+def is_bdiff : Prop := ∃ (M : ℤ), ∀ (n : ℤ), abs (n - τ n) ≤ M
 
 private def width_bound (N : ℤ) : Prop :=
-  ∀ (a b : ℤ), N ≤ (abs a - b) → τ.s a b = max (τ.χ + a - b) 0
+  ∀ (a b : ℤ), N ≤ abs (a - b) → τ.s a b = max 0 (a - b + τ.χ)
+
+
+private lemma width_sides : (∃ (N : ℤ), τ.width_bound N) ↔ (∃ (M N : ℤ), ∀ (a b : ℤ),
+  (a - b ≤ M → τ.s a b = 0) ∧ (a - b ≥ N → τ⁻¹.s b a = 0)) := by
+  constructor
+  · rintro ⟨N0, hN0⟩
+    let N := max (abs N0) (abs τ.χ)
+    have hN : τ.width_bound N := by
+      intro a b hab
+      exact hN0 a b <| (le_abs_self N0).trans <| (le_max_left _ _).trans hab
+    have Npos : 0 ≤ N := (abs_nonneg N0).trans (le_max_left _ _)
+    have Ngeχ : τ.χ ≤ N := (le_abs_self τ.χ).trans (le_max_right _ _)
+    have Nge_negχ : -τ.χ ≤ N := (neg_le_abs τ.χ).trans (le_max_right _ _)
+    use -N, N
+    intro a b
+    constructor <;> intro hab
+    · rw [hN a b (by rw [abs_of_nonpos (by omega)]; omega), max_eq_left (by omega)]
+    · rw [τ.s'_eq, hN a b (by rw [abs_of_nonneg (by omega)]; omega),
+        max_eq_right (by omega)]
+      omega
+  · rintro ⟨M, N, hMN⟩
+    use max |M| |N|
+    intro a b hab
+    specialize hMN a b
+    rw [← τ.s_chi_eq, τ.s.eq_iff_nonspecial]
+    by_cases h : 0 ≤ a - b
+    · right
+      rw [τ.s_dual]
+      exact hMN.2 <| by
+        rw [← abs_of_nonneg h]
+        exact (le_abs_self N).trans <| (le_max_right _ _).trans hab
+    · left
+      push Not at h
+      exact hMN.1 <| by
+        have hMabs : |M| ≤ |a - b| := (le_max_left _ _).trans hab
+        have hM : -|M| ≤ M := by
+          have := le_abs_self (-M)
+          rw [abs_neg] at this
+          omega
+        rw [abs_of_neg h] at hMabs
+        omega
 
 private def M : Set ℤ :=
   {m | ∃ a b : ℤ, τ.s a b > 0 ∧ m ≤ τ⁻¹.s b a}
@@ -1961,14 +2002,160 @@ private lemma M_sub_M'' : τ.M ⊆ τ.M'' := by
 lemma M'_eq_M : τ.M' = τ.M :=
   Set.Subset.antisymm τ.M'_sub_M <| Set.Subset.trans τ.M_sub_M'' τ.M''_sub_M'
 
-lemma M''_eq_M' : τ.M'' = τ.M :=
+lemma M''_eq_M : τ.M'' = τ.M :=
   Set.Subset.antisymm (Set.Subset.trans τ.M''_sub_M' τ.M'_sub_M) τ.M_sub_M''
 
+private lemma bdiff_width_helper (M : ℤ) :
+  (∀ n : ℤ, n - τ n ≤ M) ↔
+   (∀ (a b : ℤ), M ≤ b - a → τ.s a b = 0) := by
+  constructor
+  · intro h a b hab
+    by_contra hzero
+    have hpos : τ.s a b > 0 :=
+      lt_of_le_of_ne (τ.s_nonneg a b) (fun h => hzero h.symm)
+    have : M - τ.χ + 1 ∈ τ.M' := by
+      rw [τ.M'_eq_M, ← τ.M''_eq_M]
+      use a, b
+      exact ⟨hpos, by omega⟩
+    rcases this with ⟨n, hn⟩
+    have := h n
+    omega
+  · intro h n
+    by_contra hn
+    have : M - τ.χ + 1 ∈ τ.M'' := by
+      rw [τ.M''_eq_M, ← τ.M'_eq_M]
+      use n
+      omega
+    rcases this with ⟨a, b, hpos, hm⟩
+    have := h a b (by omega)
+    omega
 
+theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
+  constructor
+  · intro bdiff
+    rcases bdiff with ⟨M, hM⟩
+    rw [width_sides]
+    use -M, M
+    intro a b
+    constructor <;> intro hab
+    · have : ∀ (n : ℤ), n - τ n ≤ M := by
+        intro n
+        specialize hM n
+        exact le_trans (le_abs_self (n - τ n)) hM
+      rw [τ.bdiff_width_helper] at this
+      apply this a b (by omega)
+    · have : ∀ (n : ℤ), n - τ⁻¹ n ≤ M := by
+        intro n
+        specialize hM (τ⁻¹ n)
+        rw [τ.mul_inv_cancel_eval] at hM
+        have := le_trans (neg_le_abs (τ⁻¹ n - n)) hM
+        omega
+      rw [τ⁻¹.bdiff_width_helper] at this
+      apply this b a hab
+  · intro wb
+    rw [width_sides] at wb
+    rcases wb with ⟨M, N, hMN⟩
+    have h_left_zero : ∀ (a b : ℤ), -M ≤ b - a → τ.s a b = 0 := by
+      intro a b hab
+      exact (hMN a b).1 (by omega)
+    have h_left : ∀ n : ℤ, n - τ n ≤ -M := by
+      rw [τ.bdiff_width_helper]
+      exact h_left_zero
+    have h_right_zero : ∀ (a b : ℤ), N ≤ b - a → τ⁻¹.s a b = 0 := by
+      intro a b hab
+      exact (hMN b a).2 hab
+    have h_right : ∀ n : ℤ, n - τ⁻¹ n ≤ N := by
+      rw [τ⁻¹.bdiff_width_helper]
+      exact h_right_zero
+    use max (-M) N
+    intro n
+    have hle := h_left n
+    have hge := h_right (τ n)
+    rw [τ.inv_mul_cancel_eval] at hge
+    rw [abs_le]
+    constructor
+    · omega
+    · omega
 
-
-
-
+theorem bdiff_iff_clifford : τ.is_bdiff ↔ τ.s.is_clifford := by
+  -- Proof written by GPT-5.5
+  constructor
+  · rintro ⟨M, hM⟩
+    have M_nonneg : 0 ≤ M := (abs_nonneg (0 - τ 0)).trans (hM 0)
+    have M_bound : ∀ m ∈ τ.M, m ≤ M - τ.χ := by
+      intro m hm
+      rw [← τ.M'_eq_M] at hm
+      rcases hm with ⟨n, hn⟩
+      have := le_trans (le_abs_self (n - τ n)) (hM n)
+      omega
+    have M_bound_inv : ∀ m ∈ τ⁻¹.M, m ≤ M + τ.χ := by
+      intro m hm
+      rw [← τ⁻¹.M'_eq_M] at hm
+      rcases hm with ⟨n, hn⟩
+      rw [τ.chi_dual] at hn
+      have hn_bound := hM (τ⁻¹ n)
+      rw [τ.mul_inv_cancel_eval] at hn_bound
+      have := neg_le_abs (τ⁻¹ n - n)
+      omega
+    use (2 * M + 1).toNat
+    intro a b hsum
+    by_cases hs_zero : τ.s a b = 0
+    · exact Or.inl hs_zero
+    right
+    by_contra hdual_zero
+    have hs_pos : τ.s a b > 0 :=
+      lt_of_le_of_ne (τ.s_nonneg a b) (fun h => hs_zero h.symm)
+    have hdual_pos : τ⁻¹.s b a > 0 := by
+      rw [← τ.s_dual]
+      exact lt_of_le_of_ne (τ.s.dual.nonneg b a) (fun h => hdual_zero h.symm)
+    have hdual_mem : τ⁻¹.s b a ∈ τ.M := by
+      exact ⟨a, b, hs_pos, le_rfl⟩
+    have hs_mem : τ.s a b ∈ τ⁻¹.M := by
+      use b, a
+      rw [inv_inv]
+      exact ⟨hdual_pos, le_rfl⟩
+    have hdual_bound := M_bound _ hdual_mem
+    have hs_bound := M_bound_inv _ hs_mem
+    have hthreshold : ((2 * M + 1).toNat : ℤ) = 2 * M + 1 :=
+      Int.toNat_of_nonneg (by omega)
+    rw [τ.s_dual] at hsum
+    omega
+  · rintro ⟨C, hC⟩
+    apply τ.bdiff_iff_width.mpr
+    rw [width_sides]
+    use - (C : ℤ) - τ.χ, (C : ℤ) - τ.χ
+    intro a b
+    constructor
+    · intro hab
+      by_contra hs_zero
+      have hs_pos : τ.s a b > 0 :=
+        lt_of_le_of_ne (τ.s_nonneg a b) (fun h => hs_zero h.symm)
+      have hdual_pos : τ⁻¹.s b a > 0 := by
+        rw [τ.s'_eq]
+        omega
+      have hdual_eq := τ.s'_eq b a
+      have hsum : τ.s a b + τ.s.dual b a ≥ C := by
+        rw [τ.s_dual]
+        omega
+      rcases hC a b hsum with hzero | hdual_zero
+      · exact hs_zero hzero
+      · rw [τ.s_dual] at hdual_zero
+        omega
+    · intro hab
+      by_contra hdual_zero
+      have hdual_pos : τ⁻¹.s b a > 0 :=
+        lt_of_le_of_ne ((τ⁻¹).s_nonneg b a) (fun h => hdual_zero h.symm)
+      have hs_pos : τ.s a b > 0 := by
+        have := τ.s'_eq b a
+        omega
+      have hdual_eq := τ.s'_eq b a
+      have hsum : τ.s a b + τ.s.dual b a ≥ C := by
+        rw [τ.s_dual]
+        omega
+      rcases hC a b hsum with hs_zero | hzero
+      · omega
+      · rw [τ.s_dual] at hzero
+        exact hdual_zero hzero
 
 
 

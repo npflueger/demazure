@@ -1529,7 +1529,8 @@ theorem ler_of_lres (α β : AspPerm) : α ◃ β ≤R α := by
     (lres_a_step_eq_iff_exists_witness α β v b).mp hflat
   have hu_wit := (lres_a_step_one_iff_forall_witness α β u b).mp hone
   have huv_lt : u < v := huv.1
-  have huv_le : u + 1 ≤ v + 1 := by omega
+  have huv_le : u + 1 ≤ v + 1 := by
+    simpa only [add_comm] using add_le_add_right huv.1.le 1
   obtain ⟨l', hl', hll'⟩ :=
     lres_witness_move_a_down_of_le α β (u + 1) (v + 1) b l huv_le hl
   refine ⟨huv.1, ?_⟩

@@ -141,6 +141,40 @@ lemma s_eq (a b : ℤ) : sf a b = a - b + sf.χ + sf.dual b a := by
 lemma s'_eq (b a : ℤ) : sf.dual b a = sf a b - a + b - sf.χ := by
   linarith [sf.duality a b]
 
+lemma ge_max (a b : ℤ) : sf a b ≥ max 0 (a - b + sf.χ) :=
+  max_le (sf.nonneg a b) (sf.ge_diff a b)
+
+lemma gt_iff_special (a b : ℤ) : sf a b > max 0 (a - b + sf.χ)
+  ↔ sf a b > 0 ∧ sf.dual b a > 0 := by
+  constructor
+  · intro hab
+    refine ⟨lt_of_le_of_lt (le_max_left _ _) hab, ?_⟩
+    by_contra hdual
+    have hdual0 : sf.dual b a = 0 := le_antisymm (le_of_not_gt hdual) (sf.dual.nonneg b a)
+    have hle : sf a b ≤ max 0 (a - b + sf.χ) := by
+      rw [sf.s_eq, hdual0]
+      simp
+    exact not_lt_of_ge hle hab
+  · intro hsf
+    exact max_lt_iff.mpr ⟨hsf.1, by rw [sf.s_eq]; exact lt_add_of_pos_right _ hsf.2⟩
+
+lemma eq_iff_nonspecial (a b : ℤ) : sf a b = max 0 (a - b + sf.χ)
+  ↔ sf a b = 0 ∨ sf.dual b a = 0 := by
+  rw [← eq_comm, ← (sf.ge_max a b).not_lt_iff_eq]
+  change ¬ sf a b > max 0 (a - b + sf.χ) ↔ sf a b = 0 ∨ sf.dual b a = 0
+  rw [sf.gt_iff_special]
+  constructor
+  · intro h
+    push Not at h
+    by_cases hs : sf a b > 0
+    · right; exact le_antisymm (h hs) (sf.dual.nonneg b a)
+    · left; exact le_antisymm (le_of_not_gt hs) (sf.nonneg a b)
+  · rintro (h | h) ⟨hs, hdual⟩
+    · rw [h] at hs
+      exact (lt_irrefl 0 hs).elim
+    · rw [h] at hdual
+      exact (lt_irrefl 0 hdual).elim
+
 /-- The one-sided monotonicity and vanishing conditions providing a simplified
 criterion for slipfaces.
 
@@ -1267,8 +1301,7 @@ private lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b
   have hl' : t (l-1) b ≠ t ((l-1)+1) b := by
     contrapose! h with hl'
     rw [hl']
-    congr
-    omega
+    simp only [sub_add_cancel]
   obtain ⟨m, ⟨teq, tneq, sumle⟩⟩ := bend_set_witness_helper s t a b (l-1) hl'
   use m, teq, tneq
   apply le_trans sumle
@@ -1278,7 +1311,7 @@ private lemma bend_set_witness_helper (s t : SlipFace) (a b l : ℤ) (hl : t l b
     apply le_of_le_of_eq hs_step.2
     congr; omega
   have ht_eq : t l b = t (l-1) b + 1 := by
-    have hpred_succ : l - 1 + 1 = l := by omega
+    have hpred_succ : l - 1 + 1 = l := sub_add_cancel l 1
     rw [hpred_succ] at ht_step
     omega
   omega
@@ -1286,7 +1319,7 @@ termination_by (t l b).toNat
 decreasing_by
   simp_wf
   have ht_step := t.a_step (l - 1) b
-  have hpred_succ : l - 1 + 1 = l := by omega
+  have hpred_succ : l - 1 + 1 = l := sub_add_cancel l 1
   rw [hpred_succ] at ht_step
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega
@@ -1360,22 +1393,21 @@ private lemma bend_set_witness_lres_helper (s t : SlipFace) (a b l : ℤ)
   have hl' : t (l-1) b ≠ t ((l-1)+1) b := by
     contrapose! h with hl'
     rw [hl']
-    congr
-    omega
+    simp only [sub_add_cancel]
   obtain ⟨m, hm_left, hm_right, hm_le⟩ :=
     bend_set_witness_lres_helper s t a b (l-1) hl'
   use m, hm_left, hm_right
   have hs_step := s.b_step a (l-1)
   have ht_step := t.a_step (l-1) b
   have ht_eq : t l b = t (l-1) b + 1 := by
-    have hpred_succ : l - 1 + 1 = l := by omega
+    have hpred_succ : l - 1 + 1 = l := sub_add_cancel l 1
     rw [hpred_succ] at ht_step
     omega
   have hdual : t.dual b (l-1) = t.dual b l := by
     rw [t.s'_eq b (l-1), t.s'_eq b l, ht_eq]
     omega
   have hs_le : s a l ≤ s a (l-1) := by
-    have hpred_succ : l - 1 + 1 = l := by omega
+    have hpred_succ : l - 1 + 1 = l := sub_add_cancel l 1
     rw [hpred_succ] at hs_step
     exact hs_step.1
   have hcurr_prev : s a l - t.dual b l ≤ s a (l-1) - t.dual b (l-1) := by
@@ -1386,7 +1418,7 @@ termination_by (t l b).toNat
 decreasing_by
   simp_wf
   have ht_step := t.a_step (l - 1) b
-  have hpred_succ : l - 1 + 1 = l := by omega
+  have hpred_succ : l - 1 + 1 = l := sub_add_cancel l 1
   rw [hpred_succ] at ht_step
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega

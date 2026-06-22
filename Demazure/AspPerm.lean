@@ -1016,16 +1016,59 @@ lemma b_step_one_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b - 1 ↔ τ b < a := b
     intro h_eq
     omega
 
-lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ τ b ≥ a := by
+lemma b_step_lt_iff (a b : ℤ) : τ.s a (b + 1) < τ.s a b ↔ τ b < a := by
+  -- Proof written by GPT-5.
+  have hiff := τ.b_step_one_iff a b
+  have hstep : τ.s a (b + 1) ≤ τ.s a b ∧ τ.s a b ≤ τ.s a (b + 1) + 1 :=
+    τ.s.b_step a b
+  constructor
+  · intro h
+    exact hiff.mp (by omega)
+  · intro h
+    have hs := hiff.mpr h
+    omega
+
+lemma b_step_eq_iff (a b : ℤ) : τ.s a (b+1) = τ.s a b ↔ a ≤ τ b := by
   rw [b_step τ a b]
   by_cases h_lt : τ b < a
-  · simp only [h_lt, ↓reduceIte, sub_eq_self, one_ne_zero, ge_iff_le, false_iff, not_le]
-  · simp only [h_lt, ↓reduceIte, sub_zero, ge_iff_le, true_iff]
+  · simp only [h_lt, ↓reduceIte, sub_eq_self, one_ne_zero, false_iff, not_le]
+  · simp only [h_lt, ↓reduceIte, sub_zero, true_iff]
     omega
+
+lemma b_step_ge_iff (a b : ℤ) : τ.s a (b + 1) ≥ τ.s a b ↔ a ≤ τ b := by
+  constructor
+  · intro h
+    apply (τ.b_step_eq_iff a b).mp <| le_antisymm _ h
+    rw [τ.b_step a b]
+    omega
+  · intro h
+    apply le_of_eq
+    rw [(τ.b_step_eq_iff a b).mpr h]
 
 lemma a_step_one_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b := by
   rw [a_step τ a b]
   by_cases h_ge : τ⁻¹ a ≥ b <;> simp [h_ge]
+
+lemma a_step_gt_iff (a b : ℤ) : τ.s a b < τ.s (a + 1) b ↔ b ≤ τ⁻¹ a := by
+  -- Proof written by GPT-5.
+  have hiff := τ.a_step_one_iff a b
+  have hstep : τ.s a b ≤ τ.s (a + 1) b ∧ τ.s (a + 1) b ≤ τ.s a b + 1 :=
+    τ.s.a_step a b
+  constructor
+  · intro h
+    exact hiff.mp (by omega)
+  · intro h
+    have hs := hiff.mpr h
+    omega
+
+lemma a_step_le_iff (a b : ℤ) : τ.s (a+1) b ≤ τ.s a b ↔ τ⁻¹ a < b := by
+  constructor
+  · intro h
+    contrapose! h
+    rwa [a_step_gt_iff]
+  · intro h
+    contrapose! h
+    rwa [← a_step_gt_iff]
 
 lemma a_step_one_iff' (u b : ℤ) : τ.s (τ u + 1) b = τ.s (τ u) b + 1 ↔ u ≥ b := by
   have := a_step_one_iff τ (τ u) b
@@ -1806,5 +1849,33 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       have : α⁻¹.s l a ≥ N + 1 - n := by
         rwa [this] at s_ge
       linarith [ineq']
+
+/-!
+  ## The essential set of a permutation
+  This section formalizes results from Section 7.2 of [An extended Demazure product](https://arxiv.org/abs/2206.14227) about the "essential set" of a permutation and permutations of bounded difference.
+  -/
+
+def ess (τ : AspPerm) : Set (ℤ × ℤ) := {⟨a, b⟩ | τ b < a ∧ a ≤ τ (b-1) ∧ τ⁻¹ a < b ∧ b ≤ τ⁻¹ (a-1)}
+
+lemma ess_asp_eq_ass_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
+  ext ⟨a, b⟩
+  unfold AspPerm.ess SlipFace.ess
+  constructor
+  · rintro ⟨h1, h2, h3, h4⟩
+    rw [← b_step_lt_iff] at h1
+    rw [← b_step_eq_iff, Int.sub_add_cancel] at h2
+    rw [← a_step_eq_iff] at h3
+    rw [← a_step_gt_iff, Int.sub_add_cancel] at h4
+    exact ⟨h4, Eq.symm h3, h1, h2⟩
+  · rintro ⟨h1, h2, h3, h4⟩
+    nth_rewrite 2 [← Int.sub_add_cancel a 1] at h1
+    rw [a_step_gt_iff] at h1
+    let h2 := Eq.symm h2
+    rw [τ.a_step_eq_iff a b] at h2
+    rw [b_step_lt_iff] at h3
+    nth_rewrite 1 [← Int.sub_add_cancel b 1] at h4
+    rw [b_step_eq_iff] at h4
+    exact ⟨h3, h4, h2, h1⟩
+
 
 end AspPerm

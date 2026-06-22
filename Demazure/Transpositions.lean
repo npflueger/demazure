@@ -464,47 +464,6 @@ private lemma lres_step_max_eq_oneIf (s : SlipFace) (a b : ℤ) :
       rw [hleft']
       exact max_eq_left (by omega)
 
-private lemma asp_s_prev_gt_iff (α : AspPerm) (a b : ℤ) :
-    α.s a (b - 1) > α.s a b ↔ α (b - 1) < a := by
-  -- Proof written by GPT 5.5.
-  have hiff := α.b_step_one_iff a (b - 1)
-  rw [show (b - 1 : ℤ) + 1 = b by omega] at hiff
-  have hstep : α.s a b ≤ α.s a (b - 1) ∧ α.s a (b - 1) ≤ α.s a b + 1 := by
-    simpa only [sub_add_cancel] using α.s.b_step a (b - 1)
-  constructor
-  · intro h
-    exact hiff.mp (by omega)
-  · intro h
-    have hs := hiff.mpr h
-    omega
-
-private lemma asp_s_eq_next_iff (α : AspPerm) (a b : ℤ) :
-    α.s a b = α.s a (b + 1) ↔ a ≤ α b := by
-  -- Proof written by GPT 5.5.
-  rw [eq_comm]
-  simpa only [ge_iff_le] using α.b_step_eq_iff a b
-
-private lemma asp_s_prev_eq_iff (α : AspPerm) (a b : ℤ) :
-    α.s a (b - 1) = α.s a b ↔ a ≤ α (b - 1) := by
-  -- Proof written by GPT 5.5.
-  have hiff := α.b_step_eq_iff a (b - 1)
-  rw [show (b - 1 : ℤ) + 1 = b by omega] at hiff
-  rw [eq_comm]
-  simpa only [ge_iff_le] using hiff
-
-private lemma asp_s_gt_next_iff (α : AspPerm) (a b : ℤ) :
-    α.s a b > α.s a (b + 1) ↔ α b < a := by
-  -- Proof written by GPT 5.5.
-  have hiff := α.b_step_one_iff a b
-  have hstep : α.s a (b + 1) ≤ α.s a b ∧ α.s a b ≤ α.s a (b + 1) + 1 :=
-    by simpa using α.s.b_step a b
-  constructor
-  · intro h
-    exact hiff.mp (by omega)
-  · intro h
-    have hs := hiff.mpr h
-    omega
-
 /-- The slipface $s \star \sigma_S$ is given by adding 1 to a certain pattern of entries of $s$.
 The expression `Utils.oneIf P` is the indicator $\delta(P)$ in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
@@ -580,9 +539,13 @@ theorem asp_star_sigma_sf (S : Set ℤ) (hS : NoConsecutive S) (α : AspPerm) (a
         (b - 1 ∈ S ∧ α (b - 1) < a ∧ a ≤ α b) := by
     constructor
     · rintro ⟨hb, hprev, hnext⟩
-      exact ⟨hb, (asp_s_prev_gt_iff α a b).mp hprev, (asp_s_eq_next_iff α a b).mp hnext⟩
+      exact ⟨hb,
+        (α.b_step_lt_iff a (b - 1)).mp (by simpa only [sub_add_cancel] using hprev),
+        (α.b_step_eq_iff a b).mp hnext.symm⟩
     · rintro ⟨hb, hprev, hnext⟩
-      exact ⟨hb, (asp_s_prev_gt_iff α a b).mpr hprev, (asp_s_eq_next_iff α a b).mpr hnext⟩
+      exact ⟨hb,
+        by simpa only [sub_add_cancel] using (α.b_step_lt_iff a (b - 1)).mpr hprev,
+        ((α.b_step_eq_iff a b).mpr hnext).symm⟩
   rw [Utils.oneIf_congr hiff]
 
 /-- A formula for $s \triangleleft \sigma_S$.
@@ -666,9 +629,14 @@ theorem asp_residual_sigma_sf (S : Set ℤ) (hS : NoConsecutive S)
         (b - 1 ∈ S ∧ α b < a ∧ a ≤ α (b - 1)) := by
     constructor
     · rintro ⟨hb, hprev, hnext⟩
-      exact ⟨hb, (asp_s_gt_next_iff α a b).mp hnext, (asp_s_prev_eq_iff α a b).mp hprev⟩
+      exact ⟨hb, (α.b_step_lt_iff a b).mp hnext,
+        (α.b_step_eq_iff a (b - 1)).mp (by simpa only [sub_add_cancel] using hprev.symm)⟩
     · rintro ⟨hb, hnext, hprev⟩
-      exact ⟨hb, (asp_s_prev_eq_iff α a b).mpr hprev, (asp_s_gt_next_iff α a b).mpr hnext⟩
+      exact ⟨hb,
+        by
+          have hflat := (α.b_step_eq_iff a (b - 1)).mpr hprev
+          simpa only [sub_add_cancel] using hflat.symm,
+        (α.b_step_lt_iff a b).mpr hnext⟩
   rw [Utils.oneIf_congr hiff]
 
 /-- The subset of $S$ where right multiplication by $\sigma_S$ should increase the

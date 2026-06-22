@@ -1837,5 +1837,68 @@ lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
         · omega
     exact ⟨h1, h2, h3, h4⟩
 
+private lemma ess_seeker (s t : SlipFace) (nle : ¬ s ≤ t) (M : ℕ) :
+  ∃ (a b : ℤ), s a b > t a b ∧ ( (a,b) ∈ s.ess ∨ s a b + s.dual b a ≥ M) := by
+  induction M with
+  | zero =>
+    contrapose! nle with le
+    intro a b; specialize le a b
+    by_contra! lt
+    obtain ⟨_, lt_zero⟩ := le lt
+    have nn1 := s.nonneg a b
+    have nn2 := s.dual.nonneg b a
+    omega
+  | succ M ih =>
+    rcases ih with ⟨a, b, s_gt_t, (ab_ess | ab_ge_M)⟩
+    · use a, b, s_gt_t
+      left; exact ab_ess
+    · by_cases ab_ess : (a, b) ∈ s.ess
+      · use a, b, s_gt_t
+        left; exact ab_ess
+      obtain ⟨a', b', _, s'_gt_t', sum_ineq⟩ :=  ess_step s t a b s_gt_t ab_ess
+      use a', b', s'_gt_t'
+      right
+      omega
+
+/-- *Definition 7.3* (`defn:cliffordSF`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+def is_clifford : Prop := ∃ (M : ℕ),
+  ∀ a b : ℤ, sf a b + sf.dual b a ≥ M → sf a b = 0 ∨ sf.dual b a = 0
+
+private lemma le_of_ess_le (s t : SlipFace) (cliff : s.is_clifford) (chile : s.χ ≤ t.χ)
+  (ess_le : ∀ (a b : ℤ), (a, b) ∈ s.ess → s a b ≤ t a b) :
+  s ≤ t := by
+  obtain ⟨M, cliff_cond⟩ := cliff
+  contrapose! ess_le with nle
+  obtain ⟨a, b, s_gt_t, (ab_ess | ab_ge_M)⟩ := ess_seeker s t nle M
+  · exact ⟨a, b, ab_ess, s_gt_t⟩
+  · exfalso
+    obtain (s_zero | s'_zero) := cliff_cond a b ab_ge_M
+    · rw [s_zero] at s_gt_t
+      have := t.nonneg a b
+      omega
+    · rw [s.s_eq a b, t.s_eq a b, s'_zero] at s_gt_t
+      have := t.dual.nonneg b a
+      omega
+
+theorem le_iff_ess_le (s t : SlipFace) (cliff : s.is_clifford) :
+  s ≤ t ↔ s.χ ≤ t.χ ∧ ∀ (a b : ℤ), (a, b) ∈ s.ess → s a b ≤ t a b := by
+  constructor
+  · intro s_le_t
+    have chile : s.χ ≤ t.χ := by
+      obtain ⟨b, hb⟩ := t.dual.small_a 0
+      have t_zero := hb b (le_refl _)
+      rw [t.s'_eq b 0] at t_zero
+      have h_t : t.χ = t 0 b + b := by omega
+      have h_s : s.χ ≤ s 0 b + b := by
+        have h1 := s.duality 0 b
+        have h2 := s.dual.nonneg b 0
+        omega
+      have := s_le_t 0 b
+      omega
+    use chile
+    intro a b _
+    exact s_le_t a b
+  · rintro ⟨chile, ess_le⟩
+    exact le_of_ess_le s t cliff chile ess_le
 
 end SlipFace

@@ -64,8 +64,8 @@ lemma min_spec : ∀ n : ℤ, v.f n ≥ v.min := by
     rwa [hm.2] at this
   have mem_floor : n ∈ v.floor (v.f 0) := by
     simpa using le_of_not_gt h
-  have mem_image_floor : v.f n ∈ Finset.image v.f (v.floor (v.f 0)) := by
-    exact Finset.mem_image.mpr ⟨n, mem_floor, rfl⟩
+  have mem_image_floor : v.f n ∈ Finset.image v.f (v.floor (v.f 0)) :=
+    Finset.mem_image.mpr ⟨n, mem_floor, rfl⟩
   exact Finset.min'_le (Finset.image v.f (v.floor (v.f 0))) (v.f n) mem_image_floor
 
 lemma argmin_set_nonempty : (v.floor v.min).Nonempty := by

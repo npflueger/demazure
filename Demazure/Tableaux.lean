@@ -752,10 +752,8 @@ noncomputable def HF_equiv_PChain :
   where
   toFun := PChain_of_HF h_321a
   invFun := HF_of_PChain h_321a
-  left_inv A := by
-    exact HF_of_PChain_of_HF h_321a A
-  right_inv C := by
-    exact PChain_of_HF_of_PChain h_321a C
+  left_inv := HF_of_PChain_of_HF h_321a
+  right_inv := PChain_of_HF_of_PChain h_321a
 
 end Chains
 

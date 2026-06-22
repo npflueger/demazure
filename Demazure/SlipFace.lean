@@ -292,34 +292,15 @@ lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
 /-- Every slipface function and its dual satisfies the `D_props`, denoted (D1) and (D2).
 *Lemma 3.6 (`lem:dualCrit`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227),* part 2/2. -/
-lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func := by
-  constructor
-  · constructor
-    · intro a b
-      exact (sf.a_step a b).1
-    · intro a b
-      exact (sf.b_step a b).1
-    · intro a
-      exact sf.large_b a
-    · intro b
-      exact sf.small_a b
-  · constructor
-    · intro a b
-      exact (sf.dual.a_step a b).1
-    · intro a b
-      exact (sf.dual.b_step a b).1
-    · intro a
-      exact sf.dual.large_b a
-    · intro b
-      exact sf.dual.small_a b
+lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func :=
+  ⟨⟨fun a b => (sf.a_step a b).1, fun a b => (sf.b_step a b).1, sf.large_b, sf.small_a⟩,
+    ⟨fun a b => (sf.dual.a_step a b).1, fun a b => (sf.dual.b_step a b).1,
+      sf.dual.large_b, sf.dual.small_a⟩⟩
 
 lemma nondec {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) : sf a b ≤ sf a' b' := by
   have dp := D_props_of_sf sf
-  have h1 : sf a b ≤ sf a' b := by
-    exact mono_a_of_D_props sf.func dp.1 a a' b a_le_a'
-  have h2 : sf a' b ≤ sf a' b' := by
-    exact mono_b_of_D_props sf.func dp.1 a' b' b b'_le_b
-  exact le_trans h1 h2
+  exact le_trans (mono_a_of_D_props sf.func dp.1 a a' b a_le_a')
+    (mono_b_of_D_props sf.func dp.1 a' b' b b'_le_b)
 
 lemma zero_below {a a' b b' : ℤ} (a_le_a' : a ≤ a') (b'_le_b : b' ≤ b) :
   sf a' b' = 0 → sf a b = 0 := by

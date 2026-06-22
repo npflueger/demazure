@@ -200,15 +200,15 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
   let H := star_hi_error α β a b l₀
   let n := H.max' (Finset.card_pos.mp hhi₀)
   have hnH : n ∈ H := Finset.max'_mem H (Finset.card_pos.mp hhi₀)
-  have hn_data : l₀ ≤ n ∧ α n < a ∧ β⁻¹ n < b := by
-    exact (mem_star_hi_error α β a b l₀ n).mp hnH
+  have hn_data : l₀ ≤ n ∧ α n < a ∧ β⁻¹ n < b :=
+    (mem_star_hi_error α β a b l₀ n).mp hnH
   have hhi_succ : star_hi_error α β a b (n + 1) = ∅ := by
     apply Finset.eq_empty_iff_forall_notMem.mpr
     intro n' hn'
     have hn'_hi := (mem_star_hi_error α β a b (n + 1) n').mp hn'
     have hn'H : n' ∈ H := by
       apply (mem_star_hi_error α β a b l₀ n').mpr
-      have hnn' : n ≤ n' := by omega
+      have hnn' : n ≤ n' := le_trans (le_of_lt (lt_add_one n)) hn'_hi.1
       exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
     have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
     omega
@@ -220,10 +220,10 @@ private lemma star_le_mul_of_reducedProduct (α β : AspPerm)
   have hlo_succ : 0 < (star_lo_error α β a b (n + 1)).card := by
     omega
   obtain ⟨m, hm⟩ := Finset.card_pos.mp hlo_succ
-  have hm' : m < n + 1 ∧ b ≤ β⁻¹ m ∧ a ≤ α m := by
-    exact (mem_star_lo_error α β a b (n + 1) m).mp hm
+  have hm' : m < n + 1 ∧ b ≤ β⁻¹ m ∧ a ≤ α m :=
+    (mem_star_lo_error α β a b (n + 1) m).mp hm
   have hmn : m < n := by
-    have hmn_le : m ≤ n := by omega
+    have hmn_le : m ≤ n := Int.le_of_lt_add_one hm'.1
     apply lt_of_le_of_ne hmn_le
     intro hmn_eq
     subst m
@@ -435,20 +435,20 @@ private lemma mul_le_lres_of_le_weak_L (α β : AspPerm)
     exact Finset.notMem_empty _ hβm
   by_cases hhi₀_empty : lres_hi_error α β a b l₀ = ∅
   · exact hle_of_errors_empty l₀ hlo₀ hhi₀_empty
-  · have hhi₀ : 0 < (lres_hi_error α β a b l₀).card := by
-      exact Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hhi₀_empty)
+  · have hhi₀ : 0 < (lres_hi_error α β a b l₀).card :=
+      Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hhi₀_empty)
     let H := lres_hi_error α β a b l₀
     let n := H.max' (Finset.card_pos.mp hhi₀)
     have hnH : n ∈ H := Finset.max'_mem H (Finset.card_pos.mp hhi₀)
-    have hn_data : l₀ ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n := by
-      exact (mem_lres_hi_error α β a b l₀ n).mp hnH
+    have hn_data : l₀ ≤ n ∧ β⁻¹ n < b ∧ a ≤ α n :=
+      (mem_lres_hi_error α β a b l₀ n).mp hnH
     have hhi_succ : lres_hi_error α β a b (n + 1) = ∅ := by
       apply Finset.eq_empty_iff_forall_notMem.mpr
       intro n' hn'
       have hn'_hi := (mem_lres_hi_error α β a b (n + 1) n').mp hn'
       have hn'H : n' ∈ H := by
         apply (mem_lres_hi_error α β a b l₀ n').mpr
-        have hnn' : n ≤ n' := by omega
+        have hnn' : n ≤ n' := le_trans (le_of_lt (lt_add_one n)) hn'_hi.1
         exact ⟨le_trans hn_data.1 hnn', hn'_hi.2⟩
       have hn'_le : n' ≤ n := Finset.le_max' H n' hn'H
       omega
@@ -457,7 +457,7 @@ private lemma mul_le_lres_of_le_weak_L (α β : AspPerm)
       intro m hm
       have hm' := (mem_lres_lo_error α β a b (n + 1) m).mp hm
       have hmn : m < n := by
-        have hmn_le : m ≤ n := by omega
+        have hmn_le : m ≤ n := Int.le_of_lt_add_one hm'.1
         apply lt_of_le_of_ne hmn_le
         intro hmn_eq
         subst m
@@ -594,8 +594,8 @@ namespace ReducedFact
 
 /-- Construct a reduced fact from its defining two properties. -/
 def of_mul_reduced {α β γ : AspPerm} (h_mul : α * β = γ)
-    (h_reduced : AspPerm.ReducedProduct α β) : ReducedFact α β γ := by
-  exact ReducedFact.mk h_reduced h_mul
+    (h_reduced : AspPerm.ReducedProduct α β) : ReducedFact α β γ :=
+  ReducedFact.mk h_reduced h_mul
 
 /-- Construct a reduced fact when ordinary and Demazure multiplication have
 the same value. -/

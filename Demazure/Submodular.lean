@@ -41,7 +41,7 @@ private lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
       exact le_antisymm this (s.dual.nonneg b (A-1))
     have : s.Δ (A-1) b = -1 := by
       dsimp [SlipFace.Δ]
-      have : A - 1 + 1 = A := by omega
+      have : A - 1 + 1 = A := sub_add_cancel A 1
       rw [this]
       rw [s.s_eq (A-1) b, s.s_eq (A-1) (b+1)]
       rw [hA', hA, hAb, hbA]
@@ -199,15 +199,15 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
       intro b hb
       by_cases b_neg : b < 0
       · exact lt_of_lt_of_le b_neg (le_max_left 0 B')
-      have b_nonneg : b ≥ 0 := by linarith
+      have b_nonneg : b ≥ 0 := le_of_not_gt b_neg
       clear b_neg
       suffices b < B' by
         exact lt_of_lt_of_le this (le_max_right 0 B')
       let a := asp_func hsub b
       have a_neg : a < 0 := by
         by_contra! a_nonneg
-        have neg : b * a < 0 := by exact hb
-        have nonneg : b * a ≥ 0 := by exact mul_nonneg b_nonneg a_nonneg
+        have neg : b * a < 0 := hb
+        have nonneg : b * a ≥ 0 := mul_nonneg b_nonneg a_nonneg
         linarith
       have mem : ⟨a, b⟩ ∈ s.Γ := by
         apply (asp_func_spec hsub a b).mp
@@ -226,7 +226,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
       intro b hb
       by_cases b_nonneg : b ≥ 0
       · exact le_trans (min_le_left 0 B) b_nonneg
-      have b_neg : b < 0 := by linarith
+      have b_neg : b < 0 := lt_of_not_ge b_nonneg
       clear b_nonneg
       suffices b ≥ B by
         exact le_trans (min_le_right 0 B) this
@@ -235,7 +235,7 @@ noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
         by_contra! a_nonpos
         have nonneg : b * a ≥ 0 := by
           apply mul_nonneg_of_nonpos_of_nonpos (le_of_lt b_neg) a_nonpos
-        have neg : b * a < 0 := by exact hb
+        have neg : b * a < 0 := hb
         linarith
       have mem : ⟨a, b⟩ ∈ s.Γ := by
         apply (asp_func_spec hsub a b).mp
@@ -1004,8 +1004,7 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.s = β.s) : α = β := by
 permutation. -/
 private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ⋆ β.s := by
   intro α β
-  have : (α.s ⋆ β.s).submodular := by
-    exact Submodular.submodular_of_star (α.submodular) (β.submodular)
+  have := Submodular.submodular_of_star (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ⋆ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
@@ -1019,8 +1018,7 @@ private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s 
 unique ASP permutation. -/
 private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ◃ β.s := by
   intro α β
-  have : (α.s ◃ β.s).submodular := by
-    exact Submodular.submodular_of_lres (α.submodular) (β.submodular)
+  have := Submodular.submodular_of_lres (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ◃ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ
@@ -1034,8 +1032,7 @@ private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s 
 unique ASP permutation. -/
 private lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ▹ β.s := by
   intro α β
-  have : (α.s ▹ β.s).submodular := by
-    exact Submodular.submodular_of_rres (α.submodular) (β.submodular)
+  have := Submodular.submodular_of_rres (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ▹ β.s)).mp this
   rcases ex with ⟨τ, hτ⟩
   use τ

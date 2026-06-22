@@ -801,7 +801,7 @@ private lemma sigmaFun_mul (S₁ S₂ : Set ℤ) (hDisj : Disjoint S₁ S₂)
       have h3 : n + 1 ∉ S₁ := by
         intro h
         exact hS n (Set.mem_union_right S₁ h2) (Set.mem_union_left S₂ h)
-      have h4 : (n + 1 : ℤ) - 1 = n := by omega
+      have h4 : (n + 1 : ℤ) - 1 = n := add_sub_cancel_right n 1
       simp only [sigmaFun, h2', if_false, h2, if_true, h3, h4, Set.mem_union,
         false_or]
     · by_cases h3 : n - 1 ∈ S₁
@@ -1012,8 +1012,8 @@ theorem star_simple (α σ : AspPerm) (n : ℤ)
   -- Proof written by GPT 5.5.
   let T : Set ℤ := {n}
   let hT : NoConsecutive T := noConsecutive_singleton n
-  have hσ : σ = sigma T hT := by
-    exact eq_sigma_singleton_of_chi_eq_zero_of_inv_set_eq_singleton σ n hχ hInv
+  have hσ : σ = sigma T hT :=
+    eq_sigma_singleton_of_chi_eq_zero_of_inv_set_eq_singleton σ n hχ hInv
   rw [hσ]
   by_cases hα : α n < α (n + 1)
   · rw [if_pos hα]
@@ -1049,8 +1049,8 @@ theorem residual_simple (α σ : AspPerm) (n : ℤ)
   -- Proof written by GPT 5.5.
   let T : Set ℤ := {n}
   let hT : NoConsecutive T := noConsecutive_singleton n
-  have hσ : σ = sigma T hT := by
-    exact eq_sigma_singleton_of_chi_eq_zero_of_inv_set_eq_singleton σ n hχ hInv
+  have hσ : σ = sigma T hT :=
+    eq_sigma_singleton_of_chi_eq_zero_of_inv_set_eq_singleton σ n hχ hInv
   rw [hσ]
   by_cases hα : α (n + 1) < α n
   · rw [if_pos hα]

@@ -65,8 +65,8 @@ private lemma not_mem_of_ge (asps : AspSet) {m n : ℤ} (n_le_m : n ≤ m) : ⟨
   intro h
   exact (not_lt_of_ge n_le_m) (asps.directed m n h)
 
-@[simp] private lemma not_mem_self (asps : AspSet) (n : ℤ) : ⟨n, n⟩ ∉ asps := by
-  exact asps.not_mem_of_ge (le_refl n)
+@[simp] private lemma not_mem_self (asps : AspSet) (n : ℤ) : ⟨n, n⟩ ∉ asps :=
+  asps.not_mem_of_ge (le_refl n)
 
 /-- The order on indices after the inversions in `asps` are applied. -/
 private def post_lt (asps : AspSet) (m n : ℤ) : Prop :=
@@ -700,12 +700,12 @@ noncomputable def AspPerm_equiv_AspSet :
     (AspPerm_equiv_AspSet τ).2 = τ.χ := rfl
 
 @[simp] lemma inv_set_AspPerm_equiv_AspSet_invFun (asps : AspSet) (χ : ℤ) :
-    inv_set (AspPerm_equiv_AspSet.invFun (asps, χ)) = asps := by
-  exact invSet_of_toAspPerm asps χ
+    inv_set (AspPerm_equiv_AspSet.invFun (asps, χ)) = asps :=
+  invSet_of_toAspPerm asps χ
 
 @[simp] lemma chi_AspPerm_equiv_AspSet_invFun (asps : AspSet) (χ : ℤ) :
-    (AspPerm_equiv_AspSet.invFun (asps, χ)).χ = χ := by
-  exact chi_of_toAspPerm asps χ
+    (AspPerm_equiv_AspSet.invFun (asps, χ)).χ = χ :=
+  chi_of_toAspPerm asps χ
 
 /-!
 A set $I \subseteq \mathbb{Z} \times \mathbb{Z}$ is the inversion set of an ASP permutation

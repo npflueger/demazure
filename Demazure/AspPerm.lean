@@ -115,8 +115,7 @@ lemma se_finite_of_asp {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n :
       intro k hk
       simp only [southeast_set] at hk
       obtain ⟨k_pos, τk_neg⟩ := hk
-      have : k > 0 := by omega
-      exact mul_neg_of_pos_of_neg this τk_neg
+      exact mul_neg_of_pos_of_neg k_pos τk_neg
     exact Set.Finite.subset h_asp this
   exact se_finite_of_finite h_inj 0 1 m n h_se
 
@@ -129,8 +128,7 @@ lemma nw_finite_of_asp {τ : ℤ → ℤ} (h_inj : Function.Injective τ) (m n :
       intro k hk
       simp only[northwest_set] at hk
       obtain ⟨k_neg, τk_pos⟩ := hk
-      have : τ k > 0 := by omega
-      exact mul_neg_of_neg_of_pos k_neg this
+      exact mul_neg_of_neg_of_pos k_neg τk_pos
     exact Set.Finite.subset h_asp this
   exact nw_finite_of_finite h_inj 1 0 m n h_nw
 
@@ -1808,7 +1806,7 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
       linarith [habMN]
     rw [← l_eq] at ineqs
     obtain ⟨hβ, hα⟩ := ineqs
-    have hβ : β.s l b ≤ m-1 := by exact Int.le_sub_one_of_lt hβ
+    have hβ : β.s l b ≤ m-1 := Int.le_sub_one_of_lt hβ
     have hα : α.s a l ≤ M  - m := by
       linarith [α.s_eq a l]
     have : α.s a l + β.s l b ≤ M-1 := by

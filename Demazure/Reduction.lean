@@ -59,8 +59,8 @@ product of the original factors. This is the ASP form of the bound used in
 the equation labeled `eq:astarbBound` in
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 lemma mul_le_star_of_le {α₁ α₂ β₁ β₂ : AspPerm}
-    (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ * β₁ ≤ α₂ ⋆ β₂ := by
-  exact le_trans (ReducedProducts.mul_le_star α₁ β₁) (star_mono hα hβ)
+    (hα : α₁ ≤ α₂) (hβ : β₁ ≤ β₂) : α₁ * β₁ ≤ α₂ ⋆ β₂ :=
+  le_trans (ReducedProducts.mul_le_star α₁ β₁) (star_mono hα hβ)
 
 /-! ### Theorem B: greedy characterization of `⋆` -/
 

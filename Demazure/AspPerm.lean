@@ -1877,5 +1877,100 @@ lemma ess_asp_eq_ass_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
     rw [b_step_eq_iff] at h4
     exact ⟨h3, h4, h2, h1⟩
 
+def is_bdd_diff : Prop := ∃ (M : ℤ), ∀ (n : ℤ), abs (n - τ n) ≤ M
+
+private def width_bound (N : ℤ) : Prop :=
+  ∀ (a b : ℤ), N ≤ (abs a - b) → τ.s a b = max (τ.χ + a - b) 0
+
+private def M : Set ℤ :=
+  {m | ∃ a b : ℤ, τ.s a b > 0 ∧ m ≤ τ⁻¹.s b a}
+
+private def M' : Set ℤ :=
+  {m | ∃ n : ℤ, m ≤ n - τ n - τ.χ}
+
+private def M'' : Set ℤ :=
+  {m | ∃ a b : ℤ, τ.s a b > 0 ∧ m ≤ b - a - τ.χ + 1}
+
+
+private lemma M'_sub_M : τ.M' ⊆ τ.M := by
+  rintro m ⟨n, hn⟩
+  use τ n + 1, n
+  have : τ.s (τ n + 1) n = τ.s (τ n) n + 1 := by
+    apply (τ.a_step_one_iff (τ n) n).2
+    rw [τ.inv_mul_cancel_eval]
+  rw [this]
+  have hpos : τ.s (τ n) n ≥ 0 := τ.s_nonneg (τ n) n
+  constructor
+  · omega
+  · rw [τ.s'_eq]
+    omega
+
+private lemma M''_sub_M' : τ.M'' ⊆ τ.M' := by
+  rintro m ⟨a, b, hpos, mle⟩
+  rw [τ.s_eq_se_card, gt_iff_lt] at hpos
+  rw [Nat.cast_pos, Finset.card_pos] at hpos
+  rcases hpos with ⟨n, hn⟩
+  rw [τ.mem_se] at hn
+  use n
+  omega
+
+private lemma M_sub_M'' : τ.M ⊆ τ.M'' := by
+  rintro m ⟨a, b, hpos, mle⟩
+  rw [τ.s_eq_se_card, gt_iff_lt] at hpos
+  rw [Nat.cast_pos, Finset.card_pos] at hpos
+  let n := Finset.max' _ hpos
+  have hn : n ∈ τ.se_finset a b := Finset.max'_mem _ hpos
+  obtain ⟨nge, τnlt⟩ := (τ.mem_se a b n).mp hn
+  have s_zero : τ.s (τ n + 1) n = 1 := by
+    calc
+      τ.s (τ n + 1) n = τ.s (τ n) n + 1 := by
+        apply (τ.a_step_one_iff (τ n) n).2
+        simp only [τ.inv_mul_cancel_eval, le_refl]
+      _ = 1 := by
+        rw [τ.s_eq_se_card]
+        have : τ.se_finset (τ n) n = ∅ := by
+          rw [Finset.eq_empty_iff_forall_notMem]
+          intro m hm
+          rw [τ.mem_se] at hm
+          have b_le_m : b ≤ m := le_trans nge hm.1
+          have τm_lt_a : τ m < a:= lt_trans hm.2 τnlt
+          have m_se : m ∈ τ.se_finset a b := by
+            rw [τ.mem_se]
+            exact ⟨b_le_m, τm_lt_a⟩
+          have : m ≤ n := Finset.le_max' _ m m_se
+          have m_eq_n : m = n := le_antisymm this hm.1
+          rw [m_eq_n] at hm
+          exact lt_irrefl (τ n) hm.2
+        rw [this, Finset.card_empty, Nat.cast_zero, zero_add]
+  rw [τ.mem_se] at hn
+  use τ n + 1, n
+  constructor
+  · have : τ.s (τ n + 1) n = τ.s (τ n) n + 1 := by
+      apply (τ.a_step_one_iff (τ n) n).2
+      rw [τ.inv_mul_cancel_eval]
+    rw [this]
+    have := τ.s_nonneg (τ n) n
+    omega
+  · have mle' : m ≤ τ⁻¹.s n (τ n + 1) := by
+      apply le_trans mle
+      apply τ⁻¹.s.nondec (a := b) (b := a) (a' := n) (b' := τ n + 1) nge (by omega)
+    rw [τ.s'_eq] at mle'
+    obtain ⟨h1, h2⟩ := hn
+    omega
+
+lemma M'_eq_M : τ.M' = τ.M :=
+  Set.Subset.antisymm τ.M'_sub_M <| Set.Subset.trans τ.M_sub_M'' τ.M''_sub_M'
+
+lemma M''_eq_M' : τ.M'' = τ.M :=
+  Set.Subset.antisymm (Set.Subset.trans τ.M''_sub_M' τ.M'_sub_M) τ.M_sub_M''
+
+
+
+
+
+
+
+
+
 
 end AspPerm

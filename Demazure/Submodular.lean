@@ -982,7 +982,7 @@ end Submodular
 /-! ### The operations $\star,\; \triangleleft,\; \triangleright$ on `AspPerm`
 
 Using the slipface construction above, this section defines Demazure product
-and the two residual operationson ASP permutations and proves its basic
+and the two residual operations on ASP permutations and proves its basic
 structural properties. -/
 
 namespace AspPerm
@@ -1055,7 +1055,7 @@ noncomputable def star (α β : AspPerm) : AspPerm :=
 /-- The Demazure product on ASP is characterized by the equation
 $s_{\alpha \star \beta} = s_\alpha \star s_\beta$.
 *Theorem 4.5 (`thm:starExists1`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
 @[simp] lemma star_spec (α β : AspPerm) : (star α β).s = α.s ⋆ β.s :=
   (Classical.choose_spec (star_exists α β)).1
 
@@ -1419,7 +1419,7 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
 theorem ess_bdiff (α β : AspPerm) (bdiff : α.is_bdiff) :
   α ≤ β ↔ α.χ ≤ β.χ ∧ ∀ (a b : ℤ), ⟨a, b⟩ ∈ α.ess → α.s a b ≤ β.s a b := by
   have := SlipFace.ess_clifford α.s β.s (α.bdiff_iff_clifford.mp bdiff)
-  rwa [← α.s_chi_eq, ← β.s_chi_eq, α.ess_asp_eq_ass_sf]
+  rwa [← α.s_chi_eq, ← β.s_chi_eq, α.ess_asp_eq_ess_sf]
 
 end AspPerm
 

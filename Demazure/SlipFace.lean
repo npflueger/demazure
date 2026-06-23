@@ -12,7 +12,8 @@ import Mathlib.Data.Int.Interval
 
 This file defines slipface functions and develops their basic properties, including the $\star$
 (Demazure product) and residuals $\triangleleft$ and $\triangleright$. It corresponds roughly to
-Section 3 of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+Section 3, with some essential-set material from Section 7.1, of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
 /-- A slipface function of shift `χ`, i.e. a function $s : \mathbb{Z}^2 \to \mathbb{N}$
@@ -217,7 +218,7 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
 
 /-- Construct a slipface from a pair of functions satisfying `D_props` and the
 duality relation `s a b - t b a = a - b + χ`. *Lemma 3.6 (`lem:dualCrit`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),* part 1/2. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
     (h : ∀ a b, s a b - t b a = a - b + χ) :
   D_props s ∧ D_props t →
@@ -291,7 +292,7 @@ lemma sf_of_D_props {s t : ℤ → ℤ → ℤ} {χ : ℤ}
 
 /-- Every slipface function and its dual satisfies the `D_props`, denoted (D1) and (D2).
 *Lemma 3.6 (`lem:dualCrit`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227),* part 2/2. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 lemma D_props_of_sf (sf : SlipFace) : D_props sf.func ∧ D_props sf.dual.func :=
   ⟨⟨fun a b => (sf.a_step a b).1, fun a b => (sf.b_step a b).1, sf.large_b, sf.small_a⟩,
     ⟨fun a b => (sf.dual.a_step a b).1, fun a b => (sf.dual.b_step a b).1,
@@ -471,9 +472,11 @@ lemma star_func_eq (s t : SlipFace) : (s ⋆ t).func = star_func s t := by
   have h := star_exists s t
   exact (Classical.choose_spec h).1.1
 
-/-- The formula for the Demazure product of Slipfaces:
+/-- The formula for the Demazure product of slipfaces:
 $s \star t(a,b) = \min_{l \in \mathbb{Z}} (s(a,l) + t(l,b))$.
-This is unpacking the formal definition of $\star$ to put it more transporently in the form of *Definition 3.7* (`defn:sfAlgebra`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/3. -/
+This unpacks the formal definition of $\star$ into the form of *Definition 3.7*
+(`defn:sfAlgebra`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227),
+part 1/3.* -/
 lemma star_eq_min (s t : SlipFace) (a b : ℤ) :
   IsLeast { s a l + t l b | l : ℤ } ( (s ⋆ t) a b ) := by
   let v := SlipValley s t a b
@@ -513,7 +516,7 @@ lemma star_eq_min (s t : SlipFace) (a b : ℤ) :
 
 This section defines the Bruhat order on `SlipFace` and records the basic
 comparison lemmas relating that order to the product `⋆`.
-[An extended Demazure product](https://arxiv.org/abs/2206.14227). *Definition 3.2.* -/
+*Definition 3.2* of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 
 instance : PartialOrder SlipFace where
   le (s t : SlipFace) := ∀ a b, s a b ≤ t a b
@@ -1176,7 +1179,8 @@ lemma lres_wit_spec (s t : SlipFace) (a b : ℤ) :
 $(s ◃ t)(a,b) = \max_{\ell \in \mathbb{Z}} (s(a,\ell) - t^\vee(b,\ell))$.
 This is simply an unwinding of the formal definition to obtain the formula as stated in
 *Definition 3.7* (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/lemma lres_eq_max (s t : SlipFace) (a b : ℤ) :
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/3.* -/
+lemma lres_eq_max (s t : SlipFace) (a b : ℤ) :
     IsGreatest {s a l - t.dual b l | l : ℤ} ((s ◃ t) a b) := by
     constructor
     · exact ⟨_, Eq.symm (lres_wit_spec s t a b)⟩
@@ -1215,7 +1219,8 @@ lemma rres_wit_spec (s t : SlipFace) (a b : ℤ) :
 $(s ▹ t)(a,b) = \max_{\ell \in \mathbb{Z}} (t(\ell,b) - s^\vee(\ell,a))$.
 This is simply an unwinding of the formal definition to obtain the formula as stated in
 *Definition 3.7* (`defn:sfAlgebra`) of
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/lemma rres_eq_max (s t : SlipFace) (a b : ℤ) :
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/3.* -/
+lemma rres_eq_max (s t : SlipFace) (a b : ℤ) :
     IsGreatest {t l b - s.dual l a | l : ℤ} ((s ▹ t) a b) := by
     constructor
     · exact ⟨_, Eq.symm (rres_wit_spec s t a b)⟩
@@ -1771,7 +1776,10 @@ lemma Γ_dual : ∀ (a b : ℤ), (a, b) ∈ sf.Γ ↔ (b, a) ∈ sf.dual.Γ := b
   simp only [Γ, Set.mem_setOf_eq, sf.Δ_dual]
 
 /-! ## The essential set of a slipface
-  This section includes the content of §7.1 of [An extended Demazure product](https://arxiv.org/abs/2206.14227), about the essential set of a slipface.
+
+This section includes the content of §7.1 of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), about the essential set of a
+slipface.
 -/
 
 /-- The *essential set* of a slipface $s$ is the set
@@ -1781,7 +1789,7 @@ s(a-1,b) < s(a,b) = s(a+1,b) \mbox{ and } s(a,b+1) < s(a,b) = s(a,b-1) \}.$
 def ess : Set (ℤ × ℤ) := {(a, b) | sf (a-1) b < sf a b ∧ sf a b = sf (a+1) b
   ∧ sf a (b+1) < sf a b ∧ sf a b = sf a (b-1)}
 
-/-- Lemmma 7.2 (`lem:essSetMoves`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+/-- Lemma 7.2 (`lem:essSetMoves`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
   ¬ (a, b) ∈ s.ess →
@@ -1870,7 +1878,8 @@ private lemma ess_seeker (s t : SlipFace) (nle : ¬ s ≤ t) (M : ℕ) :
       right
       omega
 
-/-- *Definition 7.3* (`defn:cliffordSF`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+/-- *Definition 7.3 (`defn:cliffordSF`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 def is_clifford : Prop := ∃ (M : ℕ),
   ∀ a b : ℤ, sf a b + sf.dual b a ≥ M → sf a b = 0 ∨ sf.dual b a = 0
 

@@ -10,13 +10,14 @@ import Mathlib.Data.Set.Card
 import Mathlib.Tactic.Ring
 
 /-!
-# ASP permutations
+# Almost-sign-preserving permutations
 
-This file defines ASP permutations, their inversion sets, associated slipfaces,
+This file defines almost-sign-preserving permutations, their inversion sets, associated slipfaces,
 the Bruhat order, and some properties laying the groundwork for the Demazure product $\star$ and
 residuals $\triangleleft$ and $\triangleright$. These three operations are not yet defined in
 this file; that is deferred until `Submodular.lean`, where the bijection between $\mathrm{ASP}$ and
-the set of submodular slipfaces is established. This corresponds roughly to Section 2 of
+the set of submodular slipfaces is established. This corresponds roughly to Section 2, with some
+bounded-difference material from Section 7, of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
 
@@ -835,7 +836,7 @@ lemma chi_eq_card : τ.χ = ((τ.se_finset 0 0).card : ℤ) - (τ.nw_finset 0 0)
   dsimp [AspPerm.χ]
   rw [s_eq_se_card_raw, s'_eq_nw_card_raw]
 
--- Note: use of _raw defintions and statemnents should stop here
+-- Note: use of _raw definitions and statements should stop here
 
 @[simp] lemma id_chi : AspPerm.id.χ = 0 := by
   have h_se : southeast_set AspPerm.id 0 0 = ∅ := by
@@ -1844,12 +1845,15 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
 
 /-!
   ## The essential set of a permutation
-  This section formalizes results from Section 7.2 of [An extended Demazure product](https://arxiv.org/abs/2206.14227) about the "essential set" of a permutation and permutations of bounded difference.
+
+  This section formalizes results from Section 7.2 of
+  [An extended Demazure product](https://arxiv.org/abs/2206.14227) about the essential set of a
+  permutation and permutations of bounded difference.
   -/
 
 def ess (τ : AspPerm) : Set (ℤ × ℤ) := {⟨a, b⟩ | τ b < a ∧ a ≤ τ (b-1) ∧ τ⁻¹ a < b ∧ b ≤ τ⁻¹ (a-1)}
 
-lemma ess_asp_eq_ass_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
+lemma ess_asp_eq_ess_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
   ext ⟨a, b⟩
   unfold AspPerm.ess SlipFace.ess
   constructor
@@ -1991,11 +1995,13 @@ private lemma M_sub_M'' : τ.M ⊆ τ.M'' := by
     obtain ⟨h1, h2⟩ := hn
     omega
 
-/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2. -/
+/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2.* -/
 lemma M'_eq_M : τ.M' = τ.M :=
   Set.Subset.antisymm τ.M'_sub_M <| Set.Subset.trans τ.M_sub_M'' τ.M''_sub_M'
 
-/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2. -/
+/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 lemma M''_eq_M : τ.M'' = τ.M :=
   Set.Subset.antisymm (Set.Subset.trans τ.M''_sub_M' τ.M'_sub_M) τ.M_sub_M''
 
@@ -2024,8 +2030,10 @@ private lemma bdiff_width_helper (M : ℤ) :
     have := h a b (by omega)
     omega
 
-/-- A permutation $\tau$ has bounded difference if and only if $s_\tau(a,b)$ is nonspecial for all
-$|a-b| \gg 0$. *Proposition 7.7* (`prop:cliffordPerms`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2. -/
+/-- A permutation $\tau$ has bounded difference if and only if $s_\tau(a,b)$ agrees with
+$\max\{0, a-b+\chi(\tau)\}$ for all $|a-b| \gg 0$. *Proposition 7.7*
+(`prop:cliffordPerms`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227),
+part 1/2.* -/
 theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
   constructor
   · intro bdiff
@@ -2073,7 +2081,9 @@ theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
     · omega
     · omega
 
-/-- A permutation $\tau$ has bounded difference if and only if $s_\tau$ is a Clifford slipface. *Proposition 7.7* (`prop:cliffordPerms`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2. -/
+/-- A permutation $\tau$ has bounded difference if and only if $s_\tau$ is a Clifford slipface.
+*Proposition 7.7* (`prop:cliffordPerms`) of
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2.* -/
 theorem bdiff_iff_clifford : τ.is_bdiff ↔ τ.s.is_clifford := by
   constructor
   · rintro ⟨M, hM⟩

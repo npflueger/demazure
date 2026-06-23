@@ -360,7 +360,7 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
 
 /-- The bend set for $\sigma_S$ is the singleton $\{b\}$ when $b - 1 \notin S$.
 This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:starTrans`) in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/6.* -/
 private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∉ S) :
     SlipFace.bend_set (sigma S hS).s b = {b} := by
@@ -377,7 +377,7 @@ private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S
 
 /-- The bend set for $\sigma_S$ is $\{b - 1, b + 1\}$ when $b - 1 \in S$.
 This is one case of the computation of `L` in the proof of Lemma 3.17 (`lem:starTrans`) in
-[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6. -/
+[An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/6.* -/
 private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b : ℤ}
     (hb : b - 1 ∈ S) :
     SlipFace.bend_set (sigma S hS).s b = {l : ℤ | l = b - 1 ∨ l = b + 1} := by

@@ -387,9 +387,8 @@ private lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) :=
   · intro a b
     let v := SlipValley s t (a+1) b
     let l := v.M
-    have hl : s (a+1) l + t l b = s.star_func t (a+1) b := by
-      exact (SlipValley s t (a+1) b).f_M
-    rw [← hl]
+    rw [← show s (a+1) l + t l b = s.star_func t (a+1) b by
+      exact (SlipValley s t (a+1) b).f_M]
     have hmin : s.star_func t a b ≤ s a l + t l b := by
       exact (SlipValley s t a b).min_spec l
     apply le_trans hmin
@@ -398,9 +397,8 @@ private lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) :=
   · intro a b
     let v := SlipValley s t a b
     let l := v.M
-    have hl : s a l + t l b = s.star_func t a b := by
-      exact (SlipValley s t a b).f_M
-    rw [← hl]
+    rw [← show s a l + t l b = s.star_func t a b by
+      exact (SlipValley s t a b).f_M]
     have hmin : s.star_func t a (b+1) ≤ s a l + t l (b+1) := by
       exact (SlipValley s t a (b+1)).min_spec l
     apply le_trans hmin
@@ -420,9 +418,8 @@ private lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) :=
     have ge_zero : s.star_func t a b ≥ 0 := by
       let v := SlipValley s t a b
       let l := v.M
-      have hl : s a l + t l b = s.star_func t a b := by
-        exact (SlipValley s t a b).f_M
-      rw [← hl]
+      rw [← show s a l + t l b = s.star_func t a b by
+        exact (SlipValley s t a b).f_M]
       linarith [s.nonneg a l, t.nonneg l b]
     exact le_antisymm le_zero ge_zero
   · intro b
@@ -1893,7 +1890,7 @@ private lemma le_of_ess_le (s t : SlipFace) (cliff : s.is_clifford) (chile : s.�
       have := t.dual.nonneg b a
       omega
 
-theorem le_iff_ess_le (s t : SlipFace) (cliff : s.is_clifford) :
+theorem ess_clifford (s t : SlipFace) (cliff : s.is_clifford) :
   s ≤ t ↔ s.χ ≤ t.χ ∧ ∀ (a b : ℤ), (a, b) ∈ s.ess → s a b ≤ t a b := by
   constructor
   · intro s_le_t

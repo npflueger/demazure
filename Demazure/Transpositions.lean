@@ -225,20 +225,17 @@ private lemma sigma_slipface (S : Set ℤ) (hS : NoConsecutive S) (a b : ℤ) :
       max 0 (a - b) + Utils.oneIf (a = b ∧ a - 1 ∈ S) := by
   -- Proof written by GPT 5.5.
   rcases lt_trichotomy a b with hab | hab | hba
-  · have hzero : (sigma S hS).s a b = 0 := by
-      simpa using sigma_s_zero_of_lt S hS hab
-    rw [hzero]
+  · rw [show (sigma S hS).s a b = 0 by
+      simpa using sigma_s_zero_of_lt S hS hab]
     have hmax : max 0 (a - b) = 0 := max_eq_left (by omega)
     have hne : a ≠ b := ne_of_lt hab
     simp only [hmax, Utils.oneIf, hne, false_and, if_false, add_zero]
   · subst a
-    have hdiag : (sigma S hS).s b b = Utils.oneIf (b - 1 ∈ S) := by
-      simpa using sigma_s_diag S hS b
-    rw [hdiag]
+    rw [show (sigma S hS).s b b = Utils.oneIf (b - 1 ∈ S) by
+      simpa using sigma_s_diag S hS b]
     simp only [sub_self, max_eq_left (by omega : (0 : ℤ) ≤ 0), true_and, zero_add]
-  · have hs : (sigma S hS).s a b = a - b := by
-      simpa using sigma_s_of_gt S hS hba
-    rw [hs]
+  · rw [show (sigma S hS).s a b = a - b by
+      simpa using sigma_s_of_gt S hS hba]
     have hmax : max 0 (a - b) = a - b := max_eq_right (by omega)
     have hne : a ≠ b := ne_of_gt hba
     simp only [hmax, Utils.oneIf, hne, false_and, if_false, add_zero]

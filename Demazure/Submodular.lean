@@ -1233,7 +1233,7 @@ lemma chi_OrdProd (L : List AspPerm) : (OrdProd L).χ = (L.map AspPerm.χ).sum :
 
 lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
   rw [AspPerm.s_eq_se_card]
-  have hset : AspPerm.id.se_finset a b = Finset.Ico b a := by
+  rw [show AspPerm.id.se_finset a b = Finset.Ico b a by
     ext k
     constructor
     · intro hk
@@ -1242,11 +1242,9 @@ lemma id_s_eq (a b : ℤ) : AspPerm.id.s a b = max (a - b) 0 := by
     · intro hk
       have hk' : b ≤ k ∧ AspPerm.id k < a := by
         simpa [AspPerm.id] using hk
-      exact (AspPerm.id.mem_se a b k).2 hk'
-  rw [hset]
-  have hcard : (Finset.Ico b a).card = (a - b).toNat := by
-    simp only [Int.card_Ico b a]
-  rw [hcard]
+      exact (AspPerm.id.mem_se a b k).2 hk']
+  rw [show (Finset.Ico b a).card = (a - b).toNat by
+    simp only [Int.card_Ico b a]]
   by_cases h : a - b ≥ 0
   · rw [max_eq_left h, Int.toNat_of_nonneg h]
   · have h' : a - b < 0 := lt_of_not_ge h
@@ -1412,6 +1410,15 @@ lemma eq_star_iff {τ α β : AspPerm} : τ = α ⋆ β ↔ τ.eq_dprod α β :=
       rw [ge_star_iff]
       exact eq.2
     apply le_antisymm le ge
+
+/-- Comparison of ASP permutations in the Bruhat order using essential set.
+  This is Corollary 7.9 (`lem:essBD`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+  This theorem is delayed until this file since the definition of `≤` on ASP is needed for the
+  statement. -/
+theorem ess_bdiff (α β : AspPerm) (bdiff : α.is_bdiff) :
+  α ≤ β ↔ α.χ ≤ β.χ ∧ ∀ (a b : ℤ), ⟨a, b⟩ ∈ α.ess → α.s a b ≤ β.s a b := by
+  have := SlipFace.ess_clifford α.s β.s (α.bdiff_iff_clifford.mp bdiff)
+  rwa [← α.s_chi_eq, ← β.s_chi_eq, α.ess_asp_eq_ass_sf]
 
 end AspPerm
 

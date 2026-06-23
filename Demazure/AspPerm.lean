@@ -235,16 +235,14 @@ def mul (σ τ : AspPerm) : AspPerm where
       exact not_lt_of_ge hC_nonneg hC_neg
     refine Set.Finite.subset ?_ this
     have h_pre : Set.Finite {n | τ n * σ (τ n) < 0} := by
-      have h : {n | τ n * σ (τ n) < 0} = τ ⁻¹' {n | n * σ n < 0} := by
+      rw [show {n | τ n * σ (τ n) < 0} = τ ⁻¹' {n | n * σ n < 0} by
         ext n
-        simp
-      rw [h]
+        simp]
       exact Set.Finite.preimage (Set.injOn_of_injective τ.injective) σ.asp
     have h_zero : Set.Finite {n | τ n = 0} := by
-      have h : {n | τ n = 0} = τ ⁻¹' ({0} : Set ℤ) := by
+      rw [show {n | τ n = 0} = τ ⁻¹' ({0} : Set ℤ) by
         ext n
-        simp
-      rw [h]
+        simp]
       exact Set.Finite.preimage (Set.injOn_of_injective τ.injective) (Set.finite_singleton 0)
     exact Set.Finite.union (Set.Finite.union τ.asp h_pre) h_zero
 
@@ -1141,12 +1139,10 @@ $- \#\{u \in \mathbb{Z} : (u,n) \in \operatorname{Inv} \tau\}$.
 theorem reconstruction : ∀ n : ℤ,
   τ n = n - τ.χ + (τ.outset n).ncard - (τ.inset n).ncard := by
   intro n
-  have h1 : τ.s (τ n) n = (τ.outset n).ncard := by
-    rw [s_eq_ncard, τ.outset_eq_se]
-  rw [← h1]
-  have h2 : (τ⁻¹).s n (τ n) = (τ.inset n).ncard := by
-    rw [s'_eq_ncard, τ.inset_eq_nw]
-  rw [← h2]
+  rw [← show τ.s (τ n) n = (τ.outset n).ncard by
+    rw [s_eq_ncard, τ.outset_eq_se]]
+  rw [← show (τ⁻¹).s n (τ n) = (τ.inset n).ncard by
+    rw [s'_eq_ncard, τ.inset_eq_nw]]
   have := τ.duality (τ n) n
   omega
 
@@ -1483,10 +1479,9 @@ lemma u_crit (b : ℤ) {n : ℤ} (n_pos : n > 0) (u : ℤ) :
       simpa using s_next
     have u_lt_b : u < b := by
       by_contra! u_ge_b
-      have hs_eq : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) := by
+      rw [show (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) by
         apply ((τ⁻¹).b_step_eq_iff b (τ u)).2
-        simpa using u_ge_b
-      rw [hs_eq] at s_next_inv
+        simpa using u_ge_b] at s_next_inv
       exact lt_irrefl _ (lt_of_lt_of_le s_next_inv s_ge_n_inv)
     have hs_dec : (τ⁻¹).s b (τ u + 1) = (τ⁻¹).s b (τ u) - 1 := by
       apply ((τ⁻¹).b_step_one_iff b (τ u)).2
@@ -1801,10 +1796,9 @@ theorem ramp_dprod_legos (α β : AspPerm) (a b M N : ℤ)
     contrapose! dprod with ineqs
     let l := b + m - n  - β.χ
     use l
-    have l_eq : l = a + n' - m' - α⁻¹.χ := by
+    rw [← show l = a + n' - m' - α⁻¹.χ by
       simp only [α.chi_dual, sub_neg_eq_add, l, n', m']
-      linarith [habMN]
-    rw [← l_eq] at ineqs
+      linarith [habMN]] at ineqs
     obtain ⟨hβ, hα⟩ := ineqs
     have hβ : β.s l b ≤ m-1 := Int.le_sub_one_of_lt hβ
     have hα : α.s a l ≤ M  - m := by
@@ -1921,13 +1915,13 @@ private lemma width_sides : (∃ (N : ℤ), τ.width_bound N) ↔ (∃ (M N : �
         rw [abs_of_neg h] at hMabs
         omega
 
-private def M : Set ℤ :=
+def M : Set ℤ :=
   {m | ∃ a b : ℤ, τ.s a b > 0 ∧ m ≤ τ⁻¹.s b a}
 
-private def M' : Set ℤ :=
+def M' : Set ℤ :=
   {m | ∃ n : ℤ, m ≤ n - τ n - τ.χ}
 
-private def M'' : Set ℤ :=
+def M'' : Set ℤ :=
   {m | ∃ a b : ℤ, τ.s a b > 0 ∧ m ≤ b - a - τ.χ + 1}
 
 
@@ -2076,86 +2070,62 @@ theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
     · omega
 
 theorem bdiff_iff_clifford : τ.is_bdiff ↔ τ.s.is_clifford := by
-  -- Proof written by GPT-5.5
   constructor
   · rintro ⟨M, hM⟩
     have M_nonneg : 0 ≤ M := (abs_nonneg (0 - τ 0)).trans (hM 0)
-    have M_bound : ∀ m ∈ τ.M, m ≤ M - τ.χ := by
-      intro m hm
-      rw [← τ.M'_eq_M] at hm
-      rcases hm with ⟨n, hn⟩
+    use (2*M+1).toNat
+    intro a b hsum
+    rw [show (↑(2*M+1).toNat : ℤ) = 2*M+1 by omega] at hsum
+    by_contra! hspecial
+    have spos : τ.s a b > 0 := by
+      apply lt_of_le_of_ne <| τ.s_nonneg a b
+      intro h; exact hspecial.1 h.symm
+    have s'pos : τ⁻¹.s b a > 0 := by
+      rw [← τ.s_dual]
+      apply lt_of_le_of_ne <| τ.s.dual.nonneg b a
+      intro h; exact hspecial.2 h.symm
+    have s'le : τ.s.dual b a ≤ M - τ.χ := by
+      rw [τ.s_dual]
+      have hmem : τ⁻¹.s b a ∈ τ.M := by exact ⟨a, b, spos, le_rfl⟩
+      rw [← τ.M'_eq_M] at hmem
+      rcases hmem with ⟨n, hn⟩
       have := le_trans (le_abs_self (n - τ n)) (hM n)
       omega
-    have M_bound_inv : ∀ m ∈ τ⁻¹.M, m ≤ M + τ.χ := by
-      intro m hm
-      rw [← τ⁻¹.M'_eq_M] at hm
-      rcases hm with ⟨n, hn⟩
+    have sle : τ.s a b ≤ M + τ.χ := by
+      have hmem : τ.s a b ∈ τ⁻¹.M := by
+        use b, a
+        rw [inv_inv]
+        exact ⟨s'pos, le_rfl⟩
+      rw [← τ⁻¹.M'_eq_M] at hmem
+      rcases hmem with ⟨n, hn⟩
       rw [τ.chi_dual] at hn
-      have hn_bound := hM (τ⁻¹ n)
-      rw [τ.mul_inv_cancel_eval] at hn_bound
-      have := neg_le_abs (τ⁻¹ n - n)
+      have := hM (τ⁻¹ n); rw [τ.mul_inv_cancel_eval] at this
+      have := le_trans (neg_le_abs (τ⁻¹ n - n)) this
       omega
-    use (2 * M + 1).toNat
-    intro a b hsum
-    by_cases hs_zero : τ.s a b = 0
-    · exact Or.inl hs_zero
-    right
-    by_contra hdual_zero
-    have hs_pos : τ.s a b > 0 :=
-      lt_of_le_of_ne (τ.s_nonneg a b) (fun h => hs_zero h.symm)
-    have hdual_pos : τ⁻¹.s b a > 0 := by
-      rw [← τ.s_dual]
-      exact lt_of_le_of_ne (τ.s.dual.nonneg b a) (fun h => hdual_zero h.symm)
-    have hdual_mem : τ⁻¹.s b a ∈ τ.M := by
-      exact ⟨a, b, hs_pos, le_rfl⟩
-    have hs_mem : τ.s a b ∈ τ⁻¹.M := by
-      use b, a
-      rw [inv_inv]
-      exact ⟨hdual_pos, le_rfl⟩
-    have hdual_bound := M_bound _ hdual_mem
-    have hs_bound := M_bound_inv _ hs_mem
-    have hthreshold : ((2 * M + 1).toNat : ℤ) = 2 * M + 1 :=
-      Int.toNat_of_nonneg (by omega)
-    rw [τ.s_dual] at hsum
     omega
-  · rintro ⟨C, hC⟩
-    apply τ.bdiff_iff_width.mpr
-    rw [width_sides]
-    use - (C : ℤ) - τ.χ, (C : ℤ) - τ.χ
-    intro a b
-    constructor
-    · intro hab
-      by_contra hs_zero
-      have hs_pos : τ.s a b > 0 :=
-        lt_of_le_of_ne (τ.s_nonneg a b) (fun h => hs_zero h.symm)
-      have hdual_pos : τ⁻¹.s b a > 0 := by
-        rw [τ.s'_eq]
+  · rintro ⟨C, hC⟩; rw [τ.s_dual] at hC
+    use C + 1 + |τ.χ|
+    intro n
+    by_contra! abs_gt
+    by_cases h : n - τ n ≤ 0
+    · rw [abs_of_nonpos h] at abs_gt
+      have : (↑C) + (1 : ℤ) ∈ τ⁻¹.M' := by
+        use τ n; rw [τ.inv_mul_cancel_eval, τ.chi_dual]
+        have := neg_le_abs τ.χ
         omega
-      have hdual_eq := τ.s'_eq b a
-      have hsum : τ.s a b + τ.s.dual b a ≥ C := by
-        rw [τ.s_dual]
+      rw [τ⁻¹.M'_eq_M] at this
+      rcases this with ⟨b, a, hpos, hle⟩
+      rw [inv_inv] at hle
+      specialize hC a b (by omega)
+      omega
+    · rw [abs_of_pos (a := n - τ n) (by omega)] at abs_gt
+      have : (↑C) + (1 : ℤ) ∈ τ.M' := by
+        use n
+        have := le_abs_self τ.χ
         omega
-      rcases hC a b hsum with hzero | hdual_zero
-      · exact hs_zero hzero
-      · rw [τ.s_dual] at hdual_zero
-        omega
-    · intro hab
-      by_contra hdual_zero
-      have hdual_pos : τ⁻¹.s b a > 0 :=
-        lt_of_le_of_ne ((τ⁻¹).s_nonneg b a) (fun h => hdual_zero h.symm)
-      have hs_pos : τ.s a b > 0 := by
-        have := τ.s'_eq b a
-        omega
-      have hdual_eq := τ.s'_eq b a
-      have hsum : τ.s a b + τ.s.dual b a ≥ C := by
-        rw [τ.s_dual]
-        omega
-      rcases hC a b hsum with hs_zero | hzero
-      · omega
-      · rw [τ.s_dual] at hzero
-        exact hdual_zero hzero
-
-
-
+      rw [τ.M'_eq_M] at this
+      rcases this with ⟨a, b, hpos, hle⟩
+      specialize hC a b (by omega)
+      omega
 
 end AspPerm

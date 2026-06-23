@@ -1249,13 +1249,13 @@ left/right duality to dual slipfaces.
   dsimp [rres]
   rw [SlipFace.dual_dual]
 
-/- A small set on which witnesses to the value $s \star t (a,b)$ always occur.
+/-- A small set on which witnesses to the value $s \star t (a,b)$ always occur.
 *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/5.* -/
 def bend_set (t : SlipFace) (b : ℤ) : Set ℤ :=
   {l : ℤ | t (l-1) b = t l b ∧ t l b ≠ t (l+1) b}
 
-/- *Lemma 3.13 (`lem:setL`) of
+/-- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/5.* -/
 lemma bend_set_finite (t : SlipFace) (b : ℤ) : Finite (bend_set t b) := by
   obtain ⟨A1, hA1⟩ := t.large_a b
@@ -1302,7 +1302,7 @@ decreasing_by
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega
 
-/- *Lemma 3.13 (`lem:setL`) of
+/-- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 3/5.* -/
 lemma bend_set_witness (s t : SlipFace) (a b : ℤ) :
   ∃ l ∈ bend_set t b, (s ⋆ t) a b = s a l + t l b := by
@@ -1401,7 +1401,7 @@ decreasing_by
   have ht_nonneg : 0 ≤ t (l - 1) b := t.nonneg (l - 1) b
   omega
 
-/- *Lemma 3.13 (`lem:setL`) of
+/-- *Lemma 3.13 (`lem:setL`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 4/5.* -/
 lemma bend_set_witness_lres (s t : SlipFace) (a b : ℤ) :
     ∃ l ∈ bend_set t b, (s ◃ t) a b = s a l - t.dual b l := by
@@ -1664,7 +1664,7 @@ def Δ (a b : ℤ) : ℤ :=
   sf (a+1) b - sf a b - sf (a+1) (b+1) + sf a (b+1)
 
 /-- Duality preserves the mixed difference `Δ` after swapping the coordinates.
-*Equation (18) of [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
+*Equation (20) (`eq:DeltasDual`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227).* -/
 lemma Δ_dual (a b : ℤ) : sf.dual.Δ b a = sf.Δ a b := by
   dsimp [SlipFace.dual, Δ]
   omega
@@ -1734,7 +1734,7 @@ lemma sum_b (a : ℤ) {b₁ b₂ : ℤ} (hb : b₁ ≤ b₂) :
     omega
 
 /-- Summing `Δ` over a rectangle recovers the corresponding boundary term in
-`sf`. *Modification of Equation (17) of
+`sf`. *Modification of Equation (19) (`eq:sumDelta`) of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227) to a finite sum.* -/
 lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b₂) :
   ∑ b ∈ Finset.Ico b₁ b₂, ∑ a ∈ Finset.Ico a₁ a₂, sf.Δ a b

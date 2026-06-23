@@ -534,9 +534,9 @@ private lemma outset_eq_se (n : ℤ) : ↑(asps.outset n)
   · rintro ⟨hnx, hσ⟩
     exact hmem.mpr ⟨by omega, hσ⟩
 
--- This lemma is equivalent to the function being unbounded above on every tail,
--- but it is stated in a strange way. This is just for convenience
--- in the proof of surjectivity.
+/-- This lemma is equivalent to the reconstructed function being unbounded above
+on every tail, but is stated in a form convenient for the proof of
+surjectivity. -/
 private lemma surj_helper_up (m : ℤ) (n : ℕ) :
   ∃ x : ℤ, x ≥ m ∧ asps.recon χ x ≥ asps.recon χ m + n := by
   induction n with

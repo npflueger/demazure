@@ -586,7 +586,7 @@ private lemma b_step_raw (a b : ℤ) : τ.s_raw a (b+1) = τ.s_raw a b - (if τ 
 
 /-- The key duality_raw formula for slipfaces of ASP permutations:
 $s_\alpha(a,b) - s_{\alpha^{-1}}(b,a) = \chi_\alpha + a - b$.
-This is Equation (15) (`eq:saDuality`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+This is Equation ($\dagger$) (`eq:saDuality`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 private theorem duality_raw (a b : ℤ) : τ.s_raw a b - (τ⁻¹).s_raw b a = τ.χ + a - b := by
   let h (a b : ℤ) := τ.s_raw a b - (τ⁻¹).s_raw b a - a + b
   have h_zero : h 0 0 = τ.χ := by
@@ -1991,9 +1991,11 @@ private lemma M_sub_M'' : τ.M ⊆ τ.M'' := by
     obtain ⟨h1, h2⟩ := hn
     omega
 
+/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2. -/
 lemma M'_eq_M : τ.M' = τ.M :=
   Set.Subset.antisymm τ.M'_sub_M <| Set.Subset.trans τ.M_sub_M'' τ.M''_sub_M'
 
+/-- A set-theoretic reformulation of *Lemma 7.8* (`lem:malpha`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2. -/
 lemma M''_eq_M : τ.M'' = τ.M :=
   Set.Subset.antisymm (Set.Subset.trans τ.M''_sub_M' τ.M'_sub_M) τ.M_sub_M''
 
@@ -2022,6 +2024,8 @@ private lemma bdiff_width_helper (M : ℤ) :
     have := h a b (by omega)
     omega
 
+/-- A permutation $\tau$ has bounded difference if and only if $s_\tau(a,b)$ is nonspecial for all
+$|a-b| \gg 0$. *Proposition 7.7* (`prop:cliffordPerms`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 1/2. -/
 theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
   constructor
   · intro bdiff
@@ -2069,6 +2073,7 @@ theorem bdiff_iff_width : τ.is_bdiff ↔ ∃ N, τ.width_bound N := by
     · omega
     · omega
 
+/-- A permutation $\tau$ has bounded difference if and only if $s_\tau$ is a Clifford slipface. *Proposition 7.7* (`prop:cliffordPerms`) of [An extended Demazure product](https://arxiv.org/abs/2206.14227), part 2/2. -/
 theorem bdiff_iff_clifford : τ.is_bdiff ↔ τ.s.is_clifford := by
   constructor
   · rintro ⟨M, hM⟩

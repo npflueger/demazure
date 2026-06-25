@@ -1369,6 +1369,16 @@ theorem lres_eq_min (α β : AspPerm) :
   · intro γ h
     exact (ge_star_iff_ge_lres γ β α).mpr h
 
+/- The right residual $\alpha^{-1} \triangleright \beta$ is the minimum permutation $\gamma$
+  such that $\alpha \star \gamma \ge \beta$.
+  This is Equation (11) (`eq:resRMin`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
+theorem rres_eq_min (α β : AspPerm) :
+  IsLeast {γ : AspPerm | α ⋆ γ ≥ β } (α⁻¹ ▹ β) := by
+  constructor
+  · apply (ge_star_iff_ge_rres α (α⁻¹ ▹ β) β).mp (le_refl _)
+  · intro γ h
+    exact (ge_star_iff_ge_rres α γ β).mpr h
+
 /-- Comparison `τ ≤ α ⋆ β` is equivalent to the lower Demazure-product
 inequalities defining `τ.le_dprod α β`. -/
 lemma le_star_iff (τ α β : AspPerm) : τ ≤ α ⋆ β ↔ τ.le_dprod α β := by

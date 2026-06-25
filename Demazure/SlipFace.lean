@@ -1486,6 +1486,32 @@ def iota_sf (n : ℤ) : SlipFace  := {
     omega
 }
 
+private lemma bend_set_iota (n b : ℤ) : bend_set (iota_sf n) b = {b - n} := by
+  ext m
+  constructor
+  · intro h
+    obtain ⟨h1, h2⟩ := h
+    have mle : m ≤ b - n := by
+      by_contra!
+      rw [show iota_sf n (m-1) b = m -1 - b + n  by exact max_eq_left (by omega)] at h1
+      rw [show iota_sf n m b = m - b + n by exact max_eq_left (by omega)] at h1 h2
+      rw [show iota_sf n (m+1) b = m + 1 - b + n by exact max_eq_left (by omega)] at h2
+      omega
+    have mge : b - n ≤ m := by
+      by_contra!
+      rw [show iota_sf n (m-1) b = 0 by exact max_eq_right (by omega)] at h1
+      rw [show iota_sf n m b = 0 by exact max_eq_right (by omega)] at h1 h2
+      rw [show iota_sf n (m+1) b = 0 by exact max_eq_right (by omega)] at h2
+      omega
+    rw [antisymm mle mge]
+    rfl
+  · intro h
+    rw [show m = b - n by exact h]
+    constructor <;>  rw [show iota_sf n (b-n) b = 0 by exact max_eq_right (by omega)]
+    · rw [show iota_sf n (b-n-1) b = 0 by exact max_eq_right (by omega)]
+    · rw [show iota_sf n (b-n+1) b = b-n+1-b+n by exact max_eq_left (by omega)]
+      omega
+
 /-!
   ## Monotonicity, adjointness, and associativity
 -/

@@ -329,7 +329,8 @@ lemma between_inv {u x v : ℤ}
       intro h_xv
       have := tfree_of_is_321a τ h_321a u x v
       rcases this <;> contradiction
-    constructor <;> simp [x_snk, x_not_src, h_ux, h_xv]
+    constructor <;> simp only [x_not_src, x_snk, or_true, h_xv, h_ux, not_true_eq_false,
+      not_false_eq_true]
   · have h_xv : ⟨x, v⟩ ∈ inv_set τ := by
       have ineq : τ u ≤ τ x := by
         by_contra! h
@@ -353,7 +354,8 @@ lemma between_inv {u x v : ℤ}
       intro h_snk
       have := not_src_and_snk h_321a x
       rcases this <;> contradiction
-    constructor <;> simp [x_src, x_nsnk, h_ux, h_xv]
+    constructor <;> simp only [x_src, x_nsnk, or_false, h_xv, h_ux, not_false_eq_true,
+      not_true_eq_false]
 
 omit h_321a in
 lemma inv_of_quadrants {τ : AspPerm} {a b u v : ℤ}
@@ -783,7 +785,7 @@ theorem eq_s_of_lel
     constructor <;> (intro h; linarith)
   wlog x_lt_v : x < v
   · have v_eq_x : v = x := by linarith
-    rw [v_eq_x]; simp
+    rw [v_eq_x]; simp only [lt_self_iff_false]
   suffices ⟨x, v⟩ ∈ inv_set β ↔ ⟨x, v⟩ ∈ inv_set τ by
     rw [β.inv_iff_le x_lt_v, τ.inv_iff_le x_lt_v] at this
     constructor <;> (intro h; contrapose! h; rwa [this] at *)
@@ -1288,16 +1290,19 @@ lemma not_isolated_of_excess {a b : ℤ} (h_s : α.dprod_val_ge β a b (τ.s a b
     have := not_isolated_of_domino (inv_is_321a h_321a) h_R leR b a (N + 1 - n) n
       (M + 1 - m) (m - 1)
       (by linarith [n_Icc.2]) n_Icc.1
-      (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith) (by simp; linarith) hβi hαi
+      (by linarith [m_Icc.2]) (by linarith [m_ge_2]) (by linarith)
+      (by simp only [sub_add_sub_cancel, add_sub_cancel_right, inv_inv]; linarith) hβi hαi
     rcases this with ⟨⟨u₁, v₁⟩, ⟨u₂, v₂⟩, ⟨h_mem, h_nest⟩⟩
     have h1_mem :
         ⟨u₁, v₁⟩ ∈
           ((τ⁻¹.sr β⁻¹) '' inv_set β⁻¹.func) ∩ inv_set α⁻¹.func :=
-      h_mem (by simp : (u₁, v₁) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
+      h_mem (by simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq,
+        true_or] : (u₁, v₁) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
     have h2_mem :
         ⟨u₂, v₂⟩ ∈
           ((τ⁻¹.sr β⁻¹) '' inv_set β⁻¹.func) ∩ inv_set α⁻¹.func :=
-      h_mem (by simp : (u₂, v₂) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
+      h_mem (by simp only [Set.mem_insert_iff, Prod.mk.injEq, Set.mem_singleton_iff,
+        or_true] : (u₂, v₂) ∈ ({(u₁, v₁), (u₂, v₂)} : Set (ℤ × ℤ)))
     have h1_sr : ⟨τ⁻¹ v₁, τ⁻¹ u₁⟩ ∈ (τ.sr α) '' inv_set α := by
       apply (τ.sr_crit α (τ⁻¹ v₁) (τ⁻¹ u₁)).mpr
       simpa using h1_mem.2
@@ -1435,9 +1440,9 @@ theorem dprod_le_iff_isolated : α ⋆ β ≤ τ
     contrapose! concl with isolated
     intro I J mems prec
     have I_mem : I ∈ (τ.sr α) '' (inv_set α) ∩ inv_set β := by
-      apply mems; simp
+      apply mems; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or]
     have J_mem : J ∈ (τ.sr α) '' (inv_set α) ∩ inv_set β := by
-      apply mems; simp
+      apply mems; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, or_true]
     exact isolated I I_mem J J_mem prec
 
 omit h_L h_R h_χ in

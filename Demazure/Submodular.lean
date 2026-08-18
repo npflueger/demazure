@@ -299,7 +299,8 @@ private lemma asp_spec (s : SlipFace) (hsub : s.submodular) :
     have : τ b' = a' ↔ s.Δ a' b' = 1 := asp_func_spec hsub a' b'
     simp only [this]
     have := s.Δ_values a' b'
-    rcases this with (h | (h | h)) <;> simp [h]
+    rcases this with (h | (h | h)) <;> simp only [h, zero_ne_one, ↓reduceIte, Int.reduceNeg,
+      reduceCtorEq, neg_eq_zero, one_ne_zero]
     have := hsub a' b'
     linarith
   have inner_sum : ∀ b' ∈ Finset.Ico b B,
@@ -412,7 +413,7 @@ private lemma AspValley_min_eq_s {α β τ : AspPerm} (dprod : τ.eq_dprod α β
     refine le_trans this ?_
     rw [← (AspValley α β a b).f_M]
     unfold AspValley
-    simp
+    simp only [Std.le_refl]
 
 /-- Compare the minima and rightmost minimizers of two valleys that differ by
 `1` below a cutoff and agree above it. *Lemma 4.7 (`lem:fg`) of
@@ -1175,7 +1176,7 @@ lemma inverse_star (α β : AspPerm) : (α ⋆ β)⁻¹ = β⁻¹ ⋆ α⁻¹ :=
   simp only [SF_ext]
   intro a b
   repeat rw [← AspPerm.s_dual]
-  simp
+  simp only [star_spec, SlipFace.star_dual]
 
 /-- The shift of a Demazure product satisfies
 `(α ⋆ β).χ = α.χ + β.χ`, i.e. $\chi_{\alpha \star \beta}

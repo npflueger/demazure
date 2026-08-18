@@ -46,7 +46,7 @@ noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m
 
 lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Nonempty := by
   refine ⟨v.f n, ?_⟩
-  exact Finset.mem_image.mpr ⟨n, by simp, rfl⟩
+  exact Finset.mem_image.mpr ⟨n, by simp only [mem_floor, Std.le_refl], rfl⟩
 
 /-- The minimum value of a valley. -/
 noncomputable def min : ℤ := Finset.min' (Finset.image v.f (v.floor (v.f 0)))
@@ -144,6 +144,6 @@ lemma shift_down_min (k : ℤ) : (v.shift_down k).min = v.min - k := by
   rw [← v'.f_M, ← v.f_M, v.shift_down_M k]
   subst v'
   unfold Valley.shift_down
-  simp
+  simp only
 
 end Valley

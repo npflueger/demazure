@@ -45,7 +45,7 @@ instance : CoeFun SlipFace (fun _ => ℤ → ℤ → ℤ) :=
 lemma SF_ext (s t : SlipFace) : s = t ↔ ∀ a b, s a b = t a b := by
   constructor
   · rintro rfl
-    simp
+    simp only [implies_true]
   · intro h
     have hχ : s.χ = t.χ := by
       obtain ⟨As, hAs⟩ := s.large_a 0
@@ -154,7 +154,7 @@ lemma gt_iff_special (a b : ℤ) : sf a b > max 0 (a - b + sf.χ)
     have hdual0 : sf.dual b a = 0 := le_antisymm (le_of_not_gt hdual) (sf.dual.nonneg b a)
     have hle : sf a b ≤ max 0 (a - b + sf.χ) := by
       rw [sf.s_eq, hdual0]
-      simp
+      simp only [add_zero, le_sup_right]
     exact not_lt_of_ge hle hab
   · intro hsf
     exact max_lt_iff.mpr ⟨hsf.1, by rw [sf.s_eq]; exact lt_add_of_pos_right _ hsf.2⟩
@@ -196,7 +196,7 @@ lemma mono_a_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
     omega
   rw [a'_eq]
   induction n with
-  | zero => simp
+  | zero => simp only [Nat.cast_zero, add_zero, ge_iff_le, Std.le_refl]
   | succ n ih =>
     apply le_trans ih
     rw [Nat.cast_add, Nat.cast_one, ← add_assoc]
@@ -210,7 +210,7 @@ lemma mono_b_of_D_props (f : ℤ → ℤ → ℤ) (h : D_props f) :
     omega
   rw [b'_eq]
   induction n with
-  | zero => simp
+  | zero => simp only [Nat.cast_zero, add_zero, Std.le_refl]
   | succ n ih =>
     apply le_trans _ ih
     rw [Nat.cast_add, Nat.cast_one, ← add_assoc]
@@ -654,7 +654,7 @@ lemma id_mul (s : SlipFace) : id ⋆ s = s := by
     use a
     have : id a a = 0 := by
       rw [id]
-      simp
+      simp only [sub_self, max_self]
     simp only [this, zero_add, ge_iff_le, le_refl]
   · apply (le_star_val_iff s id s a b).mpr
     intro l
@@ -668,7 +668,7 @@ lemma id_mul (s : SlipFace) : id ⋆ s = s := by
         apply s.dual.nondec (le_refl b) hl
       omega
     · have : id a l = 0 := by
-        rw [id]; simp; omega
+        rw [id]; simp only [sup_eq_right, tsub_le_iff_right, zero_add]; omega
       rw [this, zero_add]
       apply s.nondec (by linarith) (le_refl b)
 
@@ -680,13 +680,13 @@ lemma mul_id (s : SlipFace) : s ⋆ id = s := by
     use b
     have : id b b = 0 := by
       rw [id]
-      simp
+      simp only [sub_self, max_self]
     simp only [this, add_zero, ge_iff_le, le_refl]
   · apply (le_star_val_iff s s id a b).mpr
     intro l
     by_cases hl : l ≤ b
     · have : id l b = 0 := by
-        rw [id]; simp; omega
+        rw [id]; simp only [sup_eq_right, tsub_le_iff_right, zero_add]; omega
       rw [this, add_zero]
       apply s.nondec (le_refl a) hl
     · have : id l b = l - b := by
@@ -1440,19 +1440,22 @@ def iota_sf (n : ℤ) : SlipFace  := {
     intro a b
     by_cases h : 0 ≤ a - b + n
     · have h' : 0 ≤ a + 1 - b + n := by omega
-      simp [h,h']
+      simp only [h, sup_of_le_left, h', add_le_add_iff_right, tsub_le_iff_right, sub_add_cancel,
+        le_add_iff_nonneg_right, zero_le_one, true_and, ge_iff_le]
       omega
     · have h' : a + 1 - b + n ≤ 0 := by omega
-      simp [h']
+      simp only [h', sup_of_le_right, sup_le_iff, Std.le_refl, and_true]
       omega
   b_step := by
     intro a b
     by_cases h : 0 < a - b + n
     · have h' : 0 ≤ a - (b+1) + n := by omega
-      simp [h']
+      simp only [h', sup_of_le_left, le_sup_iff, add_le_add_iff_right, tsub_le_iff_right,
+        sup_le_iff]
       omega
     · have h' : a - (b+1) + n ≤ 0 := by omega
-      simp [h']
+      simp only [h', sup_of_le_right, le_sup_right, zero_add, sup_le_iff, zero_le_one, and_true,
+        true_and, ge_iff_le]
       omega
   nonneg := by
     intro a b
@@ -1732,10 +1735,14 @@ lemma sum_a {a₁ a₂ : ℤ} (ha : a₁ ≤ a₂) (b : ℤ) :
   rw [a₂_eq]
   induction n with
   | zero =>
-    simp
+    simp only [Nat.cast_zero, add_zero, Std.le_refl, Finset.Ico_eq_empty_of_le, Finset.sum_empty,
+      sub_self]
   | succ n ih =>
     rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
-    have disj : Disjoint (Finset.Ico a₁ (a₁ + n)) {a₁ + n} := by simp
+    have disj : Disjoint (Finset.Ico a₁ (a₁ + n)) {a₁ + n} := by
+      simp only [Finset.disjoint_singleton_right,
+        Finset.mem_Ico, le_add_iff_nonneg_right, Nat.cast_nonneg, lt_self_iff_false, and_false,
+        not_false_eq_true]
     have union : Finset.Ico a₁ (a₁ + n + 1) = Finset.Ico a₁ (a₁ + n) ∪ {a₁ + n} := by
       apply Finset.ext
       intro x
@@ -1752,10 +1759,14 @@ lemma sum_b (a : ℤ) {b₁ b₂ : ℤ} (hb : b₁ ≤ b₂) :
   rw [b₂_eq]
   induction n with
   | zero =>
-    simp
+    simp only [Nat.cast_zero, add_zero, Std.le_refl, Finset.Ico_eq_empty_of_le, Finset.sum_empty,
+      sub_self]
   | succ n ih =>
     rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
-    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by simp
+    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by
+      simp only [Finset.disjoint_singleton_right,
+        Finset.mem_Ico, le_add_iff_nonneg_right, Nat.cast_nonneg, lt_self_iff_false, and_false,
+        not_false_eq_true]
     have union : Finset.Ico b₁ (b₁ + n + 1) = Finset.Ico b₁ (b₁ + n) ∪ {b₁ + n} := by
       apply Finset.ext
       intro x
@@ -1775,10 +1786,14 @@ lemma sum_ab {a₁ a₂ b₁ b₂ : ℤ} (ha : a₁ ≤ a₂) (hb : b₁ ≤ b�
   rw [b₂_eq]
   induction n with
   | zero =>
-    simp
+    simp only [Nat.cast_zero, add_zero, Std.le_refl, Finset.Ico_eq_empty_of_le, Finset.sum_empty,
+      sub_self]
   | succ n ih =>
     rw [Nat.cast_add n 1, Nat.cast_one, ← add_assoc]
-    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by simp
+    have disj : Disjoint (Finset.Ico b₁ (b₁ + n)) {b₁ + n} := by
+      simp only [Finset.disjoint_singleton_right,
+        Finset.mem_Ico, le_add_iff_nonneg_right, Nat.cast_nonneg, lt_self_iff_false, and_false,
+        not_false_eq_true]
     have union : Finset.Ico b₁ (b₁ + n + 1) = Finset.Ico b₁ (b₁ + n) ∪ {b₁ + n} := by
       apply Finset.ext
       intro x
@@ -1830,7 +1845,8 @@ lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
     -- to how it's written in the paper.
     have h1 : s (a-1) b < s a b := by
       have : (a-1, b) ∈ steps := by
-        simp [steps]
+        simp only [Set.mem_insert_iff, Prod.mk.injEq, and_true, sub_eq_self, one_ne_zero, false_and,
+          Set.mem_singleton_iff, left_eq_add, and_self, or_self, or_false, true_or, steps]
       by_cases h' : s (a-1) b > t (a-1) b
       · specialize h (a-1) b this h'
         rw [fsub s (a-1) b, fsub s a b] at h
@@ -1842,7 +1858,8 @@ lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
         omega
     have h2 : s a b = s (a+1) b := by
       have : (a+1, b) ∈ steps := by
-        simp [steps]
+        simp only [Set.mem_insert_iff, Prod.mk.injEq, and_true, add_eq_left, one_ne_zero, false_and,
+          Set.mem_singleton_iff, left_eq_add, and_self, or_self, or_false, or_true, steps]
       by_cases h' : s (a+1) b > t (a+1) b
       · specialize h (a+1) b this h'
         rw [fsub s (a+1) b, fsub s a b] at h
@@ -1854,7 +1871,8 @@ lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
         omega
     have h3 : s a (b+1) < s a b := by
       have : (a, b+1) ∈ steps := by
-        simp [steps]
+        simp only [Set.mem_insert_iff, Prod.mk.injEq, add_eq_left, one_ne_zero, and_false,
+          left_eq_add, and_self, true_and, Set.mem_singleton_iff, or_true, steps]
       by_cases h' : s a (b+1) > t a (b+1)
       · specialize h a (b+1) this h'
         rw [fsub s a (b+1), fsub s a b] at h
@@ -1864,7 +1882,8 @@ lemma ess_step (s t : SlipFace) (a b : ℤ) (wit : s a b > t a b) :
         omega
     have h4 : s a b = s a (b-1) := by
       have : (a, b-1) ∈ steps := by
-        simp [steps]
+        simp only [Set.mem_insert_iff, Prod.mk.injEq, sub_eq_self, one_ne_zero, and_false,
+          left_eq_add, and_self, Set.mem_singleton_iff, true_and, true_or, or_true, steps]
       by_cases h' : s a (b-1) > t a (b-1)
       · specialize h a (b-1) this h'
         rw [fsub s a (b-1), fsub s a b] at h

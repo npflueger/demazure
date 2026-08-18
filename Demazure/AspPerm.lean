@@ -145,10 +145,10 @@ lemma asp_of_finite_quadrants {τ : ℤ → ℤ} (h_inj : Function.Injective τ)
     rcases this with (pos_neg | neg_pos)
     · left
       unfold southeast_set
-      simp; congr
+      simp only [Set.mem_ofPred_eq]; congr
     · right
       unfold northwest_set
-      simp; congr
+      simp only [Set.mem_ofPred_eq]; congr
   refine Set.Finite.subset ?_ this
   apply Set.Finite.union
   · exact se_finite_of_finite h_inj m n 0 1 fin_se
@@ -180,7 +180,7 @@ lemma inv_iff_lt {i j : ℤ} (i_le_j : i ≤ j) :
   rw [inv_set]
   wlog i_lt_j : i < j
   · have i_eq_j : i = j := le_antisymm i_le_j (le_of_not_gt i_lt_j)
-    rw [i_eq_j]; simp
+    rw [i_eq_j]; simp only [Set.mem_ofPred_eq, lt_self_iff_false, and_self]
   constructor
   · intro ij_inv
     exact ij_inv.2
@@ -308,12 +308,12 @@ lemma nw_finite (a b : ℤ) : (northwest_set τ a b).Finite :=
 noncomputable def se_finset (a b : ℤ) : Finset ℤ := (τ.se_finite a b).toFinset
 
 @[simp] lemma mem_se (a b n : ℤ) : n ∈ (τ.se_finset a b) ↔ n ≥ b ∧ τ n < a := by
-  simp [se_finset, southeast_set]
+  simp only [se_finset, southeast_set, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, ge_iff_le]
 
 noncomputable def nw_finset (a b : ℤ) : Finset ℤ := (τ.nw_finite a b).toFinset
 
 @[simp] lemma mem_nw (a b n : ℤ) : n ∈ (τ.nw_finset a b) ↔ n < b ∧ τ n ≥ a := by
-  simp [nw_finset, northwest_set]
+  simp only [nw_finset, northwest_set, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, ge_iff_le]
 
 lemma inv_set_inverse (u v : ℤ) :
     ⟨u, v⟩ ∈ inv_set τ ↔ ⟨τ v, τ u⟩ ∈ inv_set τ⁻¹.func := by
@@ -406,9 +406,9 @@ private lemma flip_inv : τ.flip⁻¹ = τ⁻¹.flip := by
   simp only [ext]; ext n
   suffices τ.flip (τ.flip⁻¹ n) = τ.flip (τ⁻¹.flip n) by
     exact τ.flip.injective this
-  simp
+  simp only [mul_inv_cancel_eval]
   dsimp [AspPerm.flip]
-  simp
+  simp only [Int.reduceNeg, sub_sub_cancel, mul_inv_cancel_eval]
 
 private lemma flip_flip : τ.flip.flip = τ := by
   suffices ∀ n, τ.flip.flip n = τ n by
@@ -611,7 +611,7 @@ private theorem duality_raw (a b : ℤ) : τ.s_raw a b - (τ⁻¹).s_raw b a = �
       _ = τ.s_raw a b - τ⁻¹.s_raw b a - a' + b
         + (Finset.Ico a a').card := by
         rw [← Utils.card_filter_helper (Finset.Ico a a') (τ⁻¹).func b]
-        simp; omega
+        simp only [ge_iff_le, Nat.cast_add]; omega
       _ = τ.s_raw a b - τ⁻¹.s_raw b a - a' + b + (a' - a) := by
         simp only [Int.card_Ico, Int.ofNat_toNat, Int.sub_nonneg, a_le_a', sup_of_le_left]
       _ = h a b := by linarith
@@ -630,11 +630,11 @@ private theorem duality_raw (a b : ℤ) : τ.s_raw a b - (τ⁻¹).s_raw b a = �
         - ((Finset.Ico b b').filter (τ · < a)).card
         - ((Finset.Ico b b').filter (τ · ≥ a)).card := by
         rw [a_move_up_raw (τ⁻¹) b b' a (by omega)]
-        simp; omega
+        simp only [inv_inv, ge_iff_le]; omega
       _ = τ.s_raw a b - τ⁻¹.s_raw b a - a + b'
         - (Finset.Ico b b').card := by
         rw [← Utils.card_filter_helper (Finset.Ico b b') τ.func a]
-        simp; omega
+        simp only [ge_iff_le, Nat.cast_add]; omega
       _ = τ.s_raw a b - τ⁻¹.s_raw b a - a + b' - (b' - b) := by
         simp only [Int.card_Ico, Int.ofNat_toNat, Int.sub_nonneg, b_le_b', sup_of_le_left]
       _ = h a b := by linarith
@@ -700,7 +700,7 @@ private lemma s_nondec_raw {a a' : ℤ} (a_le_a' : a ≤ a') (b : ℤ) :
   rw [a_move_up_raw τ a a' b a_le_a']
   let S := {x ∈ Finset.Ico a a' | τ⁻¹ x ≥ b}
   constructor
-  · have : S.card ≥ 0 := by simp
+  · have : S.card ≥ 0 := by simp only [ge_iff_le, zero_le]
     omega
   -- Now handle the equality case
   suffices (∀ (x : ℤ), a ≤ τ.func x → τ.func x < a' → x < b) ↔ S.card = 0 by
@@ -725,14 +725,14 @@ private lemma s_noninc_raw (a : ℤ) {b b' : ℤ} (b_le_b' : b ≤ b') :
     rw [b_move_up_raw τ a b b' b_le_b']
     simp only [sub_add_cancel, S]
   constructor
-  · have : S.card ≥ 0 := by simp
+  · have : S.card ≥ 0 := by simp only [ge_iff_le, zero_le]
     omega
   · have : τ.s_raw a b = τ.s_raw a b' ↔ S.card = 0 := by
       rw [heq]
       constructor <;> (intro; omega)
     rw [this, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
     unfold S
-    simp
+    simp only [Finset.mem_filter, Finset.mem_Ico, not_and, not_lt, and_imp, ge_iff_le]
 
 /-- The slipface attached to `τ`.
 [An extended Demazure product](https://arxiv.org/abs/2206.14227) writes its values as
@@ -744,11 +744,13 @@ noncomputable def s : SlipFace := {
   a_step := by
     intro a b
     rw [τ.a_step_raw a b]
-    by_cases h : τ⁻¹ a ≥ b <;> simp [h]
+    by_cases h : τ⁻¹ a ≥ b <;> simp only [ge_iff_le, h, ↓reduceIte, le_add_iff_nonneg_right,
+      zero_le_one, Std.le_refl, and_self, add_zero]
   b_step := by
     intro a b
     rw [τ.b_step_raw a b]
-    by_cases h : τ b < a <;> simp [h]
+    by_cases h : τ b < a <;> simp only [h, ↓reduceIte, tsub_le_iff_right, le_add_iff_nonneg_right,
+      zero_le_one, sub_add_cancel, Std.le_refl, and_self, sub_zero]
   nonneg := τ.s_nonneg_raw
   ge_diff := τ.s_ge_raw
   small_a := by
@@ -1042,7 +1044,8 @@ lemma b_step_ge_iff (a b : ℤ) : τ.s a (b + 1) ≥ τ.s a b ↔ a ≤ τ b := 
 
 lemma a_step_one_iff (a b : ℤ) : τ.s (a+1) b = τ.s a b + 1 ↔ τ⁻¹ a ≥ b := by
   rw [a_step τ a b]
-  by_cases h_ge : τ⁻¹ a ≥ b <;> simp [h_ge]
+  by_cases h_ge : τ⁻¹ a ≥ b <;> simp only [ge_iff_le, h_ge, ↓reduceIte, add_zero, left_eq_add,
+    one_ne_zero]
 
 lemma a_step_gt_iff (a b : ℤ) : τ.s a b < τ.s (a + 1) b ↔ b ≤ τ⁻¹ a := by
   -- Proof written by GPT-5.
@@ -1270,7 +1273,7 @@ lemma Γ_eq : τ.s.Γ = { ⟨a, b⟩ | τ b = a } := by
 lemma submodular : τ.s.submodular := by
   intro a b
   have Delta_eq := τ.Delta_eq a b
-  by_cases h : τ b = a <;> simp [h, Delta_eq]
+  by_cases h : τ b = a <;> simp only [Delta_eq, h, ↓reduceIte, ge_iff_le, zero_le_one, Std.le_refl]
 
 /-! ### Ramps, lamps, and wing parameters
 
@@ -1341,7 +1344,7 @@ private lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
   have := tend_zero_a (τ := τ) b
   obtain ⟨n, hn⟩ := this
   use n
-  unfold R; simp
+  unfold R; simp only [Set.mem_ofPred_eq]
   linarith [m_pos, hn]
 
 private lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
@@ -1704,7 +1707,7 @@ lemma sr_crit (τ α : AspPerm) : ∀ (u v : ℤ),
     · have := (α⁻¹.inv_set_inverse (τ v) (τ u)).mp h
       simpa
     · unfold sr
-      simp
+      simp only [mul_inv_cancel_eval, inv_mul_cancel_eval]
 
 lemma sr_subset (τ α : AspPerm) (h_R : α ≤R τ) : (τ.sr α) '' inv_set α ⊆ inv_set τ := by
   intro x hx; obtain ⟨u, v⟩ := x

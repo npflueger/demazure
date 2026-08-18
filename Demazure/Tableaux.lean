@@ -961,7 +961,7 @@ lemma isChain_of_sep_ofFn (A : Fin n → Set (ℤ × ℤ)) (χs : Fin n → ℤ)
       · intro p hp q hq hpq
         rcases (mem_boxUnion_iff_exists_mem.mp hq) with ⟨x, hx, hqx⟩
         rcases List.mem_ofFn.mp hx with ⟨i, rfl⟩
-        exact hsep (by simp) p hp q hqx hpq
+        exact hsep (by simp only [Fin.succ_pos]) p hp q hqx hpq
       · apply ih
         intro i j hij p hp q hq hpq
         exact hsep (by simpa using hij) p hp q hq hpq
@@ -972,7 +972,7 @@ lemma eq_of_isChain_getElem {L : List (Set (ℤ × ℤ) × ℤ)} (hChain : isCha
   induction L with
   | nil =>
       intro i j hi
-      simp at hi
+      simp only [List.length_nil, not_lt_zero] at hi
   | cons head tail ih =>
       intro i j hi hj hij p hp q hq hpq
       rcases hChain with ⟨hLink, hTail⟩

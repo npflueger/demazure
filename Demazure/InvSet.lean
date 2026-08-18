@@ -228,7 +228,8 @@ private lemma endpointIndicator_eq_post_lt (a k : ℤ) :
   · have not_out : k ∉ asps.outset a := fun hk =>
       absurd (asps.directed a k ((mem_outset asps a k).mp hk)) (not_lt_of_ge k_lt_a.le)
     rw [post_lt_iff_not_mem asps k_lt_a]; simp only [← mem_inset]
-    by_cases hin : k ∈ asps.inset a <;> simp [oneIf, k_lt_a, not_out, hin]
+    by_cases hin : k ∈ asps.inset a <;> simp only [oneIf, k_lt_a, ↓reduceIte, hin, sub_self,
+      not_out, add_zero, not_true_eq_false, sub_zero, not_false_eq_true]
   · simp only [oneIf, lt_self_iff_false, ↓reduceIte, Set.Finite.mem_toFinset,
       Set.mem_ofPred_eq, zero_sub, neg_add_cancel, not_post_lt_self]
   · have not_k_lt_a : ¬ k < a := not_lt_of_ge a_lt_k.le
@@ -476,7 +477,8 @@ private lemma func_contiguous (σ_m_lt_n : asps.σ χ m < asps.σ χ n) :
       rcases Finset.mem_image.mp hk with ⟨j, j_in_J, rfl⟩
       have : j ∈ (J : Set ℤ) := Finset.mem_coe.mpr j_in_J
       rw [← inv_image] at this; exact this
-    · have hIcard : (I.card : ℤ) = σ n - σ m := by unfold I; simp; omega
+    · have hIcard : (I.card : ℤ) = σ n - σ m := by unfold I; simp only [Int.card_Ico,
+      Int.ofNat_toNat, sup_eq_left, Int.sub_nonneg]; omega
       exact_mod_cast (hIcard.trans card_K.symm).le
   intro k σm_le_k k_lt_σn
   have hk : k ∈ I := Finset.mem_Ico.mpr ⟨σm_le_k, k_lt_σn⟩
@@ -542,7 +544,7 @@ private lemma surj_helper_up (m : ℤ) (n : ℕ) :
   induction n with
   | zero =>
     use m
-    simp
+    simp only [ge_iff_le, Std.le_refl, Nat.cast_zero, add_zero, and_self]
   | succ n ih =>
   rcases ih with ⟨x, x_ge_m, fx_ge⟩
   obtain ⟨y, y_gt_x, y_not_outset_x⟩ : ∃ y : ℤ, y > x ∧ y ∉ asps.outset x := by
@@ -565,7 +567,7 @@ private lemma surj_helper_down (m : ℤ) (n : ℕ) :
   induction n with
   | zero =>
     use m
-    simp
+    simp only [Std.le_refl, Nat.cast_zero, sub_zero, and_self]
   | succ n ih =>
   rcases ih with ⟨x, x_le_m, fx_le⟩
   obtain ⟨y, y_lt_x, y_not_inset_x⟩ : ∃ y : ℤ, y < x ∧ y ∉ asps.inset x := by
@@ -638,7 +640,7 @@ lemma inset_of_toAspPerm (n : ℤ) : (toAspPerm asps χ).inset n = asps.inset n 
   have h2 : x ∈ ↑(asps.inset n) ↔ ⟨x, n⟩ ∈ inv_set (toAspPerm asps χ) := by
     have := asps.inset_eq_nw χ n
     rw [invSet_of_toAspPerm asps χ]
-    simp
+    simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, SetLike.mem_coe, mem_AspSet]
   simp only [h1, ← h2]
   rfl
 
@@ -649,7 +651,7 @@ lemma outset_of_toAspPerm (n : ℤ) : (toAspPerm asps χ).outset n = asps.outset
   have h2 : x ∈ ↑(asps.outset n) ↔ ⟨n, x⟩ ∈ inv_set (toAspPerm asps χ) := by
     have := asps.outset_eq_se χ n
     rw [invSet_of_toAspPerm asps χ]
-    simp
+    simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, SetLike.mem_coe, mem_AspSet]
   simp only [h1, ← h2]
   rfl
 
@@ -657,7 +659,7 @@ lemma chi_of_toAspPerm : (toAspPerm asps χ).χ = χ := by
   let σ := toAspPerm asps χ
   have h1 : σ 0 = (asps.outset 0).card - (asps.inset 0).card - χ := by
     unfold σ toAspPerm recon
-    simp
+    simp only [zero_add]
   have h2 : σ 0 = (σ.outset 0).ncard - (σ.inset 0).ncard - σ.χ := by
     rw [σ.reconstruction 0]
     omega

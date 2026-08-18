@@ -76,7 +76,7 @@ lemma card_filter_helper (S : Finset ℤ) (f : ℤ → ℤ) (c : ℤ) :
   simpa [not_le] using
     (Finset.card_filter_add_card_filter_not (s := S) (p := fun x => f x ≥ c))
 
-def min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
+theorem min_helper {m n : ℤ} (m_pos : m ≥ 1) (n_pos : n ≥ 1)
     {S : Set (ℤ × ℤ)} (mem : ⟨m, n⟩ ∈ S) (nmem : ⟨1, 1⟩ ∉ S) :
   ∃ m' n', m' ≥ 1 ∧ n' ≥ 1 ∧ ⟨m', n'⟩ ∈ S
   ∧ ( ⟨m'-1,n'⟩ ∉ S ∧ m' ≥ 2 ∨ ⟨m', n'-1⟩ ∉ S ∧ n' ≥ 2)

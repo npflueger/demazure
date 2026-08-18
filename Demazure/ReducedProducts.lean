@@ -593,34 +593,34 @@ structure ReducedFact (α β γ : AspPerm) where
 namespace ReducedFact
 
 /-- Construct a reduced fact from its defining two properties. -/
-def of_mul_reduced {α β γ : AspPerm} (h_mul : α * β = γ)
+theorem of_mul_reduced {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_reduced : AspPerm.ReducedProduct α β) : ReducedFact α β γ :=
   ReducedFact.mk h_reduced h_mul
 
 /-- Construct a reduced fact when ordinary and Demazure multiplication have
 the same value. -/
-private def of_mul_star {α β γ : AspPerm} (h_mul : α * β = γ)
+private theorem of_mul_star {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [← ReducedProducts.star_eq_mul_iff_reducedProduct α β, h_star, h_mul]
 
 /-- Construct a reduced fact from an ordinary product and the right weak-order
 inequality for its left factor. -/
-private def of_mul_ler {α β γ : AspPerm} (h_mul : α * β = γ)
+private theorem of_mul_ler {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_weak : α ≤R γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rwa [AspPerm.reduced_iff_leR, h_mul]
 
 /-- Construct a reduced fact from an ordinary product and the left weak-order
 inequality for its right factor. -/
-def of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
+theorem of_mul_lel {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_weak : β ≤L γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rwa [AspPerm.reduced_iff_leL, h_mul]
 
 /-- Construct a reduced fact when the right residual by the inverse left
 factor collapses to ordinary multiplication. -/
-private def of_mul_rres {α β γ : AspPerm} (h_mul : α * β = γ)
+private theorem of_mul_rres {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : α⁻¹ ▹ γ = α⁻¹ * γ) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.rres_eq_mul_iff α⁻¹ γ, inv_inv, ← h_mul] at h_residual
@@ -628,18 +628,18 @@ private def of_mul_rres {α β γ : AspPerm} (h_mul : α * β = γ)
 
 /-- Construct a reduced fact when the left residual by the inverse right
 factor collapses to ordinary multiplication. -/
-private def of_mul_lres {α β γ : AspPerm} (h_mul : α * β = γ)
+private theorem of_mul_lres {α β γ : AspPerm} (h_mul : α * β = γ)
     (h_residual : γ ◃ β⁻¹ = γ * β⁻¹) : ReducedFact α β γ := by
   apply of_mul_reduced h_mul
   rw [ReducedProducts.lres_eq_mul_iff γ β⁻¹, inv_inv, ← h_mul] at h_residual
   rwa [AspPerm.reduced_iff_leL]
 
-private def of_reduced_star {α β γ : AspPerm}
+private theorem of_reduced_star {α β γ : AspPerm}
   (h_red : α.ReducedProduct β) (h_star : α ⋆ β = γ) : ReducedFact α β γ := by
   apply of_mul_reduced _ h_red
   rwa [← (ReducedProducts.star_eq_mul_iff_reducedProduct α β).mpr h_red]
 
-private def of_lel_lres {α β γ : AspPerm}
+private theorem of_lel_lres {α β γ : AspPerm}
     (h_lel : β ≤L γ) (h_lres : γ ◃ β⁻¹ = α) : ReducedFact α β γ
   := by
   have eq_α : γ * β⁻¹ = α := by
@@ -651,7 +651,7 @@ private def of_lel_lres {α β γ : AspPerm}
   rw [← h_mul] at h_lel
   exact ReducedFact.mk ((AspPerm.reduced_iff_leL α β).mpr h_lel) h_mul
 
-def of_ler_rres {α β γ : AspPerm}
+theorem of_ler_rres {α β γ : AspPerm}
     (h_ler : α ≤R γ) (h_rres : α⁻¹ ▹ γ = β) : ReducedFact α β γ := by
   have eq_β : α⁻¹ * γ = β := by
     have := ReducedProducts.rres_eq_mul_iff α⁻¹ γ

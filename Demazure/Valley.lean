@@ -42,7 +42,7 @@ vertical shifts. -/
 noncomputable def floor (m : ℤ) : Finset ℤ := Set.Finite.toFinset (v.rises m)
 
 @[simp] lemma mem_floor (m n : ℤ) : n ∈ v.floor m ↔ v.f n ≤ m := by
-  simp only [floor, Set.Finite.mem_toFinset, Set.mem_setOf_eq]
+  simp only [floor, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
 
 lemma floor_image_nonempty (n : ℤ) : (Finset.image v.f <| v.floor (v.f n)).Nonempty := by
   refine ⟨v.f n, ?_⟩
@@ -100,7 +100,7 @@ def shift_down (k : ℤ) : Valley where
     intro m
     have : {n : ℤ | v.f n - k ≤ m} = {n : ℤ | v.f n ≤ m + k} := by
       ext n
-      simp only [Set.mem_setOf_eq]
+      simp only [Set.mem_ofPred_eq]
       constructor
       · intro h; linarith
       · intro h; linarith

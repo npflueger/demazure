@@ -90,7 +90,7 @@ private lemma sigmaFun_asp (S : Set ℤ) : is_asp (sigmaFun S) := by
   -- Proof written by GPT 5.5.
   apply Set.Finite.subset (Set.finite_empty (α := ℤ))
   intro n hn
-  simp only [Set.mem_setOf_eq] at hn
+  simp only [Set.mem_ofPred_eq] at hn
   exfalso
   unfold sigmaFun at hn
   split_ifs at hn
@@ -250,7 +250,7 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
   have hmem_iff :
       l ∈ SlipFace.bend_set (sigma S hS).s b ↔
         sigma S hS (l - 1) < b ∧ b ≤ sigma S hS l := by
-    simp only [SlipFace.bend_set, Set.mem_setOf_eq]
+    simp only [SlipFace.bend_set, Set.mem_ofPred_eq]
     constructor
     · rintro ⟨hflat, hright⟩
       constructor
@@ -280,7 +280,7 @@ private lemma bend_set_sigma_cases (S : Set ℤ) (hS : NoConsecutive S) (b : ℤ
           simpa only [sigma_inv hS] using hright
         exact not_lt_of_ge hright' hlt
   rw [hmem_iff]
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   by_cases hbprev : b - 1 ∈ S
   · simp only [hbprev, not_true_eq_false, false_and, true_and, false_or]
     have hσbprev : sigma S hS (b - 1) = b := by
@@ -367,7 +367,7 @@ private lemma bend_set_sigma_of_not_pred_mem (S : Set ℤ) (hS : NoConsecutive S
   -- Proof written by GPT 5.5.
   rw [bend_set_sigma_cases S hS b]
   ext l
-  simp only [Set.mem_setOf_eq, Set.mem_singleton_iff]
+  simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
   constructor
   · rintro (⟨_, hl⟩ | ⟨hbmem, _⟩)
     · exact hl
@@ -384,7 +384,7 @@ private lemma bend_set_sigma_of_pred_mem (S : Set ℤ) (hS : NoConsecutive S) {b
   -- Proof written by GPT 5.5.
   rw [bend_set_sigma_cases S hS b]
   ext l
-  simp only [Set.mem_setOf_eq]
+  simp only [Set.mem_ofPred_eq]
   constructor
   · rintro (⟨hbnot, _⟩ | ⟨_, hl⟩)
     · exact False.elim (hbnot hb)
@@ -498,7 +498,7 @@ theorem sf_star_sigma (S : Set ℤ) (hS : NoConsecutive S) (s : SlipFace) (a b :
         le_min hle_left hle_right
       obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness s (sigma S hS).s a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
-      simp only [Set.mem_setOf_eq] at hl
+      simp only [Set.mem_ofPred_eq] at hl
       have hmin_le :
           min (s a (b - 1)) (s a (b + 1) + 1) ≤ (s ⋆ (sigma S hS).s) a b := by
         rcases hl with rfl | rfl
@@ -587,7 +587,7 @@ theorem sf_lres_sigma (S : Set ℤ) (hS : NoConsecutive S)
         max_le hge_left hge_right
       obtain ⟨l, hl, hval⟩ := SlipFace.bend_set_witness_lres s (sigma S hS).s a b
       rw [bend_set_sigma_of_pred_mem S hS hb] at hl
-      simp only [Set.mem_setOf_eq] at hl
+      simp only [Set.mem_ofPred_eq] at hl
       have hlres_le :
           (s ◃ (sigma S hS).s) a b ≤ max (s a (b - 1) - 1) (s a (b + 1)) := by
         rcases hl with rfl | rfl
@@ -665,7 +665,7 @@ private lemma risingSet_union_fallingSet (α : AspPerm) (S : Set ℤ) :
     risingSet α S ∪ fallingSet α S = S := by
   -- Proof written by GPT 5.5.
   ext n
-  simp only [risingSet, fallingSet, Set.mem_union, Set.mem_setOf_eq]
+  simp only [risingSet, fallingSet, Set.mem_union, Set.mem_ofPred_eq]
   constructor
   · rintro (⟨hn, _⟩ | ⟨hn, _⟩) <;> exact hn
   · intro hn
@@ -686,7 +686,7 @@ private lemma disjoint_risingSet_fallingSet (α : AspPerm) (S : Set ℤ) :
   -- Proof written by GPT 5.5.
   apply Set.disjoint_left.mpr
   intro n hnR hnF
-  simp only [risingSet, fallingSet, Set.mem_setOf_eq] at hnR hnF
+  simp only [risingSet, fallingSet, Set.mem_ofPred_eq] at hnR hnF
   omega
 
 private lemma risingSet_singleton_of_lt (α : AspPerm) (n : ℤ)
@@ -720,7 +720,7 @@ $(n,n+1)$ with $n \in S$. -/
 private lemma sigma_inv_set_iff (S : Set ℤ) (hS : NoConsecutive S) (u v : ℤ) :
     ⟨u, v⟩ ∈ inv_set (sigma S hS).func ↔ u ∈ S ∧ v = u + 1 := by
   -- Proof written by GPT 5.5.
-  simp only [inv_set, Set.mem_setOf_eq, sigma_apply]
+  simp only [inv_set, Set.mem_ofPred_eq, sigma_apply]
   constructor
   · rintro ⟨huv, hσ⟩
     have hupper : sigmaFun S u ≤ u + 1 := by
@@ -859,7 +859,7 @@ private lemma reducedProduct_alpha_sigma (α : AspPerm) (S : Set ℤ)
   rintro ⟨u, v⟩ hαinv hσinv
   rw [sigma_inv hS] at hσinv
   rw [sigma_inv_set_iff S hS u v] at hσinv
-  simp only [inv_set, Set.mem_setOf_eq] at hαinv
+  simp only [inv_set, Set.mem_ofPred_eq] at hαinv
   rcases hσinv with ⟨hu, rfl⟩
   have hascent := hα u hu
   omega
@@ -873,7 +873,7 @@ private lemma sigma_le_weak_L_of_falling (α : AspPerm) (S : Set ℤ)
   rw [sigma_inv hS] at hp
   rw [sigma_inv_set_iff S hS u v] at hp
   rcases hp with ⟨hu, rfl⟩
-  simp only [inv_set, Set.mem_setOf_eq]
+  simp only [inv_set, Set.mem_ofPred_eq]
   exact ⟨by omega, hα u hu⟩
 
 private lemma star_sigma_eq_self (α : AspPerm) (S : Set ℤ) (hS : NoConsecutive S)

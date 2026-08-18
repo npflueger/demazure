@@ -104,9 +104,8 @@ private lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   obtain ⟨A'new_le_A'new, h_sum⟩ := unique_a_helper hsub Anew A'new b hAnew hA'new
   have : (∑ x ∈ Finset.Ico Anew A'new, s.Δ x b)
     = s.Δ a b + ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b := by
-    exact Finset.sum_eq_add_sum_diff_singleton
-      (s := Finset.Ico Anew A'new) a (fun x => s.Δ x b)
-      (by intro ha; exact (ha a_Ico).elim)
+    rw [← Finset.erase_eq]
+    exact (Finset.add_sum_erase (Finset.Ico Anew A'new) (fun x => s.Δ x b) a_Ico).symm
   rw [this] at h_sum
   have sum0 : ∑ x ∈ (Finset.Ico Anew A'new \ {a}), s.Δ x b  = 0 := by
     have : s.Δ a b = 1 := by
@@ -384,7 +383,7 @@ private noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
         intro x
         simp only [Finset.mem_Icc, Finset.coe_Icc, Set.mem_Icc]
       intro n hn
-      simp only [Set.mem_setOf_eq] at hn
+      simp only [Set.mem_ofPred_eq] at hn
       suffices n ≥ L ∧ n ≤ R by simpa
       constructor
       · linarith [β.s_nonneg n b, α.s_ge a n]

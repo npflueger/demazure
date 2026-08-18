@@ -360,7 +360,7 @@ factorizations `τ = α ⋆ β`. -/
 noncomputable def link_equiv_dprod :
   {L : Link | L.τ = τ } ≃ {⟨α, β⟩ : AspPerm × AspPerm | α ⋆ β = τ } where
   toFun L := ⟨⟨L.val.α, L.val.β⟩, by
-    simp only [AspPerm.ext, Set.mem_setOf_eq]
+    simp only [AspPerm.ext, Set.mem_ofPred_eq]
     rw [L.val.dprod, L.prop]⟩
   invFun x := ⟨Link_of_dprod h_321a x.property, by
     rcases x with ⟨⟨α, β⟩, h_dprod⟩
@@ -1059,7 +1059,7 @@ noncomputable def labelChainEquivFixedChiPChain (χs : Fin n → ℤ)
     funext i
     ext p
     simp only [labelChainOfFixedChiPChain, fixedChiPChainOfLabelChain,
-      pChainOfLabelChain, List.getElem_ofFn, Fin.eta, Subtype.coe_eta]
+      pChainOfLabelChain, List.getElem_ofFn, Fin.eta]
   right_inv C := by
     apply Subtype.ext
     apply Subtype.ext

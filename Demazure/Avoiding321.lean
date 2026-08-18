@@ -69,10 +69,10 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     intro n hn
     unfold southeast_set at hn
     specialize h_snk n
-    simp only [Set.mem_setOf_eq] at hn h_snk
+    simp only [Set.mem_ofPred_eq] at hn h_snk
     obtain ⟨v_le_n, τ_n_lt_v⟩ := hn
     unfold inv_set at h_snk
-    simp only [Set.mem_setOf_eq, not_and, not_lt] at h_snk
+    simp only [Set.mem_ofPred_eq, not_and, not_lt] at h_snk
     have : v ≠ n := by
       intro heq
       rw [heq] at τ_n_lt_v
@@ -84,11 +84,11 @@ theorem is_asp_of_is_321a (τ : ℤ → ℤ) (h_bij : Function.Bijective τ)
     apply Set.eq_empty_of_forall_notMem
     intro n hn
     unfold northwest_set at hn
-    simp only [Set.mem_setOf_eq] at hn
+    simp only [Set.mem_ofPred_eq] at hn
     specialize h_src n
     obtain ⟨n_lt_u_plus_1, τ_n_ge_u_plus_1⟩ := hn
     unfold inv_set at h_src
-    simp only [Set.mem_setOf_eq, not_and, not_lt] at h_src
+    simp only [Set.mem_ofPred_eq, not_and, not_lt] at h_src
     have n_le_u : n ≤ u := by linarith
     have : n ≠ u := by
       intro heq
@@ -168,13 +168,13 @@ noncomputable def Perm321a_equiv_Tfas :
         (is_321a_iff_set_321a_prop τ τ.val.bijective).mp τ.prop⟩, τ.val.χ⟩
   invFun := fun ⟨I, χ⟩ =>
     ⟨I.toAspPerm χ,
-      (is_321a_iff_set_321a_prop (I.recon χ) (I.toAspPerm χ).bijective).mpr
+      (is_321a_iff_set_321a_prop (I.toAspPerm χ).func (I.toAspPerm χ).bijective).mpr
         { asp := by
-            show AspSet_prop (inv_set (I.recon χ))
-            rw [I.invSet_func χ]
+            show AspSet_prop (inv_set (I.toAspPerm χ).func)
+            rw [I.invSet_of_toAspPerm χ]
             exact I.prop
           tfree := by
-            simpa [I.invSet_func χ] using I.prop_321a.tfree }⟩
+            simpa [I.invSet_of_toAspPerm χ] using I.prop_321a.tfree }⟩
   left_inv := by
     intro τ
     apply Subtype.ext
@@ -187,13 +187,13 @@ noncomputable def Perm321a_equiv_Tfas :
   right_inv := by
     intro ⟨I, χ⟩
     rw [Prod.mk.injEq]
-    constructor
-    · cases I
-      case mk toAspSet prop_321a =>
-        rw [tfas.mk.injEq]
+    refine ⟨?_, I.chi_of_toAspPerm χ⟩
+    cases I with
+    | mk toAspSet prop_321a =>
+      have h : AspSet.of_AspPerm (toAspSet.toAspPerm χ) = toAspSet := by
         apply SetLike.coe_injective
         exact toAspSet.invSet_of_toAspPerm χ
-    · exact I.chi_of_toAspPerm χ
+      simp only [h]
 
 /-- Characterize the sets of boxes that arise as inversion sets of
 321-avoiding ASP permutations. -/
@@ -370,7 +370,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
     ⟨ lt_of_lt_of_le u_lt_b b_le_v, lt_of_lt_of_le τv_lt_a τu_ge_a⟩
   have h_union : southeast_set τ a b = southeast_set τ a v ∪ southeast_set τ (τ v) b := by
     ext n
-    simp only [Set.mem_union, southeast_set, Set.mem_setOf_eq]
+    simp only [Set.mem_union, southeast_set, Set.mem_ofPred_eq]
     constructor
     · rintro ⟨n_ge_b, τn_lt_a⟩
       by_cases n_v : n ≥ v
@@ -392,7 +392,7 @@ lemma split_s {u v : ℤ} {a b : ℤ}
     rw [Set.disjoint_iff_inter_eq_empty]
     apply Set.eq_empty_iff_forall_notMem.mpr
     intro x hx
-    simp only [Set.mem_inter_iff, southeast_set, Set.mem_setOf_eq] at hx
+    simp only [Set.mem_inter_iff, southeast_set, Set.mem_ofPred_eq] at hx
     obtain ⟨⟨x_ge_v, τx_lt_a⟩, ⟨x_ge_b, τx_lt_τv⟩⟩ := hx
     have vx_inv : ⟨v, x⟩ ∈ inv_set τ := (τ.inv_iff_lt x_ge_v).mpr τx_lt_τv
     have := tfree_of_is_321a τ h_321a u v x
@@ -1033,7 +1033,7 @@ lemma excess_of_not_isolated {u v₁ v₂ : ℤ} (v₁_lt_v₂ : v₁ < v₂)
     have h_empty : southeast_set τ a b = ∅ := by
       apply Set.eq_empty_iff_forall_notMem.mpr
       intro x x_mem
-      simp only [southeast_set, Set.mem_setOf_eq] at x_mem
+      simp only [southeast_set, Set.mem_ofPred_eq] at x_mem
       have v₁x_inv : ⟨v₁, x⟩ ∈ inv_set τ := by
         refine (τ.inv_iff_le ?_).mpr ?_
         · linarith [x_mem.1]

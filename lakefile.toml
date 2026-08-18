@@ -1,5 +1,5 @@
 name = "demazure"
-version = "0.1.0"
+version = "1.1.1"
 keywords = ["math"]
 defaultTargets = ["Demazure"]
 
@@ -13,7 +13,7 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.31.0-rc2"
+rev = "v4.33.0"
 
 [[lean_lib]]
 name = "Demazure"

@@ -3,9 +3,11 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.Valley
-import Mathlib.Algebra.BigOperators.Ring.Finset
-import Mathlib.Data.Int.Interval
+module
+
+public import Demazure.Valley
+public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import Mathlib.Data.Int.Interval
 
 /-!
 # Slipfaces
@@ -15,6 +17,8 @@ This file defines slipface functions and develops their basic properties, includ
 Section 3, with some essential-set material from Section 7.1, of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
+
+@[expose] public section
 
 /-- A slipface function of shift `χ`, i.e. a function $s : \mathbb{Z}^2 \to \mathbb{N}$
 satisfying conditions (S1) to (S3) from
@@ -442,7 +446,7 @@ private lemma D_props_of_star_func (s t : SlipFace) : D_props (s.star_func t) :=
       linarith [s.nonneg a l, t.nonneg l b]
     exact le_antisymm le_zero ge_zero
 
-private lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
+lemma star_exists (s t : SlipFace) : ∃ p : SlipFace,
   ((p.func = star_func s t ∧ p.χ = s.χ + t.χ)
   ∧ p.dual.func = star_func t.dual s.dual) := by
   let P := star_func s t
@@ -918,7 +922,7 @@ private lemma D_props_of_lres_func (s t : SlipFace) : D_props (lres_func s t) :=
         have ht_nonneg : t.dual b l ≥ 0 := t.dual.nonneg b l
         omega
 
-private lemma rres_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
+lemma rres_exists (s t : SlipFace) (a b : ℤ) : ∃ m, ∀ l,
     t l b - s.dual l a ≤ t m b - s.dual m a := by
   obtain ⟨A₁, hA₁⟩ := t.small_a b
   obtain ⟨A₂, hA₂⟩ := s.dual.small_a a
@@ -1143,7 +1147,7 @@ private lemma lres_rres_dual_eq (s t : SlipFace) (a b : ℤ) :
       lres_val_ge s t a b l
     linarith [s.s_eq a l, t.s'_eq b l, htdd, hmax]
 
-private lemma lres_exists (s t : SlipFace) : ∃ p : SlipFace,
+lemma lres_exists (s t : SlipFace) : ∃ p : SlipFace,
     ((p.func = lres_func s t ∧ p.χ = s.χ + t.χ)
     ∧ p.dual.func = rres_func t.dual s.dual) := by
   -- Proof written by GPT 5.5.

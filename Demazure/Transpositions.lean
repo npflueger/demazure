@@ -3,7 +3,9 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.Reduction
+module
+
+public import Demazure.Reduction
 
 /-!
 # Transpositions
@@ -14,6 +16,8 @@ $\triangleleft$. Its main purpose is to prove Theorem 8.7 from
 Theorem A and the theorem labeled `thm:resL`, which describe the special case of $\sigma_S$ for
 $S = \{n\}$ a singleton.
 -/
+
+@[expose] public section
 
 namespace Transpositions
 
@@ -102,8 +106,8 @@ private lemma sigmaFun_asp (S : Set ℤ) : is_asp (sigmaFun S) := by
 for $n \in S$. -/
 noncomputable def sigma (S : Set ℤ) (hS : NoConsecutive S) : AspPerm where
   func := sigmaFun S
-  bijective := ⟨sigmaFun_injective hS, sigmaFun_surjective hS⟩
-  asp := sigmaFun_asp S
+  bijective := by exact ⟨sigmaFun_injective hS, sigmaFun_surjective hS⟩
+  asp := by exact sigmaFun_asp S
 
 @[simp] private lemma sigma_apply (S : Set ℤ) (hS : NoConsecutive S) (n : ℤ) :
     sigma S hS n = sigmaFun S n := rfl
@@ -652,11 +656,11 @@ private lemma noConsecutive_subset {S T : Set ℤ} (hS : NoConsecutive S) (hT : 
   intro n hn hsucc
   exact hS n (hT hn) (hT hsucc)
 
-private lemma noConsecutive_risingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
+lemma noConsecutive_risingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
     NoConsecutive (risingSet α S) :=
   noConsecutive_subset hS (by intro n hn; exact hn.1)
 
-private lemma noConsecutive_fallingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
+lemma noConsecutive_fallingSet (α : AspPerm) {S : Set ℤ} (hS : NoConsecutive S) :
     NoConsecutive (fallingSet α S) :=
   noConsecutive_subset hS (by intro n hn; exact hn.1)
 

@@ -3,7 +3,9 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.Avoiding321
+module
+
+public import Demazure.Avoiding321
 
 /-!
 # Tableaux
@@ -15,6 +17,8 @@ This material is not present in [An extended Demazure product](https://arxiv.org
 
 This file is largely experimental and is still under development. Use at your own risk.
 -/
+
+@[expose] public section
 
 namespace Tableaux
 open ASP321a

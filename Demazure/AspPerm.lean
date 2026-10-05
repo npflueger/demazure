@@ -3,11 +3,13 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.Utils
-import Demazure.SlipFace
-import Mathlib.Data.Int.LeastGreatest
-import Mathlib.Data.Set.Card
-import Mathlib.Tactic.Ring
+module
+
+public import Demazure.Utils
+public import Demazure.SlipFace
+public import Mathlib.Data.Int.LeastGreatest
+public import Mathlib.Data.Set.Card
+public import Mathlib.Tactic.Ring
 
 /-!
 # Almost-sign-preserving permutations
@@ -20,6 +22,8 @@ the set of submodular slipfaces is established. This corresponds roughly to Sect
 bounded-difference material from Section 7, of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
+
+@[expose] public section
 
 /-- The inversion set $\operatorname{Inv} \tau = \{(u,v) \in \mathbb{Z}^2 : u < v \text{ and }
 \tau(u) > \tau(v)\}$.
@@ -333,13 +337,13 @@ def rev_map : ℤ × ℤ → ℤ × ℤ := fun ⟨i, j⟩ => ⟨τ j, τ i⟩
 $s_\tau(a,b) = \#\{n \geq b : \tau(n) < a\}$, in the notation of
 *Equation (4)* (`eq:sa`) in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 In the repository, this is denoted as `τ.s_raw a b`. -/
-private noncomputable def s_raw (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
+noncomputable def s_raw (a b : ℤ) : ℤ := ↑(southeast_set τ a b).ncard
 
 /-- The companion counting function $s_{\tau^{-1}}(b,a)$.
 
 In Lean this is written `τ.s'_raw b a`; later `dual_inverse_raw` identifies it with
 `(τ⁻¹).s_raw`. -/
-private noncomputable def s'_raw (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
+noncomputable def s'_raw (b a : ℤ) : ℤ := ↑(northwest_set τ a b).ncard
 
 private lemma dual_inverse_raw : τ.s'_raw = (τ⁻¹).s_raw := by
   funext b a
@@ -751,8 +755,8 @@ noncomputable def s : SlipFace := {
     rw [τ.b_step_raw a b]
     by_cases h : τ b < a <;> simp only [h, ↓reduceIte, tsub_le_iff_right, le_add_iff_nonneg_right,
       zero_le_one, sub_add_cancel, Std.le_refl, and_self, sub_zero]
-  nonneg := τ.s_nonneg_raw
-  ge_diff := τ.s_ge_raw
+  nonneg := by exact τ.s_nonneg_raw
+  ge_diff := by exact τ.s_ge_raw
   small_a := by
     intro b
     obtain ⟨A, hA⟩ := τ.tend_zero_a_raw b
@@ -1338,32 +1342,32 @@ lemma mem_lamp_iff_s_ge (a m n : ℤ) :
 namespace Wings
 variable (b m n : ℤ) (m_pos : m > 0) (n_pos : n > 0)
 
-private def R : Set ℤ := {n : ℤ | τ.s n b < m}
+def R : Set ℤ := {n : ℤ | τ.s n b < m}
 
-private lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
+lemma R_nonempty (m_pos : m > 0) : (R τ b m).Nonempty := by
   have := tend_zero_a (τ := τ) b
   obtain ⟨n, hn⟩ := this
   use n
   unfold R; simp only [Set.mem_ofPred_eq]
   linarith [m_pos, hn]
 
-private lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
+lemma R_bddAbove : ∃ N : ℤ, ∀ n ∈ R τ b m, n ≤ N := by
   use m + b - τ.χ
   intro n hn
   simp only [R] at hn
   have := lt_of_le_of_lt (τ.s_ge n b) hn
   omega
 
-private def L : Set ℤ := {a : ℤ | τ⁻¹.s b a ≥ n}
+def L : Set ℤ := {a : ℤ | τ⁻¹.s b a ≥ n}
 
-private lemma L_nonnempty : (L τ b n).Nonempty := by
+lemma L_nonnempty : (L τ b n).Nonempty := by
   use b - n - τ.χ
   unfold L; simp only [ge_iff_le, Set.mem_ofPred_eq]
   refine le_trans ?_ (τ⁻¹.s_ge b (b - n - τ.χ))
   rw [τ.chi_dual]
   omega
 
-private lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
+lemma L_bddAbove (n_pos : n > 0) : ∃ A : ℤ, ∀ a ∈ L τ b n, A ≥ a := by
   have := tend_zero_b (τ := τ⁻¹) b
   obtain ⟨a, ha⟩ := this
   use a
@@ -1876,7 +1880,7 @@ lemma ess_asp_eq_ess_sf (τ : AspPerm) : τ.ess = τ.s.ess := by
 
 def is_bdiff : Prop := ∃ (M : ℤ), ∀ (n : ℤ), abs (n - τ n) ≤ M
 
-private def width_bound (N : ℤ) : Prop :=
+def width_bound (N : ℤ) : Prop :=
   ∀ (a b : ℤ), N ≤ abs (a - b) → τ.s a b = max 0 (a - b + τ.χ)
 
 

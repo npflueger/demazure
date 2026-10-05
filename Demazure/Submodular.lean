@@ -3,9 +3,11 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.AspPerm
-import Demazure.Valley
-import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+module
+
+public import Demazure.AspPerm
+public import Demazure.Valley
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
 # Submodular slipfaces
@@ -15,6 +17,8 @@ uses this to define the operations $\star$, $\triangleleft$, and $\triangleright
 It corresponds roughly to Section 4 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
+
+@[expose] public section
 
 /-! ### Submodular slipfaces and recovery of ASP permutations
 
@@ -58,7 +62,7 @@ private lemma unique_a_helper {s : SlipFace} (hsub : s.submodular)
     rwa [hA' A' (le_refl A')] at this
   exact le_antisymm this (s.dual.nonneg b A')
 
-private lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
+lemma unique_a {s : SlipFace} (hsub : s.submodular) (b : ℤ) :
   ∃! a : ℤ, ⟨a, b⟩ ∈ s.Γ := by
   rcases s.dual.large_b (b+1) with ⟨A', hA'⟩
   rcases s.small_a b with ⟨A, hA⟩
@@ -188,7 +192,7 @@ private lemma asp_bijective {s : SlipFace} (hsub : s.submodular) :
 $\Gamma$ in the manner described in Section 4 of [An extended Demazure product](https://arxiv.org/abs/2206.14227). -/
 noncomputable def asp {s : SlipFace} (hsub : s.submodular) : AspPerm where
   func := fun b => (unique_a hsub b).choose
-  bijective := asp_bijective hsub
+  bijective := by exact asp_bijective hsub
   asp := by
     let S := {b : ℤ | b * (asp_func hsub b) < 0}
     suffices S.Finite by exact this
@@ -372,7 +376,7 @@ the $M_{\alpha \star \beta}(a,b)$ of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227). In Lean that rightmost
 minimizer is `(AspValley α β a b).M`. *Definition 4.6 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227), unlabeled in source.* -/
-private noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
+noncomputable def AspValley (α β : AspPerm) (a b : ℤ) : Valley where
     f := fun l => α.s a l + β.s l b
     rises := by
       intro m
@@ -1002,7 +1006,7 @@ lemma eq_of_sf_eq {α β : AspPerm} (eq_sf : α.s = β.s) : α = β := by
 
 /-- The slipface product of two ASP permutations is represented by a unique ASP
 permutation. -/
-private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ⋆ β.s := by
+lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ⋆ β.s := by
   intro α β
   have := Submodular.submodular_of_star (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ⋆ β.s)).mp this
@@ -1016,7 +1020,7 @@ private lemma star_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s 
 
 /-- The slipface left residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ◃ β.s := by
+lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ◃ β.s := by
   intro α β
   have := Submodular.submodular_of_lres (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ◃ β.s)).mp this
@@ -1030,7 +1034,7 @@ private lemma lres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s 
 
 /-- The slipface right residual of two ASP permutations is represented by a
 unique ASP permutation. -/
-private lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ▹ β.s := by
+lemma rres_exists : ∀ α β : AspPerm, ∃! τ : AspPerm, τ.s = α.s ▹ β.s := by
   intro α β
   have := Submodular.submodular_of_rres (α.submodular) (β.submodular)
   have ex := (Submodular.submodular_iff_asp (α.s ▹ β.s)).mp this

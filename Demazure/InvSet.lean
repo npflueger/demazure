@@ -3,9 +3,11 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.AspPerm
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Order.Interval.Set.Infinite
+module
+
+public import Demazure.AspPerm
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Order.Interval.Set.Infinite
 
 /-!
 # Inversion sets
@@ -14,6 +16,8 @@ This file gives a characterization of the inversion set of ASP permutations.
 It corresponds to Theorem 2.13 of
 [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
+
+@[expose] public section
 
 /-- The axioms characterizing inversion sets of ASP permutations: directedness,
 closure, coclosure, and finite in/out degree. *Definition 2.12 (`defn:aspSet`) of
@@ -69,7 +73,7 @@ private lemma not_mem_of_ge (asps : AspSet) {m n : ℤ} (n_le_m : n ≤ m) : ⟨
   asps.not_mem_of_ge (le_refl n)
 
 /-- The order on indices after the inversions in `asps` are applied. -/
-private def post_lt (asps : AspSet) (m n : ℤ) : Prop :=
+def post_lt (asps : AspSet) (m n : ℤ) : Prop :=
   (m < n ∧ ⟨m, n⟩ ∉ asps) ∨ (n < m ∧ ⟨n, m⟩ ∈ asps)
 
 @[simp] private lemma not_post_lt_self (asps : AspSet) (n : ℤ) : ¬ asps.post_lt n n := by
@@ -629,7 +633,7 @@ theorem func_asp : is_asp (asps.recon χ) := by
 /-- Package the function reconstructed from an ASP set and a shift as an
 `AspPerm`. -/
 noncomputable def toAspPerm : AspPerm :=
-  ⟨asps.recon χ, func_bijective asps χ, func_asp asps χ⟩
+  ⟨asps.recon χ, by exact func_bijective asps χ, func_asp asps χ⟩
 
 lemma invSet_of_toAspPerm : inv_set (toAspPerm asps χ)= asps := invSet_func asps χ
 

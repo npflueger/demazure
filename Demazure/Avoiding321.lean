@@ -3,8 +3,10 @@ Copyright (c) 2026 Nathan Pflueger. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Nathan Pflueger
 -/
-import Demazure.InvSet
-import Demazure.Submodular
+module
+
+public import Demazure.InvSet
+public import Demazure.Submodular
 
 /-!
 # 321-avoiding permutations
@@ -14,6 +16,8 @@ permutations (not necessarily of finite length), which are all automatically in 
 
 This material is not present in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
 -/
+
+@[expose] public section
 
 /-- The 321-avoidance condition used in this file: every triple `i < j < k`
 has either `τ i < τ j` or `τ j < τ k`. -/

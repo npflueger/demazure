@@ -7,7 +7,7 @@ module
 
 public import Demazure.Utils
 public import Demazure.SlipFace
-public import Mathlib.Data.Int.LeastGreatest
+public import Mathlib.Order.Int.LeastGreatest
 public import Mathlib.Data.Set.Card
 public import Mathlib.Tactic.Ring
 
@@ -67,7 +67,7 @@ private lemma se_finite_of_finite {τ : ℤ → ℤ} (h_inj : Function.Injective
   have h : B ⊆ A ∪ (H ∪ V) := by
     intro k hk
     simp only [A, B] at hk ⊢
-    unfold southeast_set at *
+    unfold southeast_set at hk ⊢
     by_cases k_lt_n : k < n
     · right; right
       simp only [V]
@@ -480,7 +480,7 @@ private lemma se_diff_card (a a' b : ℤ) :
 private lemma a_move_up_raw (a a' b : ℤ) (a_le_a' : a ≤ a') :
     τ.s_raw a' b = τ.s_raw a b + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card := by
   have h_sub : τ.se_finset a b ⊆ τ.se_finset a' b := fun k hk => by
-    simp only [mem_se] at *; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
+    simp only [mem_se] at hk ⊢; exact ⟨hk.1, lt_of_lt_of_le hk.2 a_le_a'⟩
   suffices (τ.se_finset a' b).card
     = (τ.se_finset a b).card + ((Finset.Ico a a').filter (τ⁻¹ · ≥ b)).card by
     have hcard : ((τ.se_finset a' b).card : ℤ) =

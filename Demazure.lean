@@ -16,6 +16,10 @@ public import Demazure.Transpositions
 public import Demazure.InvSet
 public import Demazure.Avoiding321
 public import Demazure.Tableaux
+public import Demazure.SkewShapes.Basic
+public import Demazure.SkewShapes.TwoTermFactorization
+public import Demazure.SkewShapes.HeckeFactorization
+public import Demazure.SkewShapes.ShapeConstruction
 
 /-!
 # Demazure

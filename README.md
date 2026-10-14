@@ -53,23 +53,40 @@ The Lean development in `Demazure/` is organized as follows. Section numbers tel
                       │ 321-avoiding permutations     │    │ Reduced products              │
                       │ and behavior of ⋆ on them     │    │ and relations to ⋆ and ◃      │
                       └───────────────┬───────────────┘    └───────────────┬───────────────┘
-                                      │                                    │
-                                      ▼                                    ▼
-                      ┌───────────────┴───────────────┐    ┌───────────────┴───────────────┐
-                      │ Tableaux.lean                 │    │ Reduction.lean (§6)           │
-                      │ Hecke                         │    │ Greedy and stingy             │
-                      │ factorizations and            │    │ characterizations;            │
-                      │ set-valued tableaux           │    │ reduction theorems            │
-                      └───────────────────────────────┘    └───────────────┬───────────────┘
-                                                                           │
-                                                                           ▼
-                                                           ┌───────────────┴───────────────┐
-                                                           │ Transpositions.lean (§3, §8)  │
-                                                           │ Adjacent transposition        │
-                                                           │ formulas for product          │
-                                                           │ and residual                  │
-                                                           └───────────────────────────────┘
+             ┌────────────────────────┴────┐                               │
+             ▼                             ▼                               ▼
+┌────────────┴────────────┐   ┌────────────┴────────────┐  ┌───────────────┴───────────────┐
+│ Tableaux.lean           │   │ SkewShapes/Basic.lean   │  │ Reduction.lean (§6)           │
+│ Hecke factorizations    │   │ Skew shapes and the     │  │ Greedy and stingy             │
+│ and set-valued tableaux │   │ permutations σ_S        │  │ characterizations;            │
+└─────────────────────────┘   └────────────┬────────────┘  │ reduction theorems            │
+                                           │               └───────────────┬───────────────┘
+              ┌────────────────────────────┤                               │
+              ▼                            ▼                               ▼
+┌─────────────┴─────────────┐ ┌────────────┴────────────┐  ┌───────────────┴───────────────┐
+│ SkewShapes/               │ │ SkewShapes/             │  │ Transpositions.lean (§3, §8)  │
+│ TwoTermFactorization.lean │ │ ShapeConstruction.lean  │  │ Adjacent transposition        │
+│ Weak orders; two-factor   │ │ Skew shapes from        │  │ formulas for product          │
+│ factorizations of σ_S     │ │ 321-avoiding perms      │  │ and residual                  │
+└─────────────┬─────────────┘ └─────────────────────────┘  └───────────────────────────────┘
+              │
+              ▼
+┌─────────────┴─────────────┐
+│ SkewShapes/               │
+│ HeckeFactorization.lean   │
+│ Shape chains and Hecke    │
+│ factorizations of σ_S     │
+└───────────────────────────┘
 ```
+
+### Skew shapes
+
+The folder `Demazure/SkewShapes/` develops a combinatorial model for shift-0 321-avoiding ASP permutations in terms of skew shapes (convex, locally finite sets of boxes in `ℤ × ℤ`, in matrix coordinates). This material is not in [An extended Demazure product](https://arxiv.org/abs/2206.14227).
+
+- `Basic.lean`: skew shapes and their reflections, the fringe boxes `U(x)` and `V(x)` of each box `x`, the set `I(S)` of pairs `(u(x), v(x))`, and the shift-0 321-avoiding ASP permutation `σ_S` whose inversion set is `I(S)`.
+- `TwoTermFactorization.lean`: the left and right weak orders on skew shapes, matching the weak orders below `σ_S`, and the classification of Demazure factorizations `σ_S = α ⋆ β` into shift-0 factors by pairs of shapes `A ≤R S`, `B ≤L S` that cover `S` and overlap in a nonattacking set of boxes.
+- `HeckeFactorization.lean`: the classification of Hecke factorizations `σ_S = α₁ ⋆ ⋯ ⋆ αₙ` into shift-0 factors by shape chains.
+- `ShapeConstruction.lean`: the converse construction. Given a shift-0 ASP permutation `τ` and a set `U` containing every source and no sink of an inversion of `τ` (such a `U` exists exactly when `τ` is 321-avoiding), a lattice path determined by `U` places one box for each inversion, and the resulting skew shape has `σ = τ`. Every skew shape arises this way from its own boundary path.
 
 ## Paper Coverage
 
@@ -90,6 +107,7 @@ verbatim.
 | Section 7: Bounded-difference permutations and the essential set | `AspPerm.lean`, `SlipFace.lean`, `Submodular.lean` | Partially formalized, including the essential set of a slipface, the bounded-difference criterion, and the compatibility of the essential set with the associated slipface. |
 | Section 8: Subgroups closed under `⋆` and `◃` | `Transpositions.lean` | Partially formalized. The adjacent-transposition computation used for symmetric and affine symmetric groups is formalized, but the downward-closed subgroup framework is not broadly formalized in this repository. |
 | Additional material outside [An extended Demazure product](https://arxiv.org/abs/2206.14227) | `Avoiding321.lean`, `Tableaux.lean` | These files develop 321-avoiding ASP permutations, triangle-free inversion sets, Demazure factorization criteria, Hecke factorizations, chains of inversion boxes, and set-valued tableaux. |
+| Additional material: skew shapes | `SkewShapes/Basic.lean`, `SkewShapes/TwoTermFactorization.lean`, `SkewShapes/HeckeFactorization.lean`, `SkewShapes/ShapeConstruction.lean` | Shift-0 321-avoiding ASP permutations as permutations of skew shapes, with weak orders, two-term and Hecke factorizations, and the reconstruction of a skew shape from its permutation, described in terms of boxes. |
 
 ## Installation
 
